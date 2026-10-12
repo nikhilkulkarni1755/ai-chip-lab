@@ -53,7 +53,11 @@ if [ -z "${T1_INSIDE:-}" ]; then
     exit 3
   fi
   IMAGE_ID="$(docker image inspect --format '{{.Id}}' "$LAB_SIM_IMAGE" 2>/dev/null || true)"
-  exec docker run --rm --platform linux/amd64 --cpus 2 \
+  # Part 2 rule: every container job takes the lab-wide lock (one heavy job at a
+  # time).  A caller that already holds it says so with LAB_LOCK_HELD=1.
+  LOCK=()
+  [ "${LAB_LOCK_HELD:-0}" = 1 ] || LOCK=(bash scripts/with_lock.sh rtl env LAB_LOCK_HELD=1)
+  exec "${LOCK[@]}" docker run --rm --platform linux/amd64 --cpus 2 \
     -v "$LAB_DIR":/lab -w /lab \
     -e T1_INSIDE=1 -e T1_STEPS="$STEPS" -e PYTHONHASHSEED=0 \
     -e T1_IMAGE_REF="$LAB_SIM_IMAGE" -e T1_IMAGE_ID="$IMAGE_ID" \
