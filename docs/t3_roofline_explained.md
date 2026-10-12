@@ -81,16 +81,16 @@ and of the fold structure, not a ratio of the layer's compulsory bytes to its co
 * The last, tiny classifier layer `FC` (M=1) has the lowest intensity of all (2.0 FLOP/B) and the highest required
   bandwidth (167 words/cycle), as the roofline predicts; but the three `Conv5_x` layers with K=4608 and M=25
   (intensity 49) need only 56.6 words/cycle, the lowest of the whole network, while the high-intensity
-  layers `Conv3_1b/2a/2b` (intensity 596, the highest) need 162. In weight stationary, the array consumes new
-  ifmap rows at a rate set by the array width, so layers with many row folds and large M (Conv2/Conv3) touch new
-  data every cycle, while the deep layers with few output pixels spend most cycles on long filter folds with
-  little new ifmap data per cycle.
+  layers `Conv3_1b/2a/2b` (intensity 596, the highest) need 162. A plausible reading (not separately tested): in weight
+  stationary the cycle count of the deep layers is dominated by many long filter folds with few output pixels, so
+  little new data is first touched per cycle, whereas the early layers with large M stream new ifmap data nearly
+  every cycle.
 * Re-fetch also decouples the two: the simulated ifmap DRAM reads are 5-13 times the ifmap tensor for the 3x3
   layers (64 kB buffers), so the "effective" intensity (FLOP per word moved, 42 to 128) is far flatter than the
   compulsory intensity (2 to 596). Intensity as defined by tensor sizes is a good predictor only when the
   working set fits on chip; at 64 kB it does not.
-* The 21 layers contain 7 duplicated shapes (identical numbers, handled as ties by average ranks), so the rank
-  statistic has effectively about 12 distinct points; moderate rho values are not strongly distinguishable from
+* 9 of the 21 layers repeat an earlier shape (identical numbers, handled as ties by average ranks), so the rank
+  statistic has only 12 distinct points; moderate rho values are not strongly distinguishable from
   noise.
 This explains the direction of the failure for ws; it does not rescue the check, and the roofline claim "low
 intensity -> more required bandwidth" is **not confirmed by SCALE-Sim's CALC-mode output at the pre-registered
