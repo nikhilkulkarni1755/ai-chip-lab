@@ -55,5 +55,49 @@ bundled `Resnet18.csv`** on a 128 x 128 array with the bundled `scale.cfg` SRAM 
   `model/test_perlayer.py` shows identical per-layer rows for combined and per-layer runs.
 
 ## What the new check proves (and does not)
-(Results are filled in below when the runs have finished; see `results/t3_summary.json`, `roofline` and
-`superseded`.)
+
+### Criterion B (CALC mode): evaluated on all 21 real layers, FAILS for all three dataflows
+Spearman rho(AI, required DRAM bandwidth), 128 x 128, bundled `scale.cfg`, threshold rho <= -0.6
+(`results/t3/roofline2/rl2_calc_<df>.json`; recomputed independently from the saved reports by arch and by demo):
+
+| dataflow | rho(AI, required bw) | threshold | verdict |
+|---|---|---|---|
+| ws | +0.366 | <= -0.6 | FAIL (wrong sign) |
+| os | -0.556 | <= -0.6 | FAIL (right sign, not strong enough) |
+| is | -0.509 | <= -0.6 | FAIL (right sign, not strong enough) |
+
+So with the pre-registered statistic and threshold the stage verdict is **FAIL on criterion B**, whatever criterion A
+gives. Nothing was changed after seeing these numbers: not the criterion, not the layer set, not the statistic.
+(Supplementary, not gating: rho against the *effective* intensity, FLOP per DRAM word SCALE-Sim actually moved,
+is +0.46 / -0.80 / -0.66 for ws / os / is.)
+
+**Why intensity does not rank-order the required bandwidth, ws in particular (an explanation, not a new criterion).**
+In CALC mode the "required bandwidth" is not total traffic over total time. `read_buffer_estimate_bw.py`
+(SCALE-Sim 3.0.0) splits the SRAM into an active part (90 %) and a prefetch part (10 %) and, every time the array has
+consumed one more prefetch-sized set of *new* addresses, sets the bandwidth to `ceil(elements to prefetch /
+cycles available)`, i.e. how fast new data are first touched by the array. That is a local property of the dataflow
+and of the fold structure, not a ratio of the layer's compulsory bytes to its compute. Per-layer numbers for ws
+(`rl2_calc_ws.json`) show it:
+* The last, tiny classifier layer `FC` (M=1) has the lowest intensity of all (2.0 FLOP/B) and the highest required
+  bandwidth (167 words/cycle), as the roofline predicts; but the three `Conv5_x` layers with K=4608 and M=25
+  (intensity 49) need only 56.6 words/cycle, the lowest of the whole network, while the high-intensity
+  layers `Conv3_1b/2a/2b` (intensity 596, the highest) need 162. In weight stationary, the array consumes new
+  ifmap rows at a rate set by the array width, so layers with many row folds and large M (Conv2/Conv3) touch new
+  data every cycle, while the deep layers with few output pixels spend most cycles on long filter folds with
+  little new ifmap data per cycle.
+* Re-fetch also decouples the two: the simulated ifmap DRAM reads are 5-13 times the ifmap tensor for the 3x3
+  layers (64 kB buffers), so the "effective" intensity (FLOP per word moved, 42 to 128) is far flatter than the
+  compulsory intensity (2 to 596). Intensity as defined by tensor sizes is a good predictor only when the
+  working set fits on chip; at 64 kB it does not.
+* The 21 layers contain 7 duplicated shapes (identical numbers, handled as ties by average ranks), so the rank
+  statistic has effectively about 12 distinct points; moderate rho values are not strongly distinguishable from
+  noise.
+This explains the direction of the failure for ws; it does not rescue the check, and the roofline claim "low
+intensity -> more required bandwidth" is **not confirmed by SCALE-Sim's CALC-mode output at the pre-registered
+strength** (it holds weakly for os and is, not for ws).
+
+### Criterion A (USER mode, stall fraction vs intensity under a fixed bandwidth): not evaluated (cost)
+The 12 user-bandwidth runs (3 dataflows x B = 64, 256) need roughly 4 h of exclusive lock; the largest layers
+exceed 170 s each. Per decision P2-8 only one probe hold (`rl2_user_ws_high`, at most 9 minutes) was run to measure
+the cost, and criterion A is reported per cell as "not evaluated (cost)" together with that measurement, never as
+pass or fail. See the probe result below.
