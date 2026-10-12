@@ -6,7 +6,7 @@ Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, t
 
 ## Status
 
-Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 5h 04m since start (2026-10-12 02:48:36 PDT), budget 6h).
+Generated from the files in this repository by `python3 scripts/demo_build.py` (Total runtime: 5h 08m, from 2026-10-12 02:48:36 PDT to 07:57, budget 6h).
 
 | Check | Status | Detail |
 |---|---|---|
@@ -18,7 +18,7 @@ Generated from the files in this repository by `python3 scripts/demo_build.py` (
 | Task 2: OpenROAD gcd flows within ORFS's shipped regression thresholds | **PASS** | t2_summary.json: pass=true; NOT timing-closed: nangate45/gcd misses timing at its 0.25 ns reference clock (WNS -0.161583 ns, TNS -7.08646 ns, 51 violating endpoints); sky130hd/gcd misses timing at its 1.1 ns reference clock (WNS -1.45954 ns, TNS -64.9417 ns, 63 violating endpoints) |
 | Task 3: SCALE-Sim vs analytical model | **FAIL** | marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes).; criteria that fail: roofline_agreement_is, roofline_agreement_os, roofline_agreement_ws, roofline_agrees, roofline_rank_corr_is, roofline_rank_corr_ws (the roofline-vs-stalls agreement; the analytic cycle model and byte-identity checks pass) |
 | Sweep A: architecture (SCALE-Sim) | **DONE** | sweep stopped (marker .done); this is a completion status, not a pass/fail verdict; 165 ok of 264 planned points (1 error, 1 skipped after timeout, 97 never reached before the deadline) |
-| Sweep B: physical (ORFS) | **DONE** | sweep stopped (marker .done); this is a completion status, not a pass/fail verdict; gcd frontier 0.42 ns (fastest closing period over utilizations 30-60 %), 1 failed point(s) |
+| Sweep B: physical (ORFS) | **DONE** | sweep stopped (marker .done); this is a completion status, not a pass/fail verdict; gcd closes at 0.42-0.425 ns depending on utilization (about zero margin at 0.42 ns, u50); systolic_os closes at 1.6 ns and fails at 1.2 ns (coarse, 30 % utilization only); 1 failed point(s) |
 | Repeatability rerun (repro) | **PASS** | repro_report.json: pass=true; 10 of 10 checks identical. Scope: Tasks 1 and 3 were re-run from clean directories; Task 2 reuses the two original clean runs (nangate45/gcd and sky130hd/gcd, not a third run); systolic_os has a single run, so it has no determinism verdict |
 
 PASS means the stage's `.done` marker exists and its summary JSON says `"pass": true`. Anything unfinished is shown as PENDING/RUNNING/BLOCKED/UNKNOWN and not assumed.

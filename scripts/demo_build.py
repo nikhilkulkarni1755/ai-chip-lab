@@ -311,8 +311,14 @@ def build_rows(L):
                 sc.get("ok"), asum.get("planned_points"), sc.get("error", 0), sc.get("skipped_after_timeout", 0), asum.get("not_run_points"))
         elif name == "phys" and pfr:
             fr = (pfr.get("frontier") or {}).get("gcd") or {}
-            why += "; gcd frontier %s ns (fastest closing period over utilizations 30-60 %%), %d failed point(s)" % (
-                fmt_val(min(v["fastest_closing_period_ns"] for v in fr.values())) if fr else "?", len(pfr.get("failed_points") or []))
+            so = (pfr.get("frontier") or {}).get("systolic_os") or {}
+            lo = min(v["fastest_closing_period_ns"] for v in fr.values()) if fr else None
+            hi = max(v["fastest_closing_period_ns"] for v in fr.values()) if fr else None
+            mg = [u for u, v in fr.items() if v.get("wns_at_frontier_ns", 1) < 0.001]
+            why += "; gcd closes at %s-%s ns depending on utilization%s" % (fmt_val(lo), fmt_val(hi), (" (about zero margin at %s ns, u%s)" % (fmt_val(lo), ",".join(mg))) if mg else "")
+            for u, v in so.items():
+                why += "; systolic_os closes at %s ns and fails at %s ns (coarse, %s %% utilization only)" % (fmt_val(v.get("fastest_closing_period_ns")), fmt_val(v.get("next_failing_period_ns")), u)
+            why += "; %d failed point(s)" % len(pfr.get("failed_points") or [])
         elif pts:
             why += "; %d point(s)" % pts[0]
         rows.append(Row(label, state, why, "results/sweeps/%s.jsonl" % name if pts else None))
@@ -565,13 +571,20 @@ NAV = [("summary", "Summary"), ("created", "What was created"), ("concepts", "Co
 
 
 def elapsed_str(L):
+    """Total runtime is frozen once results/.stages/60_demo.done holds the finish epoch; before that it is 'elapsed so far'."""
     b = L.jload("budget.json") or {}
     se = b.get("start_epoch")
     if not se:
         return "unknown (budget.json missing)", None
-    el = time.time() - se
-    return "%dh %02dm since start (%s), budget %sh" % (int(el // 3600), int(el % 3600 // 60), b.get("start", "?"),
-                                                       b.get("total_budget_h", "?")), el
+    fin = None
+    try:
+        fin = int(L.read("results/.stages/60_demo.done").split()[0])
+    except Exception:
+        pass
+    el = (fin or time.time()) - se
+    lab = "Total runtime" if fin else "Elapsed so far (run not finished)"
+    return "%s: %dh %02dm, from %s to %s, budget %sh" % (lab, int(el // 3600), int(el % 3600 // 60), b.get("start", "?"),
+                                                        time.strftime("%H:%M", time.localtime(fin)) if fin else "now", b.get("total_budget_h", "?")), el
 
 
 def machine_str(L):
@@ -757,7 +770,7 @@ def arch_coverage(L):
         h.append("<details><summary>Best dataflow per workload and array (default SRAM)</summary><div class='tw'><table><thead><tr><th>workload|array</th><th>best</th>"
                  "<th>total cycles per dataflow</th><th>all three run</th></tr></thead><tbody>")
         for k, v in bd.items():
-            h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(k), e(str(v.get("best"))), e(fmt_val(v.get("cycles"))), "yes" if v.get("complete") else "NO (best of those run)"))
+            h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(k), e(str(v.get("best"))), e(" \u00b7 ".join("%s %s" % (k, x) for k, x in sorted((v.get("cycles") or {}).items()))), "yes" if v.get("complete") else "NO (best of those run)"))
         h.append("</tbody></table></div></details>")
     return "".join(h)
 
@@ -913,7 +926,7 @@ def build_html(L, rows, vm):
     m = re.search(r'route:\s*"([^"]+)"', L.read("versions.lock"))
     if m:
         route = m.group(1)
-    h.append('<div class="cards"><div class="card"><span class="sub">Elapsed</span><b>%s</b></div>'
+    h.append('<div class="cards"><div class="card"><span class="sub">Runtime</span><b>%s</b></div>'
              '<div class="card"><span class="sub">Runtime route</span><b>%s</b></div>'
              '<div class="card"><span class="sub">Machine</span><b>%s</b></div>'
              '<div class="card"><span class="sub">VM at end of run</span><b>%s</b></div></div>' % (
@@ -1045,9 +1058,6 @@ def build_html(L, rows, vm):
     for line in sweep_audit(L):
         items.append("<li>%s</li>" % line)
     t1v = ((L.jload("results/t1_summary.json") or {}).get("values") or {})
-    if t1v.get("eqy_scope"):
-        items.append("<li>Equivalence scope as recorded by Task 1: <code>%s</code>. If this says per-PE or partial, the full 4x4 multiplier "
-                     "cones did not close in the time available and the claim is limited to what is stated.</li>" % e(str(t1v["eqy_scope"])))
     items.append("<li><code>demo/run_demo.sh</code> runs only the sby tasks <code>prove</code> (unbounded induction) and <code>cover</code>; "
                  "the full BMC depth-20 run is part of <code>make t1</code> (%s s in the official run). %s</li>" % (
                      e(str(t1v.get("formal_bmc_seconds", "?"))), e(demo_timing(L))))
@@ -1119,7 +1129,7 @@ Open demo/index.html in a browser (double-click; no server needed).
 STATUS
 %s
 
-Elapsed: %s
+%s
 Machine: %s
 
 START / STOP THE VM
@@ -1156,7 +1166,7 @@ def build_root_readme(L, rows, vm):
              "math, a second independent tool, or published reference values); sweeps then explore the design space.\n")
     h.append("Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, tool map, how each result was tested, "
              "plots, and honest caveats.\n")
-    h.append("## Status\n\nGenerated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: %s).\n" % el_s)
+    h.append("## Status\n\nGenerated from the files in this repository by `python3 scripts/demo_build.py` (%s).\n" % el_s)
     h.append(md_table(rows))
     h.append("\nPASS means the stage's `.done` marker exists and its summary JSON says `\"pass\": true`. Anything unfinished is shown as "
              "PENDING/RUNNING/BLOCKED/UNKNOWN and not assumed.\n")
