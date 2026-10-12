@@ -24,7 +24,7 @@
           "gds_sha256_timestamps_zeroed": "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d",
           "num_cores": 3,
           "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
-          "rtl_sha256": "85f945db2d569064eb5e6262f9986ef1cced65591641aa9cd3ac51d0fc5bd3f9"
+          "rtl_sha256": null
         }
       ],
       "run_count": 3,
@@ -61,7 +61,7 @@
       "differing_fields": {},
       "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
       "compare_rule": "all metadata.json fields except wall-clock/cpu/memory/profiling(_s)/uuid; GDS with GDSII timestamp records zeroed",
-      "note": "run1/run2 = Part 1 (first/second clean run; systolic_os: the single final-RTL run); p2_<epoch> = Part 2 clean reruns, same image digest, NUM_CORES=3"
+      "note": "run1/run2 = Part 1 (first/second clean run; systolic_os: the single final-RTL run); p2_<epoch> = Part 2 clean reruns, same image digest, NUM_CORES=3 rtl_sha256 is null for gcd: it is ORFS's own stock source inside the pinned image, not built from rtl/."
     },
     "sky130hd/gcd": {
       "runs": [
@@ -87,7 +87,7 @@
           "gds_sha256_timestamps_zeroed": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809",
           "num_cores": 3,
           "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
-          "rtl_sha256": "85f945db2d569064eb5e6262f9986ef1cced65591641aa9cd3ac51d0fc5bd3f9"
+          "rtl_sha256": null
         }
       ],
       "run_count": 3,
@@ -124,7 +124,7 @@
       "differing_fields": {},
       "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
       "compare_rule": "all metadata.json fields except wall-clock/cpu/memory/profiling(_s)/uuid; GDS with GDSII timestamp records zeroed",
-      "note": "run1/run2 = Part 1 (first/second clean run; systolic_os: the single final-RTL run); p2_<epoch> = Part 2 clean reruns, same image digest, NUM_CORES=3"
+      "note": "run1/run2 = Part 1 (first/second clean run; systolic_os: the single final-RTL run); p2_<epoch> = Part 2 clean reruns, same image digest, NUM_CORES=3 rtl_sha256 is null for gcd: it is ORFS's own stock source inside the pinned image, not built from rtl/."
     },
     "nangate45/systolic_os": {
       "runs": [

@@ -1,7 +1,77 @@
 {
+  "reference_kind": "IMPLIED: rules-base.json limits un-padded with genRuleFile.py formulas; ORFS publishes no measured metadata for gcd at this commit",
   "tolerance_doc": "docs/t2_crosscheck_tolerance.md",
   "designs": {
     "nangate45/gcd": {
+      "stage_progression_informational": {
+        "synth__design__instance__area__stdcell": {
+          "implied_reference": 626.95652,
+          "ours": 626.696,
+          "relative_delta_pct": -0.04
+        },
+        "placeopt__design__instance__area": {
+          "implied_reference": 827.82609,
+          "ours": 827.526,
+          "relative_delta_pct": -0.04
+        },
+        "placeopt__design__instance__count__stdcell": {
+          "implied_reference": 711.30435,
+          "ours": 711,
+          "relative_delta_pct": -0.04
+        },
+        "cts__timing__setup__ws": {
+          "implied_reference": -0.1565,
+          "ours": -0.156594,
+          "relative_delta_pct": -0.06
+        },
+        "cts__timing__setup__tns": {
+          "implied_reference": -7.02,
+          "ours": -6.93389,
+          "relative_delta_pct": 1.23
+        },
+        "globalroute__timing__setup__ws": {
+          "implied_reference": -0.1865,
+          "ours": -0.176283,
+          "relative_delta_pct": 5.48
+        },
+        "globalroute__timing__setup__tns": {
+          "implied_reference": -8.24,
+          "ours": -7.46772,
+          "relative_delta_pct": 9.37
+        },
+        "detailedroute__route__wirelength": {
+          "implied_reference": 6277.3913,
+          "ours": 4429,
+          "relative_delta_pct": -29.45
+        },
+        "finish__timing__setup__ws": {
+          "implied_reference": -0.1805,
+          "ours": -0.161583,
+          "relative_delta_pct": 10.48
+        },
+        "finish__timing__setup__tns": {
+          "implied_reference": -7.94,
+          "ours": -7.08646,
+          "relative_delta_pct": 10.75
+        },
+        "finish__design__instance__area": {
+          "implied_reference": 969.56522,
+          "ours": 943.502,
+          "relative_delta_pct": -2.69
+        }
+      },
+      "synth_netlist_hashes_vs_rules": {
+        "synth__canonical_netlist__hash": {
+          "rule": "6eab9bf1a5bd88a4f570c5a4fa7e0a72f6cd0e38",
+          "ours": "061b4cd4004130e38a0d4380ac60e08e664a6eb9",
+          "equal": false
+        },
+        "synth__netlist__hash": {
+          "rule": "d0ed08e4f1392b96375711f43f15c146df735c44",
+          "ours": "9e39a316f1ac13251b7cb6a660740991997af5c3",
+          "equal": false
+        }
+      },
       "clock_period_ns": 0.25,
       "two_sided": {
         "finish__timing__setup__ws": {
@@ -81,6 +151,75 @@
       "matches_published": false
     },
     "sky130hd/gcd": {
+      "stage_progression_informational": {
+        "synth__design__instance__area__stdcell": {
+          "implied_reference": 2313.04348,
+          "ours": 2313.47,
+          "relative_delta_pct": 0.02
+        },
+        "placeopt__design__instance__area": {
+          "implied_reference": 4054.78261,
+          "ours": 4055.14,
+          "relative_delta_pct": 0.01
+        },
+        "placeopt__design__instance__count__stdcell": {
+          "implied_reference": 478.26087,
+          "ours": 478,
+          "relative_delta_pct": -0.05
+        },
+        "cts__timing__setup__ws": {
+          "implied_reference": -1.435,
+          "ours": -1.43442,
+          "relative_delta_pct": 0.04
+        },
+        "cts__timing__setup__tns": {
+          "implied_reference": -63.68,
+          "ours": -63.6543,
+          "relative_delta_pct": 0.04
+        },
+        "globalroute__timing__setup__ws": {
+          "implied_reference": -1.555,
+          "ours": -1.55914,
+          "relative_delta_pct": -0.27
+        },
+        "globalroute__timing__setup__tns": {
+          "implied_reference": -69.48,
+          "ours": -69.4339,
+          "relative_delta_pct": 0.07
+        },
+        "detailedroute__route__wirelength": {
+          "implied_reference": 11786.08696,
+          "ours": 11728,
+          "relative_delta_pct": -0.49
+        },
+        "finish__timing__setup__ws": {
+          "implied_reference": -1.465,
+          "ours": -1.45954,
+          "relative_delta_pct": 0.37
+        },
+        "finish__timing__setup__tns": {
+          "implied_reference": -65.08,
+          "ours": -64.9417,
+          "relative_delta_pct": 0.21
+        },
+        "finish__design__instance__area": {
+          "implied_reference": 5053.91304,
+          "ours": 5412.69,
+          "relative_delta_pct": 7.1
+        }
+      },
+      "synth_netlist_hashes_vs_rules": {
+        "synth__canonical_netlist__hash": {
+          "rule": "f71ed75a728f1b09f265949d818d4ab321b6d3c2",
+          "ours": "f71ed75a728f1b09f265949d818d4ab321b6d3c2",
+          "equal": true
+        },
+        "synth__netlist__hash": {
+          "rule": "9aee1444e62e2785dc2ef50d4e278a326853fe68",
+          "ours": "9aee1444e62e2785dc2ef50d4e278a326853fe68",
+          "equal": true
+        }
+      },
       "clock_period_ns": 1.1,
       "two_sided": {
         "finish__timing__setup__ws": {

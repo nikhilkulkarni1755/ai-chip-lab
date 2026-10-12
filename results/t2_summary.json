@@ -1,5 +1,5 @@
 {
-  "generated_epoch": 1791821361,
+  "generated_epoch": 1791824889,
   "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
   "tool_versions": [
     "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)",
@@ -40,40 +40,32 @@
         "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
-        "cts": 32.03,
-        "detailedplace": 2.15,
-        "finish": 8.6,
-        "finish_merge": 4.62,
-        "floorplan": 22.97,
-        "globalplace": 7.01,
-        "globalplace_io": 0.84,
-        "globalplace_skip_io": 3.9,
-        "globalroute": 131.77,
-        "placeopt": 1.96,
-        "synth": 2.55
+        "cts": 31.26,
+        "detailedplace": 1.57,
+        "finish": 5.41,
+        "finish_merge": 2.86,
+        "floorplan": 14.04,
+        "globalplace": 5.72,
+        "globalplace_io": 0.72,
+        "globalplace_skip_io": 2.92,
+        "globalroute": 111.97,
+        "placeopt": 1.77,
+        "synth": 1.8
       },
-      "wall_s": 302,
+      "wall_s": 257,
       "gds": {
         "path": "orfs/work/results/nangate45/gcd/base/6_final.gds",
         "bytes": 609862,
-        "sha256": "a012aeff187bf8f2ec9ba562f17755b2d964d5736a687b6529c87d324d2b6bd5",
+        "sha256": "48253af4692dddc5a66d6320e53746a429a564cfc1741c3a5ff68f0bc1a9b177",
         "sha256_timestamps_zeroed": "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d"
       },
       "checks": {
-        "thresholds_pass": true,
+        "thresholds_pass": null,
         "drc_errors_zero": true,
         "gds_exists": true,
         "deterministic": true
       },
-      "threshold_check": {
-        "passed": true,
-        "n_rules": 27,
-        "warnings": [
-          "[WARN] synth__canonical_netlist__hash differs test: 061b4cd4004130e38a0d4380ac60e08e664a6eb9 == 6eab9bf1a5bd88a4f570c5a4fa7e0a72f6cd0e38",
-          "[WARN] synth__netlist__hash differs test: 9e39a316f1ac13251b7cb6a660740991997af5c3 == d0ed08e4f1392b96375711f43f15c146df735c44"
-        ],
-        "failures": []
-      },
+      "threshold_check": null,
       "determinism": {
         "verdict": "PASS",
         "gds_sha256_timestamps_zeroed": [
@@ -149,13 +141,14 @@
         ],
         "gds_sha256": [
           "619476af08c123ffe22f9246fb436366c1b6b253d055ce410eca0683cb98dd2b",
-          "a012aeff187bf8f2ec9ba562f17755b2d964d5736a687b6529c87d324d2b6bd5"
+          "48253af4692dddc5a66d6320e53746a429a564cfc1741c3a5ff68f0bc1a9b177"
         ],
         "gds_identical": false,
         "identical": true
       },
       "run1_wall_s": 259,
-      "pass": true
+      "pass": true,
+      "matches_published": false
     },
     "sky130hd/gcd": {
       "status": "run",
@@ -189,37 +182,32 @@
         "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
-        "cts": 28.1,
-        "detailedplace": 2.72,
-        "finish": 7.33,
-        "finish_merge": 4.18,
-        "floorplan": 5.05,
-        "globalplace": 3.9,
-        "globalplace_io": 1.67,
-        "globalplace_skip_io": 2.05,
-        "globalroute": 127.98,
-        "placeopt": 2.72,
-        "synth": 9.33
+        "cts": 14.53,
+        "detailedplace": 1.75,
+        "finish": 5.29,
+        "finish_merge": 2.7,
+        "floorplan": 4.61,
+        "globalplace": 3.24,
+        "globalplace_io": 0.69,
+        "globalplace_skip_io": 2.24,
+        "globalroute": 63.91,
+        "placeopt": 1.43,
+        "synth": 4.36
       },
-      "wall_s": 646,
+      "wall_s": 296,
       "gds": {
         "path": "orfs/work/results/sky130hd/gcd/base/6_final.gds",
         "bytes": 974128,
-        "sha256": "ebc1e0bff33fb35838d0b673877e37d14d2a96e7a0668495a62a1cfbd9ea2524",
+        "sha256": "f0c77dcc0b07a7a8d4504f5abb8a37f90d8b576c876887e8a41f6e66b7f6504b",
         "sha256_timestamps_zeroed": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809"
       },
       "checks": {
-        "thresholds_pass": true,
+        "thresholds_pass": null,
         "drc_errors_zero": true,
         "gds_exists": true,
         "deterministic": true
       },
-      "threshold_check": {
-        "passed": true,
-        "n_rules": 27,
-        "warnings": [],
-        "failures": []
-      },
+      "threshold_check": null,
       "determinism": {
         "verdict": "PASS",
         "gds_sha256_timestamps_zeroed": [
@@ -295,13 +283,14 @@
         ],
         "gds_sha256": [
           "14064c05e756f4801ed90f12e989565f60fce8e500758ca2ec2e7ebbd1b102c7",
-          "ebc1e0bff33fb35838d0b673877e37d14d2a96e7a0668495a62a1cfbd9ea2524"
+          "f0c77dcc0b07a7a8d4504f5abb8a37f90d8b576c876887e8a41f6e66b7f6504b"
         ],
         "gds_identical": false,
         "identical": true
       },
       "run1_wall_s": 734,
-      "pass": true
+      "pass": true,
+      "matches_published": true
     },
     "nangate45/systolic_os": {
       "status": "run",
@@ -335,23 +324,23 @@
         "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
-        "cts": 24.58,
-        "detailedplace": 19.98,
-        "finish": 51.61,
-        "finish_merge": 12.4,
-        "floorplan": 7.93,
-        "globalplace": 84.24,
-        "globalplace_io": 2.74,
-        "globalplace_skip_io": 14.86,
-        "globalroute": 362.31,
-        "placeopt": 25.35,
-        "synth": 68.34
+        "cts": 9.94,
+        "detailedplace": 8.0,
+        "finish": 24.34,
+        "finish_merge": 3.22,
+        "floorplan": 2.88,
+        "globalplace": 23.84,
+        "globalplace_io": 0.75,
+        "globalplace_skip_io": 4.2,
+        "globalroute": 78.94,
+        "placeopt": 6.99,
+        "synth": 26.56
       },
-      "wall_s": 1704,
+      "wall_s": 528,
       "gds": {
         "path": "orfs/work/results/nangate45/systolic_os/base/6_final.gds",
         "bytes": 9286662,
-        "sha256": "4b645f462584331d5d288dbf722b4fbfae76a77c659c61fa1174dab3e6572960",
+        "sha256": "1603ca531aabaab1c0203148eb269b385fff2fe1601bc8356a758d14f350bdb6",
         "sha256_timestamps_zeroed": "1d676f34b49e776753de3d8b905700f1ef26de9f63f6f0f8830b30603b14a68c"
       },
       "checks": {
@@ -362,7 +351,7 @@
       "threshold_check": null,
       "rtl": {
         "sha256_mac_plus_systolic": "85f945db2d569064eb5e6262f9986ef1cced65591641aa9cd3ac51d0fc5bd3f9",
-        "last_rtl_commit": "7173c7f"
+        "last_rtl_commit": "cebd174"
       },
       "previous_rtl_result": {
         "rtl_last_commit": "bf4685e",
@@ -474,11 +463,13 @@
     "file": "results/t2_crosscheck.json",
     "tolerance_doc": "docs/t2_crosscheck_tolerance.md",
     "explained_in": "docs/t2_timing_explained.md",
+    "reference_kind": "IMPLIED: rules-base.json limits un-padded with genRuleFile.py formulas; ORFS publishes no measured metadata for gcd at this commit",
     "per_design": {
       "nangate45/gcd": false,
       "sky130hd/gcd": true
     },
     "note": "reported separately; does not change the Part 1 'pass' (thresholds/DRC/GDS/determinism)"
   },
+  "matches_published": false,
   "pass": true
 }

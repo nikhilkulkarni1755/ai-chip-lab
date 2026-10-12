@@ -1,1 +1,0 @@
-P1.5 done: crosscheck finished. matches_published: sky130hd/gcd True, nangate45/gcd FALSE (setup WNS/TNS and wirelength outside band, all better than implied reference). Tolerance fixed before comparison (docs/t2_crosscheck_tolerance.md). See results/t2_crosscheck.json, docs/t2_timing_explained.md.

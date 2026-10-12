@@ -1,0 +1,33 @@
+{
+  "stage": "21_orfs_crosscheck",
+  "pass": false,
+  "oracle": "ORFS's own shipped rules-base.json (limits generated from ORFS's reference runs by genRuleFile.py); the reference values are implied by un-padding the limits, because ORFS publishes no measured metadata for gcd at the pinned commit",
+  "criteria": [
+    {
+      "name": "matches_published[nangate45/gcd] (reference IMPLIED from rules-base.json, not a measured published file)",
+      "threshold": "all 6 two-sided metrics within implied reference +- ORFS's own margin; hold ws/tns not worse (docs/t2_crosscheck_tolerance.md)",
+      "written_before_run": "a2c2d54",
+      "measured": "finish__timing__setup__ws: ours -0.161583 vs implied ref -0.1805 +-0.0125 -> OUT (better); finish__timing__setup__tns: ours -7.08646 vs implied ref -7.94 +-0.05 -> OUT (better); finish__design__instance__area: ours 943.502 vs implied ref 969.56522 +-145.43478 -> in; placeopt__design__instance__area: ours 827.526 vs implied ref 827.82609 +-124.17391 -> in; placeopt__design__instance__count__stdcell: ours 711 vs implied ref 711.30435 +-106.69565 -> in; detailedroute__route__wirelength: ours 4429 vs implied ref 6277.3913 +-941.6087 -> OUT (better)",
+      "pass": false
+    },
+    {
+      "name": "matches_published[sky130hd/gcd] (reference IMPLIED from rules-base.json, not a measured published file)",
+      "threshold": "all 6 two-sided metrics within implied reference +- ORFS's own margin; hold ws/tns not worse (docs/t2_crosscheck_tolerance.md)",
+      "written_before_run": "a2c2d54",
+      "measured": "finish__timing__setup__ws: ours -1.45954 vs implied ref -1.465 +-0.055 -> in; finish__timing__setup__tns: ours -64.9417 vs implied ref -65.08 +-0.22 -> in; finish__design__instance__area: ours 5412.69 vs implied ref 5053.91304 +-758.08696 -> in; placeopt__design__instance__area: ours 4055.14 vs implied ref 4054.78261 +-608.21739 -> in; placeopt__design__instance__count__stdcell: ours 478 vs implied ref 478.26087 +-71.73913 -> in; detailedroute__route__wirelength: ours 11728 vs implied ref 11786.08696 +-1767.91304 -> in",
+      "pass": true
+    }
+  ],
+  "superseded": [],
+  "commands": [
+    "python3 scripts/t2_crosscheck.py",
+    "scripts/t2_check.sh nangate45 gcd base"
+  ],
+  "seeds": "none",
+  "evidence": [
+    "results/evidence/21_orfs_crosscheck.txt",
+    "results/t2_crosscheck.json",
+    "docs/t2_timing_explained.md"
+  ],
+  "finding": "nangate45/gcd outside the band on setup WNS, setup TNS and wirelength (all better than implied reference); matches through CTS, departs from global route onward; see docs/t2_timing_explained.md"
+}

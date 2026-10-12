@@ -1,0 +1,5 @@
+P1.5 finished with a FAILING criterion (not a tool error): matches_published = false for nangate45/gcd (true for sky130hd/gcd).
+Reference is IMPLIED from rules-base.json (ORFS publishes no measured gcd metadata at the pinned commit). Tolerance fixed in commit a2c2d54 before comparing; not widened.
+nangate45/gcd outside band: setup WNS -0.162 vs -0.1805, TNS -7.09 vs -7.94, wirelength 4429 vs ~6277 (all better than reference).
+Diagnosis: synth/place/CTS agree to <0.1 % (netlist hashes differ, area equal); departure begins at global route -> not a Yosys-build effect per evidence; likely routing-stage drift since 2026-08-21 rule regeneration (hypothesis).
+See results/p2_21_orfs_crosscheck.json, docs/t2_timing_explained.md, results/evidence/21_orfs_crosscheck.txt.
