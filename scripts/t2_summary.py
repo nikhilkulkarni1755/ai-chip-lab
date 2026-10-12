@@ -125,6 +125,13 @@ def main():
     if os.path.exists(fp):
         S["sweep_B"] = {"frontier_file": "results/sweeps/phys_frontier.json", "data": "results/sweeps/phys.jsonl",
                         "frontier": json.load(open(fp))["frontier"], "failed_points": json.load(open(fp))["failed_points"]}
+    cp = os.path.join(LAB, "results", "t2_crosscheck.json")
+    if os.path.exists(cp):
+        cc = json.load(open(cp))
+        S["crosscheck_published"] = {"criterion": "matches_published", "value": cc["matches_published"], "file": "results/t2_crosscheck.json",
+            "tolerance_doc": "docs/t2_crosscheck_tolerance.md", "explained_in": "docs/t2_timing_explained.md",
+            "per_design": {k: v["matches_published"] for k, v in cc["designs"].items()},
+            "note": "reported separately; does not change the Part 1 'pass' (thresholds/DRC/GDS/determinism)"}
     S["pass"] = bool(ok_all)
     json.dump(S, open(os.path.join(LAB, "results", "t2_summary.json"), "w"), indent=2)
     print(scrub(json.dumps(S, indent=2)))
