@@ -239,13 +239,25 @@ def build_rows(L):
             rows.append(Row(label, "RUNNING", "re-verification in progress (see Task 1 row); the earlier values are withheld", "results/t1_summary.json"))
         elif hits:
             okk = all(v for _, v in hits)
+            extra = ""
+            if "EQY" in label:
+                extra = ("; scope: split proof (1) mac_int8 incl. multiplier, (2) full 4x4 array with mac_int8 black-boxed; compared against the generic-gate "
+                         "Yosys netlist (synth; abc; opt), NOT the placed-and-routed nangate45 netlist (the ORFS logic-equivalence step is disabled, see caveats)")
             rows.append(Row(label, "PASS" if okk else "FAIL",
-                            "checks: " + ", ".join("%s=%s" % (k, fmt_val(v)) for k, v in hits), "results/t1_summary.json"))
+                            "checks: " + ", ".join("%s=%s" % (k, fmt_val(v)) for k, v in hits) + extra, "results/t1_summary.json"))
         else:
             rows.append(Row(label, s1 if s1 in ("PENDING", "RUNNING") else ("BLOCKED" if s1 == "BLOCKED" else "UNKNOWN"),
                             "not reported in t1_summary.json yet" if t1 else "waits for Task 1 summary", None))
-    s2, d2, _ = task_state(L, "20_pnr_ref", "results/t2_summary.json")
-    rows.append(Row("Task 2: OpenROAD reference flow vs shipped thresholds", s2, d2, "results/t2_summary.json"))
+    s2, d2, t2s = task_state(L, "20_pnr_ref", "results/t2_summary.json")
+    nc = []
+    for dn, dd in ((t2s or {}).get("designs") or {}).items():
+        det = dd.get("detail") or {}
+        if dd.get("status") == "run" and det.get("timing_closed") is False:
+            pp = dd.get("ppa") or {}
+            nc.append("%s misses timing at its %s ns reference clock (WNS %s ns, TNS %s ns, %s violating endpoints)" % (
+                dn, det.get("reference_clock_period_ns"), fmt_val(pp.get("wns_setup_ns")), fmt_val(pp.get("tns_setup_ns")), det.get("setup_violating_endpoints")))
+    rows.append(Row("Task 2: OpenROAD gcd flows within ORFS's shipped regression thresholds", s2,
+                    d2 + ("; NOT timing-closed: " + "; ".join(nc) if nc else ""), "results/t2_summary.json"))
     s3, d3, _ = task_state(L, "30_arch_model", "results/t3_summary.json")
     rows.append(Row("Task 3: SCALE-Sim vs analytical model", s3, d3, "results/t3_summary.json"))
 
@@ -272,7 +284,11 @@ def build_rows(L):
             why += "; %d point(s) in results/sweeps/%s.jsonl%s" % (pts[0], name, ("; %d unparsable line(s)" % pts[1]) if pts[1] else "")
         rows.append(Row(label, state, why, "results/sweeps/%s.jsonl" % name if pts else None))
 
-    sr, dr, _ = task_state(L, "50_repro", "results/repro_report.json")
+    sr, dr, rrep = task_state(L, "50_repro", "results/repro_report.json")
+    if isinstance(rrep, dict):
+        dr += ("; %s of %s checks identical. Scope: Tasks 1 and 3 were re-run from clean directories; Task 2 reuses the two original clean runs "
+               "(nangate45/gcd and sky130hd/gcd, not a third run); systolic_os has a single run, so it has no determinism verdict" % (
+                   (rrep.get("counts") or {}).get("identical"), len(rrep.get("checks") or [])))
     rows.append(Row("Repeatability rerun (repro)", sr, dr, "results/repro_report.json"))
     return rows
 
@@ -555,9 +571,9 @@ def evidence_blocks(L, h):
 
 
 
-PPA_COLS = [("area_um2", "area (um2)"), ("utilization_frac", "utilization (fraction)"), ("wns_setup_ns", "WNS setup (ns)"),
+PPA_COLS = [("area_um2", "instance area incl. fill and tap (um2)"), ("utilization_frac", "utilization (fraction)"), ("wns_setup_ns", "WNS setup (ns)"),
             ("tns_setup_ns", "TNS setup (ns)"), ("power_total_w", "power total (W)"), ("power_leakage_w", "leakage (W)"),
-            ("cell_count", "cells"), ("drc_errors", "DRC errors"), ("wall_s", "wall (s)")]
+            ("cell_count", "cells incl. fill/tap"), ("stdcell_count", "std cells"), ("drc_errors", "DRC errors"), ("wall_s", "wall (s)")]
 
 
 def t2_table(s2):
@@ -579,13 +595,79 @@ def t2_table(s2):
         cells = "".join("<td>%s</td>" % e(fmt_val(ppa.get(k, d.get(k)))) if (k in ppa or k in d) else "<td>-</td>" for k, _ in PPA_COLS)
         h.append("<tr><td>%s</td><td>%s%s</td>%s</tr>" % (e(name), e(st), e(extra), cells))
     h.append("</tbody></table></div>")
+    h.append("<p><b>Timing at the reference clock</b> (from the flow's metadata; PASS above means only that the ORFS regression thresholds are met):</p>"
+             "<div class='tw'><table><thead><tr><th>design</th><th>reference clock (ns)</th><th>setup WNS (ns)</th><th>setup TNS (ns)</th>"
+             "<th>violating setup endpoints</th><th>timing closed</th><th>core area (um2)</th><th>instance area (um2)</th></tr></thead><tbody>")
+    for name, d in (s2.get("designs") or {}).items():
+        det, ppa = d.get("detail") or {}, d.get("ppa") or {}
+        if d.get("status") != "run":
+            continue
+        h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td class='%s'>%s</td><td>%s</td><td>%s</td></tr>" % (
+            e(name), e(fmt_val(det.get("reference_clock_period_ns"))), e(fmt_val(ppa.get("wns_setup_ns"))), e(fmt_val(ppa.get("tns_setup_ns"))),
+            e(fmt_val(det.get("setup_violating_endpoints"))), "okt" if det.get("timing_closed") else "badt", "yes" if det.get("timing_closed") else "NO",
+            e(fmt_val(det.get("core_area_um2"))), e(fmt_val(det.get("instance_area_um2_incl_fill_and_tap")))))
+    h.append("</tbody></table></div>")
     tv = s2.get("tool_versions") or []
     h.append("<p class='sub'>Tool versions as reported by the image: %s. A version of &quot;unknown&quot; is what this OpenROAD build prints; "
              "the build is identified by the image digest %s. "
-             "The utilization column is the fraction stored in <code>t2_summary.json</code> (0.876 = 87.6 %%). Negative setup WNS can still be "
-             "within the shipped thresholds because those rules allow a margin.</p>" % (
+             "The utilization column is the fraction stored in <code>t2_summary.json</code> (0.876 = 87.6 %%). The two gcd reference designs have negative setup slack at their reference clocks, which the shipped regression thresholds allow; "
+             "they are therefore reported as within thresholds, not as timing-closed.</p>" % (
                  e("; ".join(t.strip() for t in tv)), e(str(s2.get("image", "?")))))
     return "".join(h)
+
+
+def t1_block(L, s1):
+    v = (s1 or {}).get("values") or {}
+    c = (s1 or {}).get("checks") or {}
+    if not v:
+        return ""
+    R = [("random cases per simulator (seed 1234)", "%s (Verilator), %s (Icarus)" % (v.get("cases_random_verilator"), v.get("cases_random_icarus"))),
+         ("directed cases", v.get("cases_directed")), ("total cases run", v.get("cases_total")),
+         ("mismatching cases / elements, Verilator", "%s / %s" % (v.get("mismatching_cases_verilator"), v.get("mismatching_elements_verilator"))),
+         ("mismatching cases / elements, Icarus", "%s / %s" % (v.get("mismatching_cases_icarus"), v.get("mismatching_elements_icarus"))),
+         ("result CSV sha256, Verilator", v.get("csv_sha256_verilator")), ("result CSV sha256, Icarus", v.get("csv_sha256_icarus")),
+         ("functional coverage bins (hit / total)", "%s (%s %%)" % (" / ".join(str(x) for x in (v.get("coverage_bins_icarus") or [])), v.get("coverage_percent"))),
+         ("stalled-stream cases / tiles checked", "%s / %s" % (v.get("stalled_cases"), v.get("tiles"))),
+         ("lint: Verilator warnings / Verible violations", "%s / %s" % (v.get("lint_verilator_warnings"), v.get("lint_verible_violations"))),
+         ("formal MAC proof (%s)" % v.get("formal_engine"), "BMC depth %s (%s steps checked): %s; induction prove: %s; cover: %s (%s statements reached); negative control (broken MAC) %s" % (
+             v.get("formal_bmc_depth"), v.get("formal_bmc_steps_checked"), v.get("formal_bmc_status"), v.get("formal_prove_status"), v.get("formal_cover_status"),
+             v.get("formal_cover_reached"), "detected as failing" if c.get("formal_neg_bug_detected") else "NOT detected")),
+         ("EQY, MAC incl. multiplier", "%s of %s partitions proved, %s failed (%s); negative control on partition %s: reported not proven equivalent = %s" % (
+             v.get("eqy_mac_partitions_proved"), v.get("eqy_mac_partitions"), v.get("eqy_mac_partitions_failed"), v.get("eqy_mac_scope"),
+             v.get("eqy_neg_mac_partition"), "bug detected" if c.get("eqy_neg_mac_bug_detected") else "NOT detected")),
+         ("EQY, 4x4 array with MAC black-boxed", "%s of %s partitions proved, %s failed (%s); negative control on partition %s: reported not proven equivalent = %s" % (
+             v.get("eqy_array_partitions_proved"), v.get("eqy_array_partitions"), v.get("eqy_array_partitions_failed"), v.get("eqy_array_scope"),
+             v.get("eqy_neg_array_partition"), "bug detected" if c.get("eqy_neg_array_bug_detected") else "NOT detected")),
+         ("netlist compared against", "generic-gate Yosys netlist, %s cells (not the placed-and-routed nangate45 netlist)" % v.get("netlist_cells"))]
+    h = ["<table class='kv'><tbody>"]
+    for k, x in R:
+        h.append("<tr><th>%s</th><td>%s</td></tr>" % (e(k), e(str(x))))
+    h.append("</tbody></table>")
+    return "".join(h)
+
+
+def repro_table(L, rr):
+    if not isinstance(rr, dict):
+        return ""
+    h = ["<div class='tw'><table><thead><tr><th>check</th><th>verdict</th><th>note</th></tr></thead><tbody>"]
+    for c in rr.get("checks", []):
+        note = c.get("note") or ""
+        if "t2 " in c.get("check", "") and "reused" in note:
+            note = "REUSED from the original Task 2 two-clean-run check, not re-run here. " + note
+        h.append("<tr><td>%s</td><td class='%s'>%s</td><td>%s</td></tr>" % (e(c.get("check", "")), "okt" if c.get("verdict") == "identical" else "badt",
+                                                                       e(c.get("verdict", "")), e(note)))
+    t2 = L.jload("results/t2_summary.json") or {}
+    for dn, dd in (t2.get("designs") or {}).items():
+        det = dd.get("determinism")
+        if det and dn != "nangate45/gcd":
+            h.append("<tr><td>t2 %s two clean runs (metrics + GDS with timestamps zeroed)</td><td class='%s'>%s</td><td>REUSED from t2_summary.json (original two clean runs); "
+                     "not re-run by repro and not part of the repro pass flag</td></tr>" % (e(dn), "okt" if det.get("verdict") == "PASS" else "badt",
+                                                                                         "identical" if det.get("verdict") == "PASS" else "different"))
+        elif not det and dd.get("status") == "run":
+            h.append("<tr><td>t2 %s</td><td>single run</td><td>only one run exists; no determinism verdict</td></tr>" % e(dn))
+    h.append("</tbody></table></div>")
+    return "".join(h)
+
 
 
 FORMULA = {"os": ("M, N", "K", "ceil(M/R)*ceil(N/C)", "T + R + C - 2"),
@@ -747,7 +829,9 @@ def build_html(L, rows, vm):
                  "<tr><th>inputs and seeds</th><td>%s</td></tr><tr><th>pass criteria</th><td>%s</td></tr>"
                  "<tr><th>result file</th><td>%s</td></tr></tbody></table>" % (
                      oracle, e(cmd), e(inputs), e(crit), link(L, summ)))
-        if isinstance(s, dict) and stage == "30_arch_model":
+        if isinstance(s, dict) and stage == "10_rtl_verify":
+            h.append("<p><b>Actual result</b> (picked from the values in t1_summary.json)</p>" + t1_block(L, s))
+        elif isinstance(s, dict) and stage == "30_arch_model":
             h.append("<p><b>Actual result</b> (read from the summary file and stage marker)</p>" + t3_block(L, s))
         elif isinstance(s, dict):
             h.append("<p><b>Actual result</b> (as written to the summary file)</p>" + kv_table(s))
@@ -803,7 +887,8 @@ def build_html(L, rows, vm):
     sr, dr, _ = task_state(L, "50_repro", "results/repro_report.json")
     h.append("<p>%s %s</p>" % (badge(sr), e(dr)))
     if isinstance(rr, dict):
-        h.append(kv_table(rr, 80))
+        h.append("<p>What was re-run: Task 1 (all 10,000 random + directed cases, formal and equivalence) and Task 3 (one fresh pass) in clean directories with the pinned images; "
+                 "Task 2 is <b>not</b> re-run: its verdicts reuse the two original clean runs of each gcd design. systolic_os has a single run.</p>" + repro_table(L, rr))
     else:
         h.append("<p class='sub'>The clean-directory rerun of Tasks 1-3 with the pinned images runs late in the budget; "
                  "until then there is no repro report and none is invented.</p>")

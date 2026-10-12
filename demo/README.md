@@ -6,16 +6,16 @@ Open demo/index.html in a browser (double-click; no server needed).
 STATUS
   PASS     Container runtime install - route A (Colima + Lima, macOS Virtualization.framework)
   PASS     Lab images (lab-sim, ORFS) - both images referenced in coord/images.env
-  RUNNING  Task 1: INT8 systolic array vs NumPy - stage in progress
-  RUNNING  Task 1: formal MAC proof (SBY) - waits for Task 1 summary
-  RUNNING  Task 1: RTL = netlist equivalence (EQY) - waits for Task 1 summary
-  PASS     Task 2: OpenROAD reference flow vs shipped thresholds - t2_summary.json: pass=true
+  PASS     Task 1: INT8 systolic array vs NumPy - t1_summary.json: pass=true
+  PASS     Task 1: formal MAC proof (SBY) - checks: formal_bmc_pass=true, formal_prove_pass=true
+  PASS     Task 1: RTL = netlist equivalence (EQY) - checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true; scope: split proof (1) mac_int8 incl. multiplier, (2) full 4x4 array with mac_int8 black-boxed; compared against the generic-gate Yosys netlist (synth; abc; opt), NOT the placed-and-routed nangate45 netlist (the ORFS logic-equivalence step is disabled, see caveats)
+  PASS     Task 2: OpenROAD gcd flows within ORFS's shipped regression thresholds - t2_summary.json: pass=true; NOT timing-closed: nangate45/gcd misses timing at its 0.25 ns reference clock (WNS -0.161583 ns, TNS -7.08646 ns, 51 violating endpoints); sky130hd/gcd misses timing at its 1.1 ns reference clock (WNS -1.45954 ns, TNS -64.9417 ns, 63 violating endpoints)
   FAIL     Task 3: SCALE-Sim vs analytical model - marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes).
-  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 87 point(s) in results/sweeps/arch.jsonl
-  RUNNING  Sweep B: physical (ORFS) - sweep in progress; 19 point(s) in results/sweeps/phys.jsonl
-  RUNNING  Repeatability rerun (repro) - stage in progress
+  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 140 point(s) in results/sweeps/arch.jsonl
+  RUNNING  Sweep B: physical (ORFS) - sweep in progress; 38 point(s) in results/sweeps/phys.jsonl
+  PASS     Repeatability rerun (repro) - repro_report.json: pass=true; 10 of 10 checks identical. Scope: Tasks 1 and 3 were re-run from clean directories; Task 2 reuses the two original clean runs (nangate45/gcd and sky130hd/gcd, not a third run); systolic_os has a single run, so it has no determinism verdict
 
-Elapsed: 2h 58m since start (2026-10-12 02:48:36 PDT), budget 6h
+Elapsed: 4h 11m since start (2026-10-12 02:48:36 PDT), budget 6h
 Machine: Intel(R) Core(TM) i7-7660U CPU @ 2.50GHz, 2 physical / 4 logical cores, 8 GB RAM, macOS 13.7.8 (x86_64)
 
 START / STOP THE VM
@@ -28,7 +28,7 @@ RE-RUN THE SHORT DEMO
   Runs: Task 1 on 200 cases (Verilator + Icarus), the formal MAC proof restricted to the sby tasks "prove" (unbounded
   induction) and "cover", one SCALE-Sim run vs the analytic model, and ORFS's threshold check on the existing outputs.
   The full BMC-20 formal run is part of `make t1`, not of this cut (it takes ~9 minutes on this machine).
-  Measured run time: not measured yet (run it once; the result is recorded in .cache/demo_run/timing.json).
+  Last measured run time: 128 s with 200 cases (finished 2026-10-12 06:34:23, load average at the end: 4.89 5.21 7.45). The load average reflects other jobs on the same 2-core machine, so a quiet machine is faster.
 
 FREE DISK AFTERWARDS (all inside ~/ai-chip-lab; nothing outside the lab was changed)
   Safe to delete (re-creatable, results already saved under results/ and demo/):
