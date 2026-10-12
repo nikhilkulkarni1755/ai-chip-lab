@@ -45,9 +45,11 @@ RUN uv python install ${PYTHON_VER} && uv venv /opt/venv --python ${PYTHON_VER}
 COPY requirements.lock /opt/requirements.lock
 RUN VIRTUAL_ENV=/opt/venv uv pip install --require-hashes --no-deps -r /opt/requirements.lock
 
+# Shims that must precede the suite on PATH (see docker/lab-sim/bin/vvp for why)
+COPY lab-sim/bin/ /opt/lab-bin/
 # venv first so `python3` is the lab's 3.12 (the suite bundles its own private python for sby/eqy)
 ENV VIRTUAL_ENV=/opt/venv \
-    PATH=/opt/venv/bin:/opt/oss-cad-suite/bin:/opt/verible/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    PATH=/opt/venv/bin:/opt/lab-bin:/opt/oss-cad-suite/bin:/opt/verible/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg \
     OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 NUMBA_NUM_THREADS=2 \
     NUMBA_CACHE_DIR=/tmp/numba MPLCONFIGDIR=/tmp/mpl HOME=/tmp
