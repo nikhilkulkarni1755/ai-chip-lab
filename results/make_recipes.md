@@ -10,12 +10,12 @@ Each recipe below was executed for real as `make <recipe>` from the repo root (r
 | `make t2` | 0 | 69 min 08 s | 60 min 01 s | 9 min 07 s | 10:27:19 | `logs/part2/32_make_recipes/t2_102719.log` |
 | `make t2-stretch` | 0 | 38 min 12 s | 19 min 49 s | 18 min 23 s | 11:36:27 | `logs/part2/32_make_recipes/t2-stretch_113627.log` |
 | `make t3` | 2 | 55 min 39 s | 31 min 05 s | 24 min 34 s | 13:10:40 | `logs/part2/32_make_recipes/t3_131040.log` |
-| `make repro` | still running | – | – | – | 14:06:34 | `logs/part2/32_make_recipes/repro_140634.log` |
-| `make demo` | not run yet | – | – | – | – | – |
+| `make repro` | 2 | 93 min 53 s | 46 min 43 s | 47 min 10 s | 14:06:34 | `logs/part2/32_make_recipes/repro_140634.log` |
+| `make demo` | 0 | 23 s | 0 s | 23 s | 15:40:38 | `logs/part2/32_make_recipes/demo_154037.log` |
 | `make t1-routed` | 0 | 1 min 01 s | 10 s | 51 s | 15:18:53 | `logs/part2/32_make_recipes/t1-routed_151853.log` |
+| `make preflight` | 0 | 1 s | 0 s | 1 s | 15:40:37 | `logs/part2/32_make_recipes/preflight_154037.log` |
 
-**Not run as a recipe yet:** `make repro`, `make demo`.
-**Recipes that exited non-zero:** `make t3` (exit 2) — see the log of each.
+**Recipes that exited non-zero:** `make t3` (exit 2), `make repro` (exit 2) — see the log of each.
 
 Notes:
 
@@ -24,6 +24,17 @@ Notes:
 - `make t3`: attempt 2 (P2-7): criterion-A user-bandwidth jobs not started (T3_USER_DEADLINE=1) because the first one made no progress in a 769 s hold; this attempt runs the cheap second pass (bundled x3, fit, 3 CALC) and the summary; earlier jobs kept Reclassified by finish time (the recipe renamed results/t3.partial to results/t3 at its end). Under this attempt the recipe executed the second-pass jobs bundled_ws/os/is, fit, rl2_calc_ws/os/is (in results/t3.rerun.tmp, removed by the script after the byte-identity compare) and the summary + plots; see the '== t3 pass 2 job' lines in the log. Verdict printed by the recipe: pass=False, state=A_incomplete (criterion A: ws_high in_progress, the other five cells not_run); criterion B (calc_required_bw_inverse_to_ai_ws/os/is) False.
 - `make t1`: official 10,000-case run of the per-step-lock script (rtl GO 13:47, inputs final at commit aea7f62)
 - `make t1-routed`: resume mode (Decision P2-7 item 2): partitions and steps proven earlier today by the identical commands are kept (listed); only the remaining steps execute. gls_verilator skipped as instructed by rtl (T1R_SKIP)
+- `make repro`: Decision P2-7 scope: Task 3 cheap set (bundled x3, fit, 3 CALC runs; T3_JOBS=cheap, one fresh pass) then Task 1 full 10,000 cases after the first run of the same day is final; criterion-A runs not rerun (cost)
 - earlier attempts of `make t3`: attempt started 12:17:29: exit 2 after 52 min 42 s — Stopped on purpose at 13:11 (loop killed, container of the current job killed): job rl2_user_ws_high held the lock 769 s (12:55:47-13:08:36, exit 75 'partial') without finishing a single layer (its layers/ dir is empty; log: 'parallel failed: BrokenProcessPool' for Conv5_1b/Conv5_2a) and had re-queued itself for an identical hold. Rule from main: no stage lock hold > 10 min. The three CALC jobs finished under this attempt (see executed_under_this_recipe). Next attempt runs with T3_USER_DEADLINE=1 (criterion-A user-bandwidth jobs not started) so the cheap second pass and the summary can complete; criterion A stays incomplete until arch fixes the job.
 
-**`make all` fail-soft test:** not run yet.
+**`make all` fail-soft test: PASS.** Command: `MAKE_ALL_FAIL=preflight RESUME=markers SWEEPS_DETACH=1 T3_USER_DEADLINE=1 make all   (then marker restored and `make demo` rerun)`. `make all` exited 2 and listed the failed stage; the demo was built after the failure. In this test the forced stage's recipe was not run (preflight); executed for real: sweeps, demo; skipped because they had already succeeded (marker-only resume of the test, see each reason): runtime, images, t1, t2, t2-stretch, t1-routed, repro; excluded from the test: t3 (MAKE_ALL_EXCLUDE (test hook): make t3 has a .failed marker and would re-execute its second pass (7 container jobs, about 25 min of lock) plus the summary; its real runs are recorded as recipe attempts). The marker was restored and the demo rebuilt afterwards. Details: `results/make_all_failsoft.json`.
+
+**How this test differs from the test as first specified, and why.** The specification (TASK2 P1.2 item 3) was: run `make all`, temporarily force one stage marker to fail, confirm that all stages still run, the demo is built and the exit status is non-zero listing the failed stage, then restore. What was executed differs in these points:
+
+1. *The failure is injected by a hook, not by a failing recipe.* `MAKE_ALL_FAIL=preflight` makes `scripts/make_all.py` skip that stage's recipe, switch its marker from `.done` to `.failed` and count the stage as failed. This matches the specification ("forcing a stage marker to fail"); it does not show a recipe that fails by itself.
+2. *Most later stages were skipped, not executed.* The run used the marker-only resume (`RESUME=markers`): the 7 stages that already had a `.done` marker or a recorded successful run (runtime, images, t1, t2, t2-stretch, t1-routed, repro) were skipped without checking whether their inputs had changed (the input-aware rule of `RESUME=1` would have rerun: t1, t2, t2-stretch, t1-routed). Reason: a full pass costs about 3 hours of the single heavy-job queue (Decision P2-1). Consequence: the test shows the control flow continuing past the failure and reaching the end; it does **not** show a heavy stage being executed after a failure. Executed for real after the forced failure: sweeps, demo.
+3. *Excluded from the test:* `t3` — make t3 has a .failed marker and would re-execute its second pass (7 container jobs, about 25 min of lock) plus the summary; its real runs are recorded as recipe attempts. A stage with a `.failed` marker is rerun by the resume rule; this one was left out to keep the lock free.
+4. *Sweeps were started but not waited for* (`SWEEPS_DETACH=1`), and Task 3's criterion-A jobs were disabled (`T3_USER_DEADLINE=1`).
+5. *One assertion was changed while the test was written:* from "only the forced stage failed" to "the forced stage is first in the failed list", so that a stage failing for its own reasons would be listed instead of failing the test. In this run no other stage failed (none), so the original, stricter assertion would also have held.
+
+It is therefore a weaker check than a full `make all` with one stage really failing: it verifies the fail-soft bookkeeping and exit status on the real Makefile and markers, with 2 of 11 stages actually executed. Execution of real recipes after a real failure is covered separately by (a) the unit test `scripts/tests/make_all_test.sh` on a scratch repository (cases A and J: every later recipe runs after one or two failing recipes) and (b) the recorded `make all` run below, when present, in which a stage fails with its own exit code.
