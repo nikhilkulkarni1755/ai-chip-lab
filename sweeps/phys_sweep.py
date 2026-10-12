@@ -82,7 +82,7 @@ def make_sdc(plat, des, period):
 def run_point(plat, des, period, util, timeout):
     var = f"sw_{int(round(period*1000))}ps_u{util}"
     sdc = make_sdc(plat, des, period)
-    env = dict(os.environ, T2_TIMEOUT=str(timeout))
+    env = dict(os.environ, T2_TIMEOUT=str(timeout), LOCK_PRIO="low")   # sweep points never starve stage work
     t0 = now()
     rc = subprocess.call([os.path.join(LAB, "scripts", "t2_run.sh"), plat, des, var,
                           f"CORE_UTILIZATION={util}", f"SDC_FILE={sdc}"], env=env,
@@ -132,6 +132,23 @@ def next_points(plat, des, periods, utils, done, min_step):
                 yield mid, u
 
 
+def part2_plan(done):
+    """Part 2 refinement plan (P1.6), in order: systolic_os 30 % 1.25..1.55 step .05; gcd 0.400..0.430 step .005 at
+    u40,u60; systolic_os u40,u50 at the 4 periods around the u30 frontier (known once step 1 is done)."""
+    n45 = "nangate45"
+    for p in [1.25, 1.30, 1.35, 1.40, 1.45, 1.50, 1.55]:
+        yield n45, "systolic_os", p, 30
+    for u in (40, 60):
+        for i in range(0, 7):
+            yield n45, "gcd", round(0.400 + 0.005 * i, 4), u
+    ok = sorted(k[2] for k, r in done.items() if k[1] == "systolic_os" and k[3] == 30 and r.get("status") == "ok" and r.get("closed"))
+    if ok:
+        f = min(ok)
+        for u in (40, 50):
+            for p in (f - 0.05, f, f + 0.05, f + 0.10):
+                yield n45, "systolic_os", round(p, 4), u
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--platform", default="nangate45")
@@ -143,8 +160,10 @@ def main():
     ap.add_argument("--max-points", type=int, default=10**6)
     ap.add_argument("--retry", action="store_true", help="re-run failed/timeout points")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--plan", choices=["part2"], help="explicit ordered Part 2 refinement plan instead of grid+bisection")
     a = ap.parse_args()
-    budget = json.load(open(os.path.join(LAB, "budget.json")))
+    bp = os.path.join(LAB, "budget_part2.json")   # Part 2 budget (budget.json is Part 1's, frozen)
+    budget = json.load(open(bp if os.path.exists(bp) else os.path.join(LAB, "budget.json")))
     deadline = budget["deadline_sweeps_stop_epoch"]
     periods = [float(x) for x in a.periods.split(",")]
     utils = [int(x) for x in a.utils.split(",")]
@@ -156,7 +175,12 @@ def main():
         done = load_done()
         if a.retry:
             done = {k: r for k, r in done.items() if r.get("status") == "ok"}
-        pt = next(next_points(a.platform, a.design, periods, utils, done, a.min_step), None)
+        if a.plan == "part2":
+            nxt = next(((pl, de, p, u) for pl, de, p, u in part2_plan(done) if key(pl, de, p, u) not in done), None)
+            if nxt: a.platform, a.design = nxt[0], nxt[1]
+            pt = nxt[2:] if nxt else None
+        else:
+            pt = next(next_points(a.platform, a.design, periods, utils, done, a.min_step), None)
         if pt is None:
             log("no more points (grid + refinement exhausted)"); break
         walls = [r["wall_s"] for k, r in done.items() if r.get("status") == "ok" and k[1] == a.design]
@@ -169,7 +193,7 @@ def main():
         log(f"point {a.platform}/{a.design} period={p} util={u} (est {est}s)")
         if a.dry_run:
             print("would run", pt); npts += 1; done[key(a.platform, a.design, p, u)] = {"status": "dry"}; break
-        r = run_point(a.platform, a.design, p, u, a.timeout)
+        r = run_point(a.platform, a.design, p, u, max(a.timeout, 3600) if a.design == "systolic_os" else a.timeout)
         log(f"  -> {r['status']} wns={r.get('wns_setup_ns')} area={r.get('area_um2')} wall={r['wall_s']}s")
         npts += 1
     log("phys_sweep exit")
