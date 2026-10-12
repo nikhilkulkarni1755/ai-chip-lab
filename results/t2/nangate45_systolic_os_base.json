@@ -1,0 +1,62 @@
+{
+  "platform": "nangate45",
+  "design": "systolic_os",
+  "variant": "base",
+  "metrics": {
+    "area_um2": 22961.1,
+    "stdcell_area_um2": 22961.1,
+    "utilization_pct": 0.307407,
+    "wns_setup_ns": 2.02852,
+    "tns_setup_ns": 0,
+    "wns_hold_ns": 0.0760753,
+    "tns_hold_ns": 0,
+    "power_total_w": 0.0289062,
+    "power_internal_w": 0.0156113,
+    "power_switching_w": 0.0128701,
+    "power_leakage_w": 0.000424788,
+    "cell_count": 29420,
+    "stdcell_count": 11388,
+    "drc_errors": 0,
+    "antenna_violating_nets": 0,
+    "wirelength": 146026,
+    "synth_area_um2": 22481
+  },
+  "missing": [
+    "clock_period_ns"
+  ],
+  "stage_runtime_s": {
+    "cts": 18.97,
+    "detailedplace": 18.02,
+    "finish": 60.05,
+    "finish_merge": 14.68,
+    "floorplan": 6.25,
+    "globalplace": 45.0,
+    "globalplace_io": 1.46,
+    "globalplace_skip_io": 9.09,
+    "globalroute": 133.59,
+    "placeopt": 12.88,
+    "synth": 51.95
+  },
+  "total_elapsed_s_flow": 371.94,
+  "run": {
+    "platform": "nangate45",
+    "design": "systolic_os",
+    "variant": "base",
+    "rc": 0,
+    "wall_s": 1175,
+    "start_epoch": 1791800446,
+    "config": "/lab/orfs/designs/nangate45/systolic_os/config.mk",
+    "extra": "",
+    "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
+    "num_cores": 3
+  },
+  "gds": {
+    "path": "orfs/work/results/nangate45/systolic_os/base/6_final.gds",
+    "bytes": 9502292,
+    "sha256": "cb9cacb248ef95e413a0d13cbdc58fa8d20c99f5b3f54397e92b58b64b4d5e4f",
+    "sha256_timestamps_zeroed": "11e3da0108a32ea939e999ae6bb20f9912350de97964ba1f0575937a55868b82"
+  },
+  "flow_version": "unknown",
+  "n_metadata_fields": 505,
+  "deterministic_fields_sha256": "4279f7234298dcf83a3dd053a4d46889b77ae092d97cbc6ed3eb6f6d489a54ed"
+}

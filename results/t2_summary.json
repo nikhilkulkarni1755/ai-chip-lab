@@ -1,7 +1,8 @@
 {
-  "generated_epoch": 1791800542,
+  "generated_epoch": 1791803054,
   "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
   "tool_versions": [
+    "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; `openroad -version` prints 'unknown' in this build)",
     "unknown ",
     "Yosys 0.68+post (git sha1 UNKNOWN, Release, GNU /usr/local/bin/wrapped-cc/g++ 11.4.0)",
     "KLayout 0.30.12"
@@ -141,12 +142,177 @@
       "pass": true
     },
     "sky130hd/gcd": {
-      "status": "skipped",
-      "reason": "pending"
+      "status": "run",
+      "ppa": {
+        "area_um2": 5412.69,
+        "utilization_pct": 0.919643,
+        "wns_setup_ns": -1.45954,
+        "tns_setup_ns": -64.9417,
+        "wns_hold_ns": 0.532397,
+        "power_total_w": 0.00985037,
+        "power_leakage_w": 2.34514e-09,
+        "cell_count": 752,
+        "stdcell_count": 548,
+        "drc_errors": 0,
+        "wirelength": 11728
+      },
+      "stage_runtime_s": {
+        "cts": 28.1,
+        "detailedplace": 2.72,
+        "finish": 7.33,
+        "finish_merge": 4.18,
+        "floorplan": 5.05,
+        "globalplace": 3.9,
+        "globalplace_io": 1.67,
+        "globalplace_skip_io": 2.05,
+        "globalroute": 127.98,
+        "placeopt": 2.72,
+        "synth": 9.33
+      },
+      "wall_s": 646,
+      "gds": {
+        "path": "orfs/work/results/sky130hd/gcd/base/6_final.gds",
+        "bytes": 974128,
+        "sha256": "ebc1e0bff33fb35838d0b673877e37d14d2a96e7a0668495a62a1cfbd9ea2524",
+        "sha256_timestamps_zeroed": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809"
+      },
+      "checks": {
+        "thresholds_pass": true,
+        "drc_errors_zero": true,
+        "gds_exists": true,
+        "deterministic": true
+      },
+      "threshold_check": {
+        "passed": true,
+        "n_rules": 27,
+        "warnings": [],
+        "failures": []
+      },
+      "determinism": {
+        "verdict": "PASS",
+        "gds_sha256_timestamps_zeroed": [
+          "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809",
+          "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809"
+        ],
+        "gds_identical_ignoring_timestamps": true,
+        "compared_fields": 459,
+        "identical_fields": 459,
+        "differing_fields": {},
+        "excluded_fields": [
+          "cts__cpu__total",
+          "cts__elapsed_seconds",
+          "cts__mem__peak",
+          "cts__runtime__total",
+          "detailedplace__cpu__total",
+          "detailedplace__elapsed_seconds",
+          "detailedplace__mem__peak",
+          "detailedplace__runtime__total",
+          "finish__cpu__total",
+          "finish__elapsed_seconds",
+          "finish__mem__peak",
+          "finish__runtime__total",
+          "finish_merge__cpu__total",
+          "finish_merge__elapsed_seconds",
+          "finish_merge__mem__peak",
+          "finish_merge__runtime__total",
+          "floorplan__cpu__total",
+          "floorplan__elapsed_seconds",
+          "floorplan__mem__peak",
+          "floorplan__runtime__total",
+          "globalplace__cpu__total",
+          "globalplace__elapsed_seconds",
+          "globalplace__mem__peak",
+          "globalplace__runtime__total",
+          "globalplace_io__cpu__total",
+          "globalplace_io__elapsed_seconds",
+          "globalplace_io__mem__peak",
+          "globalplace_io__runtime__total",
+          "globalplace_skip_io__cpu__total",
+          "globalplace_skip_io__elapsed_seconds",
+          "globalplace_skip_io__mem__peak",
+          "globalplace_skip_io__runtime__total",
+          "globalroute__cpu__total",
+          "globalroute__elapsed_seconds",
+          "globalroute__global_route__fastroute__congestion_rsmt_s",
+          "globalroute__global_route__fastroute__finalization_s",
+          "globalroute__global_route__fastroute__initial_rsmt_s",
+          "globalroute__global_route__fastroute__monotonic_s",
+          "globalroute__global_route__fastroute__new_route_l_s",
+          "globalroute__global_route__fastroute__overflow_iterations_s",
+          "globalroute__global_route__fastroute__route_l_s",
+          "globalroute__global_route__fastroute__route_z_s",
+          "globalroute__global_route__fastroute__run_s",
+          "globalroute__global_route__fastroute__snapshot_batch_apply_s",
+          "globalroute__global_route__fastroute__snapshot_batch_route_s",
+          "globalroute__global_route__fastroute__snapshot_batch_sync_s",
+          "globalroute__global_route__fastroute__spiral_s",
+          "globalroute__mem__peak",
+          "globalroute__runtime__total",
+          "placeopt__cpu__total",
+          "placeopt__elapsed_seconds",
+          "placeopt__mem__peak",
+          "placeopt__runtime__total",
+          "run__flow__generate_date",
+          "run__flow__uuid",
+          "synth__cpu__total",
+          "synth__elapsed_seconds",
+          "synth__mem__peak",
+          "synth__runtime__total",
+          "total_elapsed_seconds",
+          "total_time"
+        ],
+        "gds_sha256": [
+          "14064c05e756f4801ed90f12e989565f60fce8e500758ca2ec2e7ebbd1b102c7",
+          "ebc1e0bff33fb35838d0b673877e37d14d2a96e7a0668495a62a1cfbd9ea2524"
+        ],
+        "gds_identical": false,
+        "identical": true
+      },
+      "run1_wall_s": 734,
+      "pass": true
     },
     "nangate45/systolic_os": {
-      "status": "skipped",
-      "reason": "running"
+      "status": "run",
+      "ppa": {
+        "area_um2": 22961.1,
+        "utilization_pct": 0.307407,
+        "wns_setup_ns": 2.02852,
+        "tns_setup_ns": 0,
+        "wns_hold_ns": 0.0760753,
+        "power_total_w": 0.0289062,
+        "power_leakage_w": 0.000424788,
+        "cell_count": 29420,
+        "stdcell_count": 11388,
+        "drc_errors": 0,
+        "wirelength": 146026
+      },
+      "stage_runtime_s": {
+        "cts": 18.97,
+        "detailedplace": 18.02,
+        "finish": 60.05,
+        "finish_merge": 14.68,
+        "floorplan": 6.25,
+        "globalplace": 45.0,
+        "globalplace_io": 1.46,
+        "globalplace_skip_io": 9.09,
+        "globalroute": 133.59,
+        "placeopt": 12.88,
+        "synth": 51.95
+      },
+      "wall_s": 1175,
+      "gds": {
+        "path": "orfs/work/results/nangate45/systolic_os/base/6_final.gds",
+        "bytes": 9502292,
+        "sha256": "cb9cacb248ef95e413a0d13cbdc58fa8d20c99f5b3f54397e92b58b64b4d5e4f",
+        "sha256_timestamps_zeroed": "11e3da0108a32ea939e999ae6bb20f9912350de97964ba1f0575937a55868b82"
+      },
+      "checks": {
+        "thresholds_pass": null,
+        "drc_errors_zero": true,
+        "gds_exists": true
+      },
+      "threshold_check": null,
+      "pass": true
     }
   },
   "pass": true

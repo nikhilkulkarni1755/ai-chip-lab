@@ -1,0 +1,34 @@
+{
+  "ppa": {
+    "area_um2": 22961.1,
+    "utilization_pct": 0.307407,
+    "wns_setup_ns": 2.02852,
+    "tns_setup_ns": 0,
+    "wns_hold_ns": 0.0760753,
+    "power_total_w": 0.0289062,
+    "power_leakage_w": 0.000424788,
+    "cell_count": 29420,
+    "stdcell_count": 11388,
+    "drc_errors": 0,
+    "wirelength": 146026
+  },
+  "wall_s": 1175,
+  "checks": {
+    "thresholds_pass": null,
+    "drc_errors_zero": true,
+    "gds_exists": true
+  },
+  "stage_runtime_s": {
+    "cts": 18.97,
+    "detailedplace": 18.02,
+    "finish": 60.05,
+    "finish_merge": 14.68,
+    "floorplan": 6.25,
+    "globalplace": 45.0,
+    "globalplace_io": 1.46,
+    "globalplace_skip_io": 9.09,
+    "globalroute": 133.59,
+    "placeopt": 12.88,
+    "synth": 51.95
+  }
+}
