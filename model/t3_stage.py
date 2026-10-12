@@ -183,6 +183,12 @@ def do_summary(out, rerun, prev_summary=None):
     summ["pass"] = bool(all(chk.values()) and r2["complete"])
     summ["complete"] = bool(not pending and r2["complete"])
     summ["state"] = ("A_incomplete(" + ",".join(k.replace("rl2_user_", "") + "=" + v for k, v in r2["cell_status"].items() if k.startswith("rl2_user_") and v != "evaluated") + ")") if not r2["complete"] else summ["identity"]["state"]
+    evaluated_fail = [k for k, v in r2["checks"].items() if not v and (
+        (k.startswith("calc_required_bw") and r2["cell_status"].get("rl2_calc_" + k.rsplit("_", 1)[1]) == "evaluated") or
+        (k.startswith(("user_bw_stalls_vs_ai_", "stall_cycles_monotone_in_B_")) and r2["per_dataflow"][k.rsplit("_", 1)[1]]["user_all_levels_evaluated"]))]
+    other_fail = [k for k in ("bundled_runs_ok", "reports_saved", "reruns_byte_identical", "analytic_constants_match_derivation", "analytic_residuals_stable") if not chk[k]]
+    summ["verdict"] = "PASS" if summ["pass"] else ("FAIL" if evaluated_fail or other_fail else "INCOMPLETE")
+    summ["verdict_failed_criteria"] = evaluated_fail + other_fail
     summ["pending"] = ["repro byte-identity of %d result files" % len(pending)] if pending else []
     return summ
 

@@ -80,7 +80,8 @@ def roofline_plot(out):
         ax.set_xlabel("arithmetic intensity (FLOP / compulsory DRAM byte)")
         ax.set_ylabel("SCALE-Sim required DRAM BW (words/cycle)")
     fig.suptitle("Task 3 roofline check (pre-registered): ResNet-18, 21 layers, 128x128 array. "
-                 f"{'PASS' if r2['passed'] else ('FAIL' if r2['complete'] else 'INCOMPLETE')}: criteria rho <= -0.6 (amended design P2-A2: B = 64, 256)", fontsize=10)
+                 f"{'PASS' if r2['passed'] else ('FAIL' if r2['complete'] or any(not v for k, v in r2['checks'].items() if k.startswith('calc_')) else 'INCOMPLETE')}"
+                 f"{'' if r2['complete'] else ' (criterion B evaluated; criterion A not evaluated: cost)'}: criteria rho <= -0.6 (amended design P2-A2: B = 64, 256)", fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(ASSETS, "t3_roofline.png"), dpi=130)
 
