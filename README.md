@@ -6,19 +6,19 @@ Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, t
 
 ## Status
 
-Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 1h 52m since start (2026-10-12 02:48:36 PDT), budget 6h).
+Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 2h 05m since start (2026-10-12 02:48:36 PDT), budget 6h).
 
 | Check | Status | Detail |
 |---|---|---|
 | Container runtime install | **PASS** | route A (Colima + Lima, macOS Virtualization.framework) |
 | Lab images (lab-sim, ORFS) | **PASS** | both images referenced in coord/images.env |
-| Task 1: INT8 systolic array vs NumPy | **RUNNING** | stage in progress |
-| Task 1: formal MAC proof (SBY) | **PENDING** | waits for Task 1 summary |
-| Task 1: RTL = netlist equivalence (EQY) | **PENDING** | waits for Task 1 summary |
+| Task 1: INT8 systolic array vs NumPy | **PASS** | t1_summary.json: pass=true |
+| Task 1: formal MAC proof (SBY) | **PASS** | checks: formal_bmc_pass=true, formal_prove_pass=true |
+| Task 1: RTL = netlist equivalence (EQY) | **PASS** | checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true |
 | Task 2: OpenROAD reference flow vs shipped thresholds | **PASS** | t2_summary.json: pass=true |
-| Task 3: SCALE-Sim vs analytical model | **RUNNING** | stage in progress |
-| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 8 point(s) in results/sweeps/arch.jsonl |
-| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 11 point(s) in results/sweeps/phys.jsonl |
+| Task 3: SCALE-Sim vs analytical model | **RUNNING** | summary says pass=true but a re-run is in progress |
+| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 10 point(s) in results/sweeps/arch.jsonl |
+| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 12 point(s) in results/sweeps/phys.jsonl |
 | Repeatability rerun (repro) | **PENDING** | no marker and no results/repro_report.json yet |
 
 PASS means the stage's `.done` marker exists and its summary JSON says `"pass": true`. Anything unfinished is shown as PENDING/RUNNING/BLOCKED/UNKNOWN and not assumed.
@@ -94,15 +94,19 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 
 ## Results
 
+![t1 waveform](demo/assets/t1_waveform.png)
+
 ![t2 nangate45 gcd](demo/assets/t2_nangate45_gcd.png)
 
 ![t2 nangate45 systolic os](demo/assets/t2_nangate45_systolic_os.png)
 
 ![t2 sky130hd gcd](demo/assets/t2_sky130hd_gcd.png)
 
+![t3 cycles vs analytic](demo/assets/t3_cycles_vs_analytic.png)
+
 ## Notes
 
 - Versions, image digests, URLs and SHA256s: `versions.lock`, `coord/images.env`.
-- VM end-state is stated at final packaging; start/stop commands are in `demo/README.md`.
+- The Colima VM is left RUNNING at the end of the run because demo/run_demo.sh needs it. Stop it with: source ~/ai-chip-lab/env.sh && colima stop
 - No personal paths, hostnames or credentials are stored in this repository; a pre-commit hook and `scripts/evidence_privacy.py` enforce that.
 

@@ -44,6 +44,8 @@ repro:
 	scripts/repro.sh
 
 demo:
+	@if [ -x .venv-arch/bin/python ]; then .venv-arch/bin/python sweeps/arch_plots.py || true; fi
+	@if [ -x .venv-pnr/bin/python ]; then .venv-pnr/bin/python sweeps/phys_plots.py || true; fi
 	python3 scripts/demo_build.py
 	@if [ -x .venv-demo/bin/python ]; then .venv-demo/bin/python scripts/evidence_render.py && python3 scripts/demo_build.py; else echo "evidence PNGs not re-rendered: no .venv-demo (uv venv .venv-demo && uv pip install pillow)"; fi
 	python3 scripts/demo_check.py

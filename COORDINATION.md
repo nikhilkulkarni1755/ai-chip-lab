@@ -90,6 +90,7 @@ Agents update their own row's State cell (short).
 | P1 | 03:00 | pnr | ORFS image pinned to tag `26Q3-600-g3a964e13f`, not `latest` | ORFS commit 76be2a8e (2026-09-22) removed rules-base.json + checkMetadata.py (thresholds now need an online dashboard); 26Q3-600 is the newest tag that still ships them (verified in image: flow/designs/*/gcd/rules-base.json) |
 | P2 | 03:12 | pnr | `LEC_CHECK=0` on all ORFS runs | Kepler-Formal LEC step dies with SIGILL on this CPU/VM ("cts.tcl: child killed: illegal instruction"); it is an optional equivalence check, not PPA |
 | P3 | 03:20 | pnr | Determinism compares all metadata.json fields except wall-clock/CPU/memory/profiling (`_s`) fields + run uuid, and the GDS with GDSII BGNLIB/BGNSTR timestamp records zeroed | raw GDS bytes differ between identical runs only in those date records (verified record-by-record) |
+| 19 | 04:50 | main/demo | `demo/run_demo.sh` runs only sby tasks `prove` + `cover` (not `bmc` depth 20); the official `make t1` and `scripts/repro.sh` keep bmc+prove+cover. Table names the tasks run; README/page state it; measured time is recorded in `.cache/demo_run/timing.json` and shown in demo/README.md. VM is left running at the end (run_demo needs it) | In the official run mac_prove and mac_cover finished within seconds while mac_bmc took ~9 min; an unbounded induction proof is the stronger statement. Measured 5-minute cut took 12 min under load before this change |
 
 ## Needs owner
 

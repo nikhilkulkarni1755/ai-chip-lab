@@ -45,10 +45,12 @@ r=$(pyget "$SCR/t1_sim/t1_summary.json" "all(c.get(k) is True for k in ['zero_mi
 record "Task 1: $N cases vs NumPy, Verilator+Icarus, CSVs identical" "$( [ "$r" = PASS ] && echo PASS || echo FAIL )" $(( $(date +%s) - t ))
 
 t=$(date +%s)
-echo "== Task 1: formal MAC proof"
-T1_STEPS="formal" bash scripts/t1_run.sh "$N" "$SCR/t1_formal" > "$SCR/t1_formal.log" 2>&1
-r=$(pyget "$SCR/t1_formal/t1_summary.json" "len([k for k in c if k.startswith('formal_') and k.endswith('pass')])>=2 and all(c[k] is True for k in c if k.startswith('formal_'))")
-record "Task 1: formal proof of the MAC (SymbiYosys bmc + prove)" "$( [ "$r" = PASS ] && echo PASS || echo FAIL )" $(( $(date +%s) - t ))
+echo "== Task 1: formal MAC proof (sby tasks: prove + cover; the full bmc-20 runs in 'make t1')"
+mkdir -p "$SCR/formal"
+docker run --rm --pull never --platform linux/amd64 -v "$LAB":/lab -w /lab/formal "$LAB_SIM_IMAGE" \
+  sby -f -j 1 --prefix "/lab/$SCR/formal/mac" mac.sby prove cover > "$SCR/t1_formal.log" 2>&1
+if [ $? -eq 0 ] && [ -f "$SCR/formal/mac_prove/PASS" ] && [ -f "$SCR/formal/mac_cover/PASS" ]; then r=PASS; else r=FAIL; fi
+record "Task 1: formal MAC proof, sby tasks prove (induction) + cover" "$r" $(( $(date +%s) - t ))
 
 # ---- 3: one SCALE-Sim invocation (bundled TPU-like config, os dataflow, 6 GEMMs) vs the closed-form model
 t=$(date +%s)
@@ -79,6 +81,11 @@ for i in "${!NAMES[@]}"; do
   printf "%-5s %4ss  %s\n" "${RES[$i]}" "${TIMES[$i]}" "${NAMES[$i]}"
   [ "${RES[$i]}" = PASS ] || fail=1
 done
-echo "total: $(( $(date +%s) - T0 )) s   logs: $SCR/*.log"
+TOT=$(( $(date +%s) - T0 ))
+echo "total: $TOT s   load average: $(uptime | sed 's/.*load averages*: //')   logs: $SCR/*.log"
+python3 - "$SCR/timing.json" "$TOT" "$N" "$(uptime | sed 's/.*load averages*: //')" "$(date '+%F %T')" <<'PY'
+import json,sys
+json.dump({"total_s":int(sys.argv[2]),"cases":int(sys.argv[3]),"load_average":sys.argv[4],"finished":sys.argv[5]},open(sys.argv[1],"w"))
+PY
 [ $fail -eq 0 ] && echo "RESULT: PASS" || echo "RESULT: FAIL (see logs in $SCR)"
 exit $fail

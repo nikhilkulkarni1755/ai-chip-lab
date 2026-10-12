@@ -538,6 +538,9 @@ def t2_table(s2):
             extra = " (" + ", ".join("%s=%s" % (k, fmt_val(v)) for k, v in d["checks"].items()) + ")"
         if st != "run":
             extra = " - " + str(d.get("reason", ""))
+        rt = d.get("rtl")
+        if isinstance(rt, dict):
+            extra += " [RTL provenance: %s %s]" % (rt.get("last_rtl_commit", "?"), rt.get("note", ""))
         cells = "".join("<td>%s</td>" % e(fmt_val(ppa.get(k, d.get(k)))) if (k in ppa or k in d) else "<td>-</td>" for k, _ in PPA_COLS)
         h.append("<tr><td>%s</td><td>%s%s</td>%s</tr>" % (e(name), e(st), e(extra), cells))
     h.append("</tbody></table></div>")
@@ -701,6 +704,9 @@ def build_html(L, rows, vm):
     if t1v.get("eqy_scope"):
         items.append("<li>Equivalence scope as recorded by Task 1: <code>%s</code>. If this says per-PE or partial, the full 4x4 multiplier "
                      "cones did not close in the time available and the claim is limited to what is stated.</li>" % e(str(t1v["eqy_scope"])))
+    items.append("<li><code>demo/run_demo.sh</code> runs only the sby tasks <code>prove</code> (unbounded induction) and <code>cover</code>; "
+                 "the full BMC depth-20 run is part of <code>make t1</code> and takes about 9 minutes on this machine. "
+                 "Measured run time of the short demo: %s</li>" % e(demo_timing(L)))
     items.append("<li>ORFS is pinned to image tag 26Q3-600 because newer tags removed the shipped threshold files (<code>rules-base.json</code>, "
                  "<code>checkMetadata.py</code>) that Task 2 compares against (COORDINATION.md Decision 6).</li>")
     items.append("<li>The optional Kepler logic-equivalence step inside the ORFS flow is disabled (<code>LEC_CHECK=0</code>) because it "
@@ -733,9 +739,17 @@ def md_table(rows):
     return "\n".join(out)
 
 
+def demo_timing(L):
+    t = L.jload(".cache/demo_run/timing.json")
+    if not t:
+        return "Measured run time: not measured yet (run it once; the result is recorded in .cache/demo_run/timing.json)."
+    return ("Last measured run time: %s s with %s cases (finished %s, load average at the end: %s). The load average reflects "
+            "other jobs on the same 2-core machine, so a quiet machine is faster." % (t.get("total_s"), t.get("cases"), t.get("finished"), t.get("load_average")))
+
+
 def build_demo_readme(L, rows, vm):
     el_s, _ = elapsed_str(L)
-    vmtxt = {"running": "The Colima VM was left running at the end of the run.",
+    vmtxt = {"running": "The Colima VM is left RUNNING at the end of the run because demo/run_demo.sh needs it. Stop it with: source ~/ai-chip-lab/env.sh && colima stop",
              "stopped": "The Colima VM was stopped at the end of the run (`colima stop`); start it before re-running."}.get(
         vm, "Final VM state is not recorded yet (it is written at final packaging); check with `colima status`.")
     return """AI chip design lab - demo summary
@@ -754,8 +768,12 @@ START / STOP THE VM
   source ~/ai-chip-lab/env.sh && colima stop       # stops it (frees RAM and CPU)
   %s
 
-RE-RUN THE 5-MINUTE DEMO
+RE-RUN THE SHORT DEMO
   source ~/ai-chip-lab/env.sh && bash demo/run_demo.sh
+  Runs: Task 1 on 200 cases (Verilator + Icarus), the formal MAC proof restricted to the sby tasks "prove" (unbounded
+  induction) and "cover", one SCALE-Sim run vs the analytic model, and ORFS's threshold check on the existing outputs.
+  The full BMC-20 formal run is part of `make t1`, not of this cut (it takes ~9 minutes on this machine).
+  %s
 
 FREE DISK AFTERWARDS (all inside ~/ai-chip-lab; nothing outside the lab was changed)
   Safe to delete (re-creatable, results already saved under results/ and demo/):
@@ -767,7 +785,7 @@ FREE DISK AFTERWARDS (all inside ~/ai-chip-lab; nothing outside the lab was chan
     the whole VM:     source env.sh && colima delete    (removes the VM disk, up to 60 GiB sparse)
   Keep: results/, demo/, versions.lock, the source directories (rtl/ tb/ formal/ eqy/ model/ arch/ orfs/ sweeps/ scripts/).
   Safe to remove everything: delete the ~/ai-chip-lab directory after `colima delete`.
-""" % ("\n".join("  %-8s %s - %s" % (r.state, r.label, r.detail) for r in rows), el_s, machine_str(L), vmtxt)
+""" % ("\n".join("  %-8s %s - %s" % (r.state, r.label, r.detail) for r in rows), el_s, machine_str(L), vmtxt, demo_timing(L))
 
 
 def build_root_readme(L, rows, vm):
@@ -813,7 +831,7 @@ def build_root_readme(L, rows, vm):
     h.append("## Notes\n\n- Versions, image digests, URLs and SHA256s: `versions.lock`, `coord/images.env`.\n"
              "- %s\n- No personal paths, hostnames or credentials are stored in this repository; a pre-commit hook and "
              "`scripts/evidence_privacy.py` enforce that.\n" % {
-                 "running": "The Colima VM was left running at the end of the run.",
+                 "running": "The Colima VM is left RUNNING at the end of the run because demo/run_demo.sh needs it. Stop it with: source ~/ai-chip-lab/env.sh && colima stop",
                  "stopped": "The Colima VM was stopped at the end of the run; `source env.sh && colima start` brings it back.",
              }.get(vm, "VM end-state is stated at final packaging; start/stop commands are in `demo/README.md`."))
     return "\n".join(h) + "\n"
@@ -829,7 +847,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--lab", default=os.environ.get("LAB", HOME_LAB))
     ap.add_argument("--out", default=None)
-    ap.add_argument("--vm", choices=["running", "stopped"], default=None)
+    ap.add_argument("--vm", choices=["running", "stopped"], default="running")
     a = ap.parse_args()
     L = Lab(os.path.abspath(a.lab), os.path.abspath(a.out or a.lab))
     rows = build_rows(L)
