@@ -1,0 +1,32 @@
+{
+  "stage": "61_pe_bf16",
+  "status": "criteria written, nothing run yet",
+  "criteria_written_before_first_run": true,
+  "design": {
+    "module": "rtl/mac_bf16.sv",
+    "function": "acc(FP32) <= clear ? +0 : valid ? fp32_add(acc, bf16_mul(a, b)) : acc",
+    "rounding": "round-to-nearest-even (the bf16 x bf16 product is exact in FP32; only the addition rounds)",
+    "subnormals": "flush to zero: a subnormal bf16 input is read as zero of the same sign; a product or sum whose exact magnitude is below 2^-126 becomes zero with the sign of the exact result",
+    "nan": "any NaN operand, inf x 0 and inf - inf give the canonical quiet NaN 0x7FC00000 (payloads and NaN signs are not propagated)",
+    "overflow": "a product or rounded sum of magnitude >= 2^128 becomes infinity of the same sign",
+    "zero_signs": "IEEE 754 round-to-nearest rules: x + (-x) = +0, (-0) + (-0) = -0"
+  },
+  "oracle": "model/bf16_golden.py: bf16 bit patterns decoded with ml_dtypes.bfloat16, product formed exactly in float64, FP32 addition by NumPy float32 (IEEE round-to-nearest-even), then the same flush / NaN / overflow rules as the RTL; compared as uint32 bit patterns after every MAC step",
+  "pass_criteria": {
+    "bit_exact_verilator": "0 mismatching accumulator values over 10,000 random cases (seed 1234, case i = default_rng([1234, i]), each case = clear followed by 1..16 MAC steps, every step compared) plus all directed cases",
+    "bit_exact_icarus": "same cases, 0 mismatching accumulator values",
+    "csv_sha256_identical": "results CSV of the two simulators byte-identical",
+    "random_case_count": "exactly 10,000 random cases on each simulator",
+    "directed_cases_present": "all of: +0/-0 operands and results, +inf/-inf, NaN operand propagation, inf x 0 = NaN, inf - inf = NaN, max normal, min normal, overflow to infinity (product and sum), rounding ties to even (round-up and round-down direction), subnormal bf16 inputs, product flushed to zero, sum flushed to zero, exact cancellation to +0",
+    "functional_coverage": "100 % of the bins defined in tb/test_mac_bf16.py before the run (operand classes x result classes, rounding decision incl. both tie directions, effective add / subtract, alignment-shift and normalisation-shift ranges)",
+    "oracle_cross_check": "the golden model agrees bit-for-bit with an independent exact-rational (fractions.Fraction) reference on >= 20,000 randomly generated MAC steps (seed 1234)",
+    "negative_control": "an RTL copy with the tie rule changed (round half up instead of half to even) must be reported as mismatching by the same test",
+    "lint_clean": "verilator --lint-only -Wall and verible-verilog-lint: 0 warnings",
+    "orfs_flow_completes": "nangate45 ORFS flow (synthesis to final) finishes for mac_bf16 and for mac_int8 at the same clock = the INT8 MAC's closure clock, metrics extracted for both"
+  },
+  "reported_not_gating": {
+    "timing_at_int8_clock": "WNS of mac_bf16 at the INT8 MAC's closure clock (met or violated is a result, not a criterion)",
+    "ppa_table": "area, power, max clock of INT8 MAC vs bf16 MAC"
+  },
+  "pass": null
+}
