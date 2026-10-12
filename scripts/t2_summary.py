@@ -121,6 +121,10 @@ def main():
         if des == "systolic_os":
             evid("20_systolic_os_ppa.txt", json.dumps({"ppa": d["ppa"], "wall_s": d["wall_s"], "checks": d["checks"],
                                                         "stage_runtime_s": d["stage_runtime_s"]}, indent=2))
+    fp = os.path.join(LAB, "results", "sweeps", "phys_frontier.json")
+    if os.path.exists(fp):
+        S["sweep_B"] = {"frontier_file": "results/sweeps/phys_frontier.json", "data": "results/sweeps/phys.jsonl",
+                        "frontier": json.load(open(fp))["frontier"], "failed_points": json.load(open(fp))["failed_points"]}
     S["pass"] = bool(ok_all)
     json.dump(S, open(os.path.join(LAB, "results", "t2_summary.json"), "w"), indent=2)
     print(scrub(json.dumps(S, indent=2)))

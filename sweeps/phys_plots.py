@@ -30,6 +30,7 @@ for des in sorted({r["design"] for r in rows}):
                 area_um2=r.get("area_um2"), power_total_w=r.get("power_total_w"),
                 marginal=r["wns_setup_ns"] < 0.005)
             nb = [x for x in bad if x[0] < p]
+            e["bracketed"] = bool(nb)   # False: no failing period swept below the frontier, true limit is lower
             if nb: q, rq = max(nb, key=lambda x: x[0]); e.update(next_failing_period_ns=q, wns_at_next_failing_ns=rq["wns_setup_ns"])
         else:
             e["fastest_closing_period_ns"] = None
