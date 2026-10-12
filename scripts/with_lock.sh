@@ -21,7 +21,8 @@
 #    Decided by ancestry (the holder is a live ancestor of the caller), not by environment. The job sees
 #    LAB_LOCK_HELD=1 (team convention); a stale LAB_LOCK_HELD=1 outside the holder's job is not honoured.
 #  * The job keeps stdin and its exit code is returned unchanged.
-# Env: LOCK_PRIO=high|low, LOCK_POLL (s, default 5), LOCK_BUSY_MAX, LOCK_SKIP_BUSY_CHECK=1 (tests only),
+# Env: LAB_LOCK_TAG=<label> is copied into the LOCK log line (used by scripts/make_record.py to sum queue waits),
+#      LOCK_PRIO=high|low, LOCK_POLL (s, default 5), LOCK_BUSY_MAX, LOCK_SKIP_BUSY_CHECK=1 (tests only),
 #      LAB_LOCK_ROOT (tests only: directory used instead of the lab for coord/ and logs/).
 LAB="$HOME/ai-chip-lab"; R="${LAB_LOCK_ROOT:-$LAB}"
 C="$R/coord"; D="$C/heavy.lock.d"; W="$C/heavy.waiting.d"; WL="$C/heavy.waiting.low.d"; BRK="$C/heavy.break.d"
@@ -148,7 +149,7 @@ if [ "${LOCK_SKIP_BUSY_CHECK:-0}" != 1 ] && [ -x "$LAB/bin/docker" ]; then
 fi
 
 # ---- run the job ------------------------------------------------------------------------------------
-log "LOCK $owner $prio waited=${waited}s $(printf '%s' "$cmd1" | cut -c1-120)"
+log "LOCK $owner $prio waited=${waited}s${LAB_LOCK_TAG:+ tag=$LAB_LOCK_TAG} $(printf '%s' "$cmd1" | cut -c1-120)"
 # LAB_LOCK_HELD=1 is the team convention scripts test to know they already run under the lock
 export LAB_LOCK_HELD=1 LAB_LOCK_HOLDER=$$
 "$@" <&0 &
