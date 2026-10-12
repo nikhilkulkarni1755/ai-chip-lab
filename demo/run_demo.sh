@@ -4,7 +4,9 @@
 #   bash demo/run_demo.sh [NCASES=200]
 # Steps: (1) Task 1, N cases on Verilator + Icarus, (2) formal MAC proof (SymbiYosys),
 #        (3) one SCALE-Sim run (bundled TPU-like config, 6 GEMM layers) vs the analytic model,
-#        (4) ORFS's own threshold checker on the existing nangate45/gcd metadata.
+#        (4) ORFS's own threshold checker on the existing nangate45/gcd metadata,
+#        (5) Part 2: the Task 3 roofline criterion B verdict recomputed from the saved reports (seconds, no container).
+# Not included on purpose: the routed-netlist gate-level simulation (67 s for 229 cases, over the 1-minute rule per step).
 # Part 2: every container job takes the lab-wide lock (scripts/with_lock.sh), so it may wait behind other jobs; the wait is
 # reported separately and excluded from the per-step times. LAB_LOCK_HELD=1 (set inside the lock) prevents a nested re-lock.
 # Prints a PASS/FAIL table; exit 0 only if every step passed.
@@ -76,13 +78,24 @@ lk env T2_USE_COMMITTED="${T2_USE_COMMITTED:-1}" bash scripts/t2_check.sh nangat
 if grep -q "All metadata rules passed" "$SCR/t2_check.log"; then r=PASS; else r=FAIL; fi
 record "Task 2: nangate45/gcd metadata within ORFS shipped thresholds (checkMetadata.py)" "$r" "$(step_secs)"
 
+# ---- 5 (Part 2): the fixed roofline check, criterion B - recompute the verdict from the saved CALC-mode SCALE-Sim reports (native python, no simulation, seconds).
+#      PASS = the recomputed verdict equals the one recorded in results/t3_summary.json (or none is recorded yet); the verdict itself (met / NOT met) is printed, never hidden.
+#      Criterion A (stalls at a fixed user bandwidth) needs SCALE-Sim runs of minutes each and is not part of this cut.
+echo "== Task 3: roofline criterion B recomputed from saved reports"
+T5=$(date +%s)
+python3 scripts/t3_criterion_b_recheck.py --lab "$LAB" > "$SCR/t3_critB.log" 2>&1; rcb=$?
+cat "$SCR/t3_critB.log"
+if [ $rcb -eq 0 ]; then r=PASS; elif [ $rcb -eq 2 ]; then r=SKIP; else r=FAIL; fi
+record "Task 3: roofline criterion B recomputed from saved reports (verdict printed above; consistency with t3_summary.json)" "$r" "$(( $(date +%s) - T5 ))"
+echo "NOTE: the routed-netlist gate-level simulation is not in this cut: Icarus needs 67 s for the 229 cases (200 random + 29 directed), over the 1-minute rule. Run it with: scripts/t1_routed.sh (T1R_STEPS=gls)."
+
 # ---- table
 echo
 echo "================ demo summary ================"
 fail=0
 for i in "${!NAMES[@]}"; do
   printf "%-5s %4ss  %s\n" "${RES[$i]}" "${TIMES[$i]}" "${NAMES[$i]}"
-  [ "${RES[$i]}" = PASS ] || fail=1
+  [ "${RES[$i]}" = PASS ] || [ "${RES[$i]}" = SKIP ] || fail=1
 done
 TOT=$(( $(date +%s) - T0 ))
 echo "total: $TOT s (of which $WAIT s waiting for the lock; steps above exclude that wait)   load average: $(uptime | sed 's/.*load averages*: //')   logs: $SCR/*.log"

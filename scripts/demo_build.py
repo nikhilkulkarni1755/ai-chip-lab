@@ -287,6 +287,27 @@ def build_rows(L):
     t3f = sorted(k for k, v in ((t3s or {}).get("checks") or {}).items() if v is False)
     if t3f:
         d3 += "; criteria that fail: %s (the roofline-vs-stalls agreement; the analytic cycle model and byte-identity checks pass)" % ", ".join(t3f)
+    if isinstance(t3s, dict) and (t3s.get("complete") is False or str(t3s.get("state", "")).startswith("A_incomplete")) and s3 not in ("RUNNING",):
+        cs = t3s.get("cell_status")
+        calc = {k: v for k, v in ((t3s.get("checks") or {}).items()) if "calc" in k.lower()}
+        d3 = ("INCOMPLETE (not PASS, not a bare FAIL): state=%s; criterion B (CALC mode) %s; criterion A (stalls at fixed user bandwidth) per (dataflow x level): %s; pending: %s. "
+              "Pre-registered in model/t3_roofline2_criteria.json, cost-only amendment P2-A2 and plan P2-7 (COORDINATION.md); a row is PASS only when every pre-registered criterion has been evaluated and passes. "
+              "The Part 2 hypothesis was wrong: the bundled google.cfg already uses USER bandwidth and its stalls are all zero (results/evidence/31_original_stalls.txt)") % (
+            t3s.get("state"), (", ".join("%s=%s" % (k, fmt_val(v)) for k, v in calc.items()) or "see the table in section 5"),
+            (json.dumps(cs, sort_keys=True)[:700] if cs is not None else "not reported"), fmt_val(t3s.get("pending")))
+        s3 = "INCOMPLETE"
+    elif isinstance(t3s, dict) and "complete" not in t3s and s3 != "PASS" and glob.glob(L.p("results/t3.partial/roofline2/*")):
+        # the re-specified roofline check (Part 2) is under way but its summary has not been written: the file on disk is still the Part 1 result
+        done = sorted(os.path.basename(x)[:-5] for x in glob.glob(L.p("results/t3.partial/roofline2/*.json")))
+        user_started = sorted(os.path.basename(x) for x in glob.glob(L.p("results/t3.partial/roofline2/rl2_user_*")) if os.path.isdir(x))
+        rh = demo_part2.calc_rhos(L)
+        bres = ("criterion B (CALC mode, rho(intensity, required bandwidth) <= -0.6 required): " + ", ".join("%s %.2f (%s)" % (k, v, "pass" if v <= -0.6 else "fails") for k, v in rh.items())) if rh else "criterion B not evaluated yet"
+        d3 = ("INCOMPLETE (not PASS, not a bare FAIL): the re-specified roofline check is in progress and results/t3_summary.json is still the Part 1 result (%s). "
+              "Roofline runs finished so far: %s; " + bres.replace("%", "%%") + "; criterion A (stalls at fixed user bandwidth) started for: %s, no layer-complete run reported yet. "
+              "Pre-registered in model/t3_roofline2_criteria.json, cost-only amendment P2-A2, plan P2-7 (COORDINATION.md). "
+              "The Part 2 hypothesis was wrong: the bundled google.cfg already uses USER bandwidth and its stalls are all zero (results/evidence/31_original_stalls.txt)") % (
+            d3, ", ".join(x for x in done if not x.startswith("rl2_user")) or "none", ", ".join(user_started) or "none")
+        s3 = "INCOMPLETE"
     rows.append(Row("Task 3: SCALE-Sim vs analytical model", s3, d3, "results/t3_summary.json"))
 
     asum = L.jload("results/sweeps/arch_summary.json") or {}
@@ -312,14 +333,16 @@ def build_rows(L):
             why += "; %s ok of %s planned points (%s error, %s skipped after timeout, %s never reached before the deadline)" % (
                 sc.get("ok"), asum.get("planned_points"), sc.get("error", 0), sc.get("skipped_after_timeout", 0), asum.get("not_run_points"))
         elif name == "phys" and pfr:
-            fr = (pfr.get("frontier") or {}).get("gcd") or {}
-            so = (pfr.get("frontier") or {}).get("systolic_os") or {}
+            lf = phys_frontier_live(L)
+            fr = lf.get("gcd") or (pfr.get("frontier") or {}).get("gcd") or {}
+            so = lf.get("systolic_os") or (pfr.get("frontier") or {}).get("systolic_os") or {}
             lo = min(v["fastest_closing_period_ns"] for v in fr.values()) if fr else None
             hi = max(v["fastest_closing_period_ns"] for v in fr.values()) if fr else None
             mg = [u for u, v in fr.items() if v.get("wns_at_frontier_ns", 1) < 0.001]
             why += "; gcd closes at %s-%s ns depending on utilization%s" % (fmt_val(lo), fmt_val(hi), (" (about zero margin at %s ns, u%s)" % (fmt_val(lo), ",".join(mg))) if mg else "")
             for u, v in so.items():
-                why += "; systolic_os closes at %s ns and fails at %s ns (coarse, %s %% utilization only)" % (fmt_val(v.get("fastest_closing_period_ns")), fmt_val(v.get("next_failing_period_ns")), u)
+                why += "; systolic_os at %s %% utilization: closes at %s ns (WNS %s ns), fails at %s ns (WNS %s ns), %s points" % (
+                    u, fmt_val(v.get("fastest_closing_period_ns")), fmt_val(v.get("wns_at_frontier_ns")), fmt_val(v.get("next_failing_period_ns")), fmt_val(v.get("wns_at_next_failing_ns")), v.get("points"))
             why += "; %d failed point(s)" % len(pfr.get("failed_points") or [])
         elif pts:
             why += "; %d point(s)" % pts[0]
@@ -328,17 +351,57 @@ def build_rows(L):
     rstage = "51_repro_full" if stage_marker(L, "51_repro_full")[0] != "none" else "50_repro"
     sr, dr, rrep = task_state(L, rstage, "results/repro_report.json")
     if isinstance(rrep, dict):
-        dr += ("; %s of %s checks identical. Scope: Tasks 1 and 3 were re-run from clean directories; Task 2 reuses the two original clean runs "
-               "(nangate45/gcd and sky130hd/gcd, not a third run); systolic_os has a single run, so it has no determinism verdict" % (
-                   (rrep.get("counts") or {}).get("identical"), len(rrep.get("checks") or [])))
+        chk = rrep.get("checks") or []
+        if any("runs" in c for c in chk):
+            cnt = {}
+            for c in chk:
+                cnt[c.get("verdict")] = cnt.get(c.get("verdict"), 0) + 1
+            dr += "; %d checks, each with its run count and verdict in section 7: %s%s" % (
+                len(chk), ", ".join("%s %s" % (v, k) for k, v in sorted(cnt.items(), key=lambda x: str(x[0]))),
+                "" if rrep.get("complete", True) else "; NOT complete: at least one check was not rerun (cost) and is not counted as identical")
+        else:
+            dr += ("; %s of %s checks identical in the Part 1 report (results/repro_report.json predates the Part 2 repro: its scope was Tasks 1 and 3 re-run once, "
+                   "Task 2 from its two original runs, systolic_os a single run). The Part 2 report with every design's run count (gcd 4 runs on both PDKs, systolic_os 3, from "
+                   "results/t2_reruns.json) replaces it when `make repro` finishes" % (
+                       (rrep.get("counts") or {}).get("identical"), len(chk)))
     rows.append(Row("Repeatability rerun (repro)", sr, dr, "results/repro_report.json"))
     if demo_part2.active(L):
         rows.extend(demo_part2.extra_rows(L, Row, t1, t2s, t3s))
     return rows
 
 
+def phys_frontier_live(L):
+    """Per design and utilization: fastest closing period and the closest failing period below it, computed from results/sweeps/phys.jsonl
+    (the ground truth; phys_frontier.json is only regenerated by the plot step and can lag behind)."""
+    pts = {}
+    try:
+        for ln in open(L.p("results/sweeps/phys.jsonl"), encoding="utf-8"):
+            ln = ln.strip()
+            if not ln:
+                continue
+            try:
+                r = json.loads(ln)
+            except ValueError:
+                continue
+            if r.get("status") == "ok" and isinstance(r.get("wns_setup_ns"), (int, float)):
+                pts.setdefault((r.get("design"), str(r.get("core_utilization"))), {})[float(r["clock_period_ns"])] = r
+    except OSError:
+        return {}
+    out = {}
+    for (d, u), by in pts.items():
+        closing = [p for p, r in by.items() if r["wns_setup_ns"] >= 0]
+        if not closing:
+            continue
+        fc = min(closing)
+        below = [p for p in by if p < fc and by[p]["wns_setup_ns"] < 0]
+        nf = max(below) if below else None
+        out.setdefault(d, {})[u] = {"points": len(by), "fastest_closing_period_ns": fc, "wns_at_frontier_ns": by[fc]["wns_setup_ns"],
+                                   "next_failing_period_ns": nf, "wns_at_next_failing_ns": by[nf]["wns_setup_ns"] if nf is not None else None}
+    return out
+
+
 # ----------------------------------------------------------------------------- html helpers
-BADGE = {"DONE": "ok", "PASS": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
+BADGE = {"INCOMPLETE": "warn", "DONE": "ok", "PASS": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
 
 
 def badge(state):
@@ -434,7 +497,7 @@ TREE = [
     ("results/evidence/", "Scrubbed real terminal output of each stage's key command; rendered to PNG for the README."),
     ("results/.stages/", "Stage markers (.done/.failed/.blocked/.running) that this page reads for its status."),
     ("demo/index.html", "This page, generated by scripts/demo_build.py from whatever exists on disk."),
-    ("demo/run_demo.sh", "The 5-minute re-run: Task 1 (200 cases, both simulators), formal proof, one SCALE-Sim run, ORFS check."),
+    ("demo/run_demo.sh", "The 5-minute re-run: Task 1 (200 cases, both simulators), formal proof, one SCALE-Sim run, ORFS check, and the Task 3 roofline criterion B recomputed from saved reports. The routed-netlist gate-level simulation is left out (67 s, over the 1-minute-per-step rule)."),
     ("demo/assets/", "Waveform, layout, plots and evidence PNGs referenced by this page."),
     ("Makefile", "make preflight runtime images t1 t2 t3 sweeps repro demo all."),
 ]
@@ -701,6 +764,39 @@ def t1_block(L, s1):
     for k, x in R:
         h.append("<tr><th>%s</th><td>%s</td></tr>" % (e(k), e(str(x))))
     h.append("</tbody></table>")
+    h.append(t1_routed_block(L, s1))
+    return "".join(h)
+
+
+def t1_routed_block(L, s1):
+    """Routed-netlist equivalence and gate-level simulation (stage 11_eqy_routed), exactly as the files say."""
+    r = (s1 or {}).get("routed")
+    top = {k: (s1 or {}).get(k) for k in ("eqy_routed_pass", "gls_routed_pass") if k in (s1 or {})}
+    j = L.jload("results/p2_11_eqy_routed.json") or {}
+    st, body = demo_part2.marker(L, "11_eqy_routed")
+    h = ["<h4>Routed netlist: equivalence and gate-level simulation (stage 11_eqy_routed, marker: %s)</h4>" % e(st)]
+    if not r and not top:
+        return "".join(h) + "<p class='sub'><span class='b dim'>PENDING</span> no routed results in t1_summary.json yet.</p>"
+    h.append("<table class='kv'><tbody>")
+    for k, v in top.items():
+        h.append("<tr><th>%s</th><td class='%s'>%s</td></tr>" % (e(k), "okt" if v else "badt", e(fmt_val(v))))
+    if isinstance(r, dict):
+        pp = r.get("eqy_partitions_proved")
+        if isinstance(pp, list) and len(pp) == 2:
+            h.append("<tr><th>EQY partitions proved</th><td>%s of %s</td></tr>" % (pp[0], pp[1]))
+        for k, v in sorted((r.get("checks") or {}).items()):
+            h.append("<tr><th>%s</th><td class='%s'>%s</td></tr>" % (e(k), "okt" if v else "badt", e(fmt_val(v))))
+        for k in ("eqy_scope", "gls_scope", "note", "routed_netlist", "routed_netlist_sha256"):
+            if r.get(k):
+                h.append("<tr><th>%s</th><td>%s</td></tr>" % (e(k), e(str(r[k]))))
+    h.append("</tbody></table>")
+    if st in ("failed", "blocked") and body:
+        h.append("<p><b>Stage marker text:</b></p><pre>%s</pre>" % e(scrub_text(body)[:2500]))
+    if "P2-R1" in L.read("COORDINATION.md"):
+        h.append("<p class='sub'>Which simulator results exist and why the gate-level criterion is defined as it is: Decision P2-R1 (COORDINATION.md). "
+                 "A Verilator gate-level result is only claimed if the file above contains a true value for it; a false value there means the check did not pass or was not run.</p>")
+    for c in j.get("superseded") or []:
+        h.append("<p class='sub'>Superseded criterion kept: <code>%s</code> (%s), result: %s</p>" % (e(str(c.get("name"))), e(str(c.get("threshold"))), "pass" if c.get("pass") else "FAIL"))
     return "".join(h)
 
 
@@ -728,14 +824,32 @@ def repro_table(L, rr):
 
 
 
+def nz(x):
+    return "-" if x is None else fmt_val(x)
+
+
 def frontier_text(L):
     fr = L.jload("results/sweeps/phys_frontier.json")
     if not isinstance(fr, dict):
         return ""
-    h = ["<h3>Timing-closure frontier per design and utilization (from results/sweeps/phys_frontier.json)</h3><p class='sub'>%s</p>" % e(str(fr.get("note", "")))]
+    live = phys_frontier_live(L)
+    merged = {}
+    for des, by in (fr.get("frontier") or {}).items():
+        for u, v in by.items():
+            merged.setdefault(des, {})[u] = dict(v)
+    for des, by in live.items():
+        for u, v in by.items():
+            m = merged.setdefault(des, {}).setdefault(u, {})
+            if m.get("fastest_closing_period_ns") != v["fastest_closing_period_ns"] or m.get("next_failing_period_ns") != v["next_failing_period_ns"]:
+                m.pop("area_um2", None); m.pop("power_total_w", None); m.pop("tightest_swept_period_ns", None)
+            m.update(v)
+            m["marginal"] = v["wns_at_frontier_ns"] < 0.001
+            m["bracketed"] = v["next_failing_period_ns"] is not None
+            m["gap"] = (v["fastest_closing_period_ns"] - v["next_failing_period_ns"]) if v["next_failing_period_ns"] is not None else None
+    h = ["<h3>Timing-closure frontier per design and utilization (computed from results/sweeps/phys.jsonl; results/sweeps/phys_frontier.json supplies area and power where it is current)</h3><p class='sub'>%s</p>" % e(str(fr.get("note", "")))]
     h.append("<div class='tw'><table><thead><tr><th>design</th><th>core utilization</th><th>points</th><th>tightest period swept (ns)</th><th>fastest closing period (ns)</th>"
              "<th>setup WNS there (ns)</th><th>next tighter period (ns)</th><th>its WNS (ns)</th><th>area (um2)</th><th>power (W)</th><th>remark</th></tr></thead><tbody>")
-    for des, by in (fr.get("frontier") or {}).items():
+    for des, by in merged.items():
         for u, v in by.items():
             rem = []
             if v.get("marginal"):
@@ -743,11 +857,17 @@ def frontier_text(L):
             if not v.get("bracketed"):
                 rem.append("not bracketed")
             if des == "systolic_os":
-                rem.append("coarse: no bisection between the closing and failing period; one utilization only")
+                gap = v.get("gap")
+                if gap is not None and gap > 0.06:
+                    rem.append("coarse: no bisection between the closing and failing period")
+                elif gap is not None:
+                    rem.append("bracketed to %s ns" % nz(round(gap, 4)))
+                if len(by) < 2:
+                    rem.append("one utilization only (40 and 50 % points: see the plan accounting in section 12)")
             h.append("<tr><td>%s</td><td>%s %%</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (
-                e(des), e(u), e(fmt_val(v.get("points"))), e(fmt_val(v.get("tightest_swept_period_ns"))), e(fmt_val(v.get("fastest_closing_period_ns"))),
-                e(fmt_val(v.get("wns_at_frontier_ns"))), e(fmt_val(v.get("next_failing_period_ns"))), e(fmt_val(v.get("wns_at_next_failing_ns"))),
-                e(fmt_val(v.get("area_um2"))), e(fmt_val(v.get("power_total_w"))), e("; ".join(rem))))
+                e(des), e(u), e(nz(v.get("points"))), e(nz(v.get("tightest_swept_period_ns"))), e(nz(v.get("fastest_closing_period_ns"))),
+                e(nz(v.get("wns_at_frontier_ns"))), e(nz(v.get("next_failing_period_ns"))), e(nz(v.get("wns_at_next_failing_ns"))),
+                e(nz(v.get("area_um2"))), e(nz(v.get("power_total_w"))), e("; ".join(rem))))
     h.append("</tbody></table></div>")
     for fp in fr.get("failed_points") or []:
         h.append("<p><b>Failed point:</b> %s %s ns u%s: %s. Meaning: %s. Retry: <code>%s</code></p>" % (
@@ -765,8 +885,9 @@ def arch_coverage(L):
     for t, c in (a.get("coverage_per_topology") or {}).items():
         h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (
             e(t), c.get("planned"), c.get("ok"), c.get("error"), c.get("skipped_after_timeout"), c.get("not_run")))
-    h.append("</tbody></table></div><p>Planned grid %s points; %s ok, %s never reached before the sweep deadline (cut for time: points were ordered cheapest-first, so the "
-             "largest workloads and arrays are the ones missing).</p><ul>" % (a.get("planned_points"), (a.get("status_counts") or {}).get("ok"), a.get("not_run_points")))
+    h.append("</tbody></table></div><p>Accounting: every planned point is either done (ok), errored, skipped after a timeout, or <b>not reached</b>: cut because the sweep ran at low "
+             "priority behind stage jobs in the one-job-at-a-time lock queue and stopped at its deadline (cost/time only; the points were ordered cheapest-first, so the largest workloads "
+             "and arrays are the ones missing). Planned grid %s points; %s ok, %s not reached.</p><ul>" % (a.get("planned_points"), (a.get("status_counts") or {}).get("ok"), a.get("not_run_points")))
     for n in a.get("notes") or []:
         h.append("<li>%s</li>" % e(str(n)))
     h.append("<li>The numbers printed inside narrow heatmap cells can be clipped; read exact values from results/sweeps/arch.jsonl.</li></ul>")
@@ -791,9 +912,11 @@ def t3_block(L, s3):
     st, body, _ = stage_marker(L, "30_arch_model")
     if st in ("failed", "blocked") and body:
         h.append("<p><b>Stage marker (%s), written by the arch agent:</b></p><pre>%s</pre>" % (st, e(scrub_text(body)[:3000])))
+    h.append(demo_part2.t3_roofline2_block(L, s3) if demo_part2.active(L) else "")
     chk = s3.get("checks") or {}
     if chk:
-        h.append("<p><b>Criteria as recorded</b></p><div class='tw'><table><thead><tr><th>check</th><th>result</th></tr></thead><tbody>")
+        h.append("<p><b>Criteria as recorded in results/t3_summary.json%s</b></p><div class='tw'><table><thead><tr><th>check</th><th>result</th></tr></thead><tbody>" % (
+            " (this is still the Part 1 file: its roofline_* criteria are the superseded ones)" if "complete" not in s3 and demo_part2.active(L) else ""))
         for k, v in sorted(chk.items()):
             h.append("<tr><td><code>%s</code></td><td class='%s'>%s</td></tr>" % (e(k), "okt" if v else "badt", "pass" if v else "FAIL"))
         h.append("</tbody></table></div>")
@@ -1165,6 +1288,15 @@ FREE DISK AFTERWARDS (all inside ~/ai-chip-lab; nothing outside the lab was chan
 """ % ("\n".join("  %-8s %s - %s" % (r.state, r.label, r.detail) for r in rows), el_s, machine_str(L), vmtxt, bmc_secs(L), demo_timing(L))
 
 
+def recipes_note_md(L):
+    """The generated note on which make recipes really ran (results/make_recipes.md, verbatim) - replaces the Part 1 'honesty note'."""
+    t = L.read("results/make_recipes.md")
+    if t.strip():
+        return t.strip() + "\n"
+    return ("Which `make` recipes were executed for real: not recorded yet (results/make_recipes.md is generated by the recipe recorder; "
+            "in Part 1 only `make preflight` was executed as a recipe).\n")
+
+
 def build_root_readme(L, rows, vm):
     el_s, _ = elapsed_str(L)
     h = []
@@ -1191,12 +1323,11 @@ def build_root_readme(L, rows, vm):
              "make t2-stretch               # systolic_os through ORFS (about 30 min)\n"
              "make t3                       # Task 3: SCALE-Sim vs analytic model + roofline (exits non-zero while the roofline criterion fails)\n"
              "make sweeps                   # architecture + physical sweeps; they start no new point after the sweep deadline in budget.json\n"
-             "make repro                    # reruns Tasks 1 and 3 clean and compares; Task 2 reuses its own two-run check\n"
+             "make repro                    # reruns Task 1 in full and the cheap Task 3 set clean and compares; Task 2 runs come from results/t2_reruns.json\n"
              "make demo                     # plots + evidence PNGs + demo/index.html + this README\n"
              "make all                      # fail-soft loop over the above, always builds the demo, exits non-zero listing failed stages\n"
              "bash demo/run_demo.sh         # short cut (cached images, scratch output dir); needs the VM running\n```\n\n"
-             "Honesty note on the recipes: in the original run the stages were executed through their scripts; of the `make` recipes only `make preflight` "
-             "was executed as such, the others (`t2`, `t2-stretch`, `t3`, `sweeps`, `all`) were dry-run verified.\n")
+             + recipes_note_md(L))
     ev = sorted(glob.glob(L.p("results/evidence/*.txt")))
     h.append("## Evidence that it builds and runs\n\nTerminal output saved by each stage, rendered to images from the saved text (not OS screenshots).\n")
     got = False
