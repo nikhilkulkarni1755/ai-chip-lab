@@ -1,0 +1,9 @@
+{
+ "Conv5_1b": [
+  {
+   "alone_full_hold": true,
+   "hold_budget_s": 480,
+   "killed_after_s": 481
+  }
+ ]
+}
