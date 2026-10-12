@@ -69,7 +69,7 @@ def gds_norm_sha256(p):
         ln = (d[i] << 8) | d[i + 1]; rt = d[i + 2]
         if ln < 4:
             break
-        if rt in (0x02, 0x05):                      # BGNLIB, BGNSTR: 12 x int16 date fields
+        if rt in (0x01, 0x05):                      # BGNLIB(1), BGNSTR(5): 12 x int16 date fields
             for k in range(i + 4, i + ln):
                 out[k] = 0
         i += ln
