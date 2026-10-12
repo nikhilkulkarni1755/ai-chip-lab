@@ -1,5 +1,5 @@
 {
-  "generated_epoch": 1791825705,
+  "generated_epoch": 1791830185,
   "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
   "tool_versions": [
     "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)",
@@ -40,32 +40,40 @@
         "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
-        "cts": 31.26,
-        "detailedplace": 1.57,
-        "finish": 5.41,
-        "finish_merge": 2.86,
-        "floorplan": 14.04,
-        "globalplace": 5.72,
-        "globalplace_io": 0.72,
-        "globalplace_skip_io": 2.92,
-        "globalroute": 111.97,
-        "placeopt": 1.77,
-        "synth": 1.8
+        "cts": 16.66,
+        "detailedplace": 1.26,
+        "finish": 4.75,
+        "finish_merge": 2.7,
+        "floorplan": 10.6,
+        "globalplace": 3.42,
+        "globalplace_io": 0.52,
+        "globalplace_skip_io": 1.86,
+        "globalroute": 67.68,
+        "placeopt": 1.26,
+        "synth": 1.62
       },
-      "wall_s": 257,
+      "wall_s": 631,
       "gds": {
         "path": "orfs/work/results/nangate45/gcd/base/6_final.gds",
         "bytes": 609862,
-        "sha256": "48253af4692dddc5a66d6320e53746a429a564cfc1741c3a5ff68f0bc1a9b177",
+        "sha256": "fe0050db642ce69ecdbee2f5d16861d4efe54e4a43e54740e77826276bd2773b",
         "sha256_timestamps_zeroed": "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d"
       },
       "checks": {
-        "thresholds_pass": null,
+        "thresholds_pass": true,
         "drc_errors_zero": true,
         "gds_exists": true,
         "deterministic": true
       },
-      "threshold_check": null,
+      "threshold_check": {
+        "passed": true,
+        "n_rules": 27,
+        "warnings": [
+          "[WARN] synth__canonical_netlist__hash differs test: 061b4cd4004130e38a0d4380ac60e08e664a6eb9 == 6eab9bf1a5bd88a4f570c5a4fa7e0a72f6cd0e38",
+          "[WARN] synth__netlist__hash differs test: 9e39a316f1ac13251b7cb6a660740991997af5c3 == d0ed08e4f1392b96375711f43f15c146df735c44"
+        ],
+        "failures": []
+      },
       "determinism": {
         "verdict": "PASS",
         "gds_sha256_timestamps_zeroed": [
@@ -141,7 +149,7 @@
         ],
         "gds_sha256": [
           "619476af08c123ffe22f9246fb436366c1b6b253d055ce410eca0683cb98dd2b",
-          "48253af4692dddc5a66d6320e53746a429a564cfc1741c3a5ff68f0bc1a9b177"
+          "fe0050db642ce69ecdbee2f5d16861d4efe54e4a43e54740e77826276bd2773b"
         ],
         "gds_identical": false,
         "identical": true
@@ -182,32 +190,37 @@
         "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
-        "cts": 14.53,
-        "detailedplace": 1.75,
-        "finish": 5.29,
-        "finish_merge": 2.7,
-        "floorplan": 4.61,
-        "globalplace": 3.24,
-        "globalplace_io": 0.69,
-        "globalplace_skip_io": 2.24,
-        "globalroute": 63.91,
-        "placeopt": 1.43,
-        "synth": 4.36
+        "cts": 15.13,
+        "detailedplace": 1.85,
+        "finish": 8.48,
+        "finish_merge": 4.24,
+        "floorplan": 5.05,
+        "globalplace": 4.97,
+        "globalplace_io": 0.81,
+        "globalplace_skip_io": 2.54,
+        "globalroute": 68.4,
+        "placeopt": 1.79,
+        "synth": 4.4
       },
-      "wall_s": 296,
+      "wall_s": 368,
       "gds": {
         "path": "orfs/work/results/sky130hd/gcd/base/6_final.gds",
         "bytes": 974128,
-        "sha256": "f0c77dcc0b07a7a8d4504f5abb8a37f90d8b576c876887e8a41f6e66b7f6504b",
+        "sha256": "f8970a47bb5297ab44ad933a8e34680de6991dc96a74ccfa398c7efb95cb09ba",
         "sha256_timestamps_zeroed": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809"
       },
       "checks": {
-        "thresholds_pass": null,
+        "thresholds_pass": true,
         "drc_errors_zero": true,
         "gds_exists": true,
         "deterministic": true
       },
-      "threshold_check": null,
+      "threshold_check": {
+        "passed": true,
+        "n_rules": 27,
+        "warnings": [],
+        "failures": []
+      },
       "determinism": {
         "verdict": "PASS",
         "gds_sha256_timestamps_zeroed": [
@@ -283,7 +296,7 @@
         ],
         "gds_sha256": [
           "14064c05e756f4801ed90f12e989565f60fce8e500758ca2ec2e7ebbd1b102c7",
-          "f0c77dcc0b07a7a8d4504f5abb8a37f90d8b576c876887e8a41f6e66b7f6504b"
+          "f8970a47bb5297ab44ad933a8e34680de6991dc96a74ccfa398c7efb95cb09ba"
         ],
         "gds_identical": false,
         "identical": true

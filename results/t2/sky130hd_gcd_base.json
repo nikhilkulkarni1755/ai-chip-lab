@@ -25,35 +25,37 @@
     "clock_period_ns"
   ],
   "stage_runtime_s": {
-    "cts": 28.1,
-    "detailedplace": 2.72,
-    "finish": 7.33,
-    "finish_merge": 4.18,
+    "cts": 15.13,
+    "detailedplace": 1.85,
+    "finish": 8.48,
+    "finish_merge": 4.24,
     "floorplan": 5.05,
-    "globalplace": 3.9,
-    "globalplace_io": 1.67,
-    "globalplace_skip_io": 2.05,
-    "globalroute": 127.98,
-    "placeopt": 2.72,
-    "synth": 9.33
+    "globalplace": 4.97,
+    "globalplace_io": 0.81,
+    "globalplace_skip_io": 2.54,
+    "globalroute": 68.4,
+    "placeopt": 1.79,
+    "synth": 4.4
   },
-  "total_elapsed_s_flow": 195.03,
+  "total_elapsed_s_flow": 117.66,
   "run": {
     "platform": "sky130hd",
     "design": "gcd",
     "variant": "base",
     "rc": 0,
-    "wall_s": 646,
-    "start_epoch": 1791802377,
+    "wall_s": 368,
+    "start_epoch": 1791828846,
     "config": "/OpenROAD-flow-scripts/flow/designs/sky130hd/gcd/config.mk",
     "extra": "",
     "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
-    "num_cores": 3
+    "num_cores": 3,
+    "rtl_sha256": "85f945db2d569064eb5e6262f9986ef1cced65591641aa9cd3ac51d0fc5bd3f9",
+    "rtl_last_commit": "cebd174"
   },
   "gds": {
     "path": "orfs/work/results/sky130hd/gcd/base/6_final.gds",
     "bytes": 974128,
-    "sha256": "ebc1e0bff33fb35838d0b673877e37d14d2a96e7a0668495a62a1cfbd9ea2524",
+    "sha256": "f8970a47bb5297ab44ad933a8e34680de6991dc96a74ccfa398c7efb95cb09ba",
     "sha256_timestamps_zeroed": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809"
   },
   "flow_version": "unknown",

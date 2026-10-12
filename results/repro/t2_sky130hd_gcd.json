@@ -2,8 +2,8 @@
   "platform": "sky130hd",
   "design": "gcd",
   "new_run_variant": "base",
-  "new_run_id": "p2_1791821635",
-  "runs": 3,
+  "new_run_id": "p2_1791828846",
+  "runs": 4,
   "identical": true,
   "verdict": "IDENTICAL",
   "new_gds_sha256_timestamps_zeroed": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809",
@@ -21,6 +21,17 @@
     },
     {
       "vs": "sky130hd_gcd_run2",
+      "identical": true,
+      "differing_fields": {},
+      "localized_stages": [],
+      "gds_identical_ignoring_timestamps": true,
+      "num_cores": [
+        3,
+        3
+      ]
+    },
+    {
+      "vs": "sky130hd_gcd_p2_1791821635",
       "identical": true,
       "differing_fields": {},
       "localized_stages": [],
