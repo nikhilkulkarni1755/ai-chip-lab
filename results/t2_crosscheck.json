@@ -1,0 +1,164 @@
+{
+  "tolerance_doc": "docs/t2_crosscheck_tolerance.md",
+  "designs": {
+    "nangate45/gcd": {
+      "clock_period_ns": 0.25,
+      "two_sided": {
+        "finish__timing__setup__ws": {
+          "rule_limit": -0.193,
+          "implied_reference": -0.1805,
+          "margin": 0.0125,
+          "ours": -0.161583,
+          "delta": 0.01892,
+          "within_band": false,
+          "direction": "better"
+        },
+        "finish__timing__setup__tns": {
+          "rule_limit": -7.99,
+          "implied_reference": -7.94,
+          "margin": 0.05,
+          "ours": -7.08646,
+          "delta": 0.85354,
+          "within_band": false,
+          "direction": "better"
+        },
+        "finish__design__instance__area": {
+          "rule_limit": 1115,
+          "implied_reference": 969.56522,
+          "margin": 145.43478,
+          "ours": 943.502,
+          "delta": -26.06322,
+          "within_band": true,
+          "direction": "better"
+        },
+        "placeopt__design__instance__area": {
+          "rule_limit": 952,
+          "implied_reference": 827.82609,
+          "margin": 124.17391,
+          "ours": 827.526,
+          "delta": -0.30009,
+          "within_band": true,
+          "direction": "better"
+        },
+        "placeopt__design__instance__count__stdcell": {
+          "rule_limit": 818,
+          "implied_reference": 711.30435,
+          "margin": 106.69565,
+          "ours": 711,
+          "delta": -0.30435,
+          "within_band": true,
+          "direction": "better"
+        },
+        "detailedroute__route__wirelength": {
+          "rule_limit": 7219,
+          "implied_reference": 6277.3913,
+          "margin": 941.6087,
+          "ours": 4429,
+          "delta": -1848.3913,
+          "within_band": false,
+          "direction": "better"
+        }
+      },
+      "one_sided_hold": {
+        "finish__timing__hold__ws": {
+          "rule_limit": -0.0125,
+          "implied_reference": 0.0,
+          "ours": 0.0880612,
+          "not_worse": true
+        },
+        "finish__timing__hold__tns": {
+          "rule_limit": -0.05,
+          "implied_reference": 0.0,
+          "ours": 0,
+          "not_worse": true
+        }
+      },
+      "no_published_value": {
+        "finish__power__total": 0.00633406,
+        "finish__design__instance__utilization": 0.876235,
+        "total_elapsed_seconds": 218.4
+      },
+      "matches_published": false
+    },
+    "sky130hd/gcd": {
+      "clock_period_ns": 1.1,
+      "two_sided": {
+        "finish__timing__setup__ws": {
+          "rule_limit": -1.52,
+          "implied_reference": -1.465,
+          "margin": 0.055,
+          "ours": -1.45954,
+          "delta": 0.00546,
+          "within_band": true,
+          "direction": "better"
+        },
+        "finish__timing__setup__tns": {
+          "rule_limit": -65.3,
+          "implied_reference": -65.08,
+          "margin": 0.22,
+          "ours": -64.9417,
+          "delta": 0.1383,
+          "within_band": true,
+          "direction": "better"
+        },
+        "finish__design__instance__area": {
+          "rule_limit": 5812,
+          "implied_reference": 5053.91304,
+          "margin": 758.08696,
+          "ours": 5412.69,
+          "delta": 358.77696,
+          "within_band": true,
+          "direction": "worse"
+        },
+        "placeopt__design__instance__area": {
+          "rule_limit": 4663,
+          "implied_reference": 4054.78261,
+          "margin": 608.21739,
+          "ours": 4055.14,
+          "delta": 0.35739,
+          "within_band": true,
+          "direction": "worse"
+        },
+        "placeopt__design__instance__count__stdcell": {
+          "rule_limit": 550,
+          "implied_reference": 478.26087,
+          "margin": 71.73913,
+          "ours": 478,
+          "delta": -0.26087,
+          "within_band": true,
+          "direction": "better"
+        },
+        "detailedroute__route__wirelength": {
+          "rule_limit": 13554,
+          "implied_reference": 11786.08696,
+          "margin": 1767.91304,
+          "ours": 11728,
+          "delta": -58.08696,
+          "within_band": true,
+          "direction": "better"
+        }
+      },
+      "one_sided_hold": {
+        "finish__timing__hold__ws": {
+          "rule_limit": -0.055,
+          "implied_reference": 0,
+          "ours": 0.532397,
+          "not_worse": true
+        },
+        "finish__timing__hold__tns": {
+          "rule_limit": -0.22,
+          "implied_reference": 0,
+          "ours": 0,
+          "not_worse": true
+        }
+      },
+      "no_published_value": {
+        "finish__power__total": 0.00985037,
+        "finish__design__instance__utilization": 0.919643,
+        "total_elapsed_seconds": 195.03
+      },
+      "matches_published": true
+    }
+  },
+  "matches_published": false
+}
