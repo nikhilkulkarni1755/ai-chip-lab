@@ -66,6 +66,7 @@ if [ -z "${T1R_INSIDE:-}" ]; then
       -v "$LAB_DIR":/lab -w /lab \
       -e T1R_INSIDE=1 -e T1R_PHASE="$1" -e T1R_STEPS="$STEPS" -e PYTHONHASHSEED=0 \
       -e T1R_CHUNK_SECONDS="${T1R_CHUNK_SECONDS:-540}" -e T1R_RESUME="${T1R_RESUME:-0}" \
+      -e T1R_EQY_TARGETS="${T1R_EQY_TARGETS:-}" \
       -e T1_ROUTED_NETLIST="${T1_ROUTED_NETLIST:-}" \
       -e T1R_IMAGE_REF="$LAB_SIM_IMAGE" -e T1R_ORFS_IMAGE="$ORFS_IMAGE" -e T1R_LIB_IN_IMAGE="$LIB_IN_IMAGE" \
       -e T1R_IMAGE_ID="$IMAGE_ID" \
@@ -92,10 +93,34 @@ if [ -z "${T1R_INSIDE:-}" ]; then
     for st in gls_icarus gls_verilator gls_neg; do phase "$st" || true; done
   fi
   if [[ " $STEPS " == *" eqy "* ]]; then
-    for chunk in $(seq 1 "${T1R_MAX_CHUNKS:-12}"); do
-      [ -f "$WORK/eqy_routed.finished" ] && break
-      echo "[t1r] EQY chunk $chunk"
-      phase eqy || true
+    # EQY holds: the first one sets the proof up (and starts solving); after that every
+    # hold gets explicit partitions -- all cheap wrapper partitions at once, then the
+    # per-PE MAC partitions two at a time (they run in parallel and take ~5 min each),
+    # so no hold is cut off in the middle of a proof.  T1R_EQY_BUDGET_SECONDS caps the
+    # total lock time spent on EQY solving in this invocation (default: no cap).
+    spent=0; budget="${T1R_EQY_BUDGET_SECONDS:-0}"
+    hold() {  # hold <partitions...>
+      local t0; t0=$(date +%s)
+      T1R_EQY_TARGETS="$*" phase eqy || true
+      spent=$(( spent + $(date +%s) - t0 ))
+      echo "[t1r] EQY lock time used in this invocation: ${spent} s"
+    }
+    todo() {  # todo <grep -E pattern on partition names>: partitions without a PASS/FAIL status
+      local p
+      cut -d' ' -f2 "$WORK/eqy_routed/partition.list" 2>/dev/null | grep -E "$1" | sort -t. -k3 -n | while read -r p; do
+        grep -qE '^(PASS|FAIL)' "$WORK/eqy_routed/strategies/$p/smt/status" 2>/dev/null || echo "$p"
+      done
+    }
+    [ -s "$WORK/eqy_routed/strategies.mk" ] || hold
+    w="$(todo -v '\.acc_o\.' | tr '\n' ' ')"
+    [ -n "${w// /}" ] && hold $w
+    while :; do
+      m="$(todo '\.acc_o\.' | head -n "${T1R_EQY_PARALLEL:-2}" | tr '\n' ' ')"
+      [ -n "${m// /}" ] || break
+      if [ "$budget" -gt 0 ] && [ $(( spent + 330 )) -gt "$budget" ]; then
+        echo "[t1r] EQY lock budget ($budget s) reached with partitions still open: $(todo '.' | tr '\n' ' ')"; break
+      fi
+      hold $m
     done
     for st in eqy_neg_rtl_mac eqy_neg_rtl_reg eqy_neg_netlist; do phase "$st" || true; done
   fi
@@ -202,19 +227,33 @@ mkeqy() {  # mkeqy <rtl dir> <netlist> <out file>
   sed -e "s#@RTL@#$1#g" -e "s#@LIB@#$WORK_ABS/cells/NangateOpenCellLibrary_typical.lib#g" -e "s#@NETLIST@#$2#g" \
     eqy/systolic_os_routed.eqy.in > "$3"
 }
-# Resumable: each call runs EQY for at most T1R_CHUNK_SECONDS; `eqy -c` continues an
-# existing work directory, re-running only the partitions without a result.
+# One hold of EQY work.  Without a set-up proof directory: `eqy -f` (partitions the
+# design, writes one make target per partition and starts solving) for at most
+# T1R_CHUNK_SECONDS.  Afterwards: exactly the partitions named in T1R_EQY_TARGETS, through
+# the make targets EQY generated (strategies.mk), so finished partitions are never redone.
 equiv() {
-  local cont=(-f) rc
-  if [ -d "$WORK/eqy_routed/partitions" ]; then cont=(-c); else mkeqy "$LAB_DIR/rtl" "$NETLIST_ABS" "$WORK/routed.eqy"; fi
-  timeout "${T1R_CHUNK_SECONDS:-540}" eqy "${cont[@]}" -j 2 -d "$WORK/eqy_routed" "$WORK/routed.eqy"
-  rc=$?
-  if grep -q "DONE (" "$WORK/eqy_routed/logfile.txt" 2>/dev/null && [ $rc -ne 124 ]; then
-    echo "$rc" > "$WORK/eqy_routed.finished"
+  local rc p targets=()
+  if [ ! -s "$WORK/eqy_routed/strategies.mk" ]; then
+    mkeqy "$LAB_DIR/rtl" "$NETLIST_ABS" "$WORK/routed.eqy"
+    timeout "${T1R_CHUNK_SECONDS:-540}" eqy -f -j 2 -d "$WORK/eqy_routed" "$WORK/routed.eqy"; rc=$?
+  else
+    for p in ${T1R_EQY_TARGETS:-}; do targets+=("strategies/$p/smt/status"); done
+    [ ${#targets[@]} -gt 0 ] || { echo "no partitions requested"; return 0; }
+    echo "partitions in this hold: ${T1R_EQY_TARGETS}"
+    timeout "${T1R_CHUNK_SECONDS:-540}" make -j 2 -C "$WORK/eqy_routed" -f strategies.mk "${targets[@]}"; rc=$?
   fi
-  echo "eqy chunk exit code: $rc (124 = chunk time limit, continued in the next chunk)"
-  cat "$WORK/eqy_routed/logfile.txt" >> "$WORK/eqy_routed_all_chunks.log" 2>/dev/null
+  echo "hold exit code: $rc (124 = time limit of this hold)"
+  for p in ${T1R_EQY_TARGETS:-}; do echo "status $p: $(cat "$WORK/eqy_routed/strategies/$p/smt/status" 2>/dev/null || echo none)"; done
   return 0
+}
+# EQY's own verdict over all partition results (nothing is solved here: finished
+# partitions are skipped; it is only run when every partition has a result).
+equiv_verdict() {
+  local p
+  while read -r _ p _; do
+    grep -qE '^(PASS|FAIL)' "$WORK/eqy_routed/strategies/$p/smt/status" 2>/dev/null || { echo "open partition: $p"; return 3; }
+  done < "$WORK/eqy_routed/partition.list"
+  timeout "$TMO" eqy -c -j 2 -d "$WORK/eqy_routed" "$WORK/routed.eqy"
 }
 # Negative controls: one injected bug, only the partition that contains it is solved
 # (apply <partition>, the rest goes to a dummy strategy); EQY must not prove it.
@@ -237,9 +276,13 @@ equiv_neg() {  # equiv_neg <tag> <partition> rtl <file> <sed expr> | netlist
   echo "eqy exit code: $rc (non-zero expected)"
   [ $rc -ne 0 ] && [ $rc -ne 124 ]
 }
-if want eqy && in_phase eqy && [ ! -f "$WORK/eqy_routed.finished" ]; then
-  n=$(grep -c '^eqy_routed_chunk' "$WORK/steps.tsv" 2>/dev/null || true)
-  step "eqy_routed_chunk$(( ${n:-0} + 1 ))" 900 equiv
+if want eqy && in_phase eqy; then
+  n=$(grep -c '^eqy_routed_hold' "$WORK/steps.tsv" 2>/dev/null || true)
+  n=$(( ${n:-0} + $(grep -c '^eqy_routed_chunk' "$WORK/steps.tsv" 2>/dev/null || true) ))
+  RESUME=0 step "eqy_routed_hold$(( n + 1 ))" 600 equiv
+fi
+if want eqy && in_phase finish; then
+  RESUME=0 step eqy_routed_verdict 300 equiv_verdict || true
 fi
 if want eqy; then
   in_phase eqy_neg_rtl_mac && step eqy_neg_rtl_mac 540 equiv_neg rtl_mac systolic_os.acc_o.0 rtl mac_int8.sv \

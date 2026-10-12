@@ -251,23 +251,41 @@ def summary(a):
     # ---------------------------------------------------------------- EQY
     if "eqy" in steps_run:
         d = os.path.join(work, "eqy_routed")
-        log, res, status, names = eqy_partitions(d)
-        # the proof runs in resumable chunks (eqy -c); results of earlier chunks count
-        all_log = read(os.path.join(work, "eqy_routed_all_chunks.log"))
-        for m in re.finditer(r"Proved equivalence of partition '([^']+)' using strategy '([^']+)'", all_log):
-            res[m.group(1)] = ("proved", m.group(2))
-        fin = read(os.path.join(work, "eqy_routed.finished")).strip()
-        chunks = sorted(k for k in step_rc if k.startswith("eqy_routed_chunk"))
-        runtimes["eqy_routed"] = sum(runtimes[k] for k in chunks)
-        step_rc["eqy_routed"] = int(fin) if fin.isdigit() else 124
+        log, _, status, names = eqy_partitions(d)
+        # per-partition results: the status file each partition's solver run wrote
+        res, seconds = {}, {}
+        for n in names:
+            sd = os.path.join(d, "strategies", n, "smt")
+            st = read(os.path.join(sd, "status")).split()
+            if st and st[0] == "PASS":
+                res[n] = ("proved", "smt")
+            elif st:
+                res[n] = ("not proved: solver status " + st[0], "smt")
+            m = re.search(r"Elapsed clock time.*\((\d+)\)", read(os.path.join(sd, n, "logfile.txt")))
+            if m and st:
+                seconds[n] = int(m.group(1))
+        holds = sorted(k for k in step_rc if k.startswith(("eqy_routed_hold", "eqy_routed_chunk")))
+        runtimes["eqy_routed"] = sum(runtimes[k] for k in holds)
+        fin_all = all(n in res for n in names) and bool(names)
+        chunks, fin = holds, ("0" if fin_all else "")
+        step_rc["eqy_routed"] = step_rc.get("eqy_routed_verdict", 3)
+        engine = (re.search(r"^engine (.+)$", read("eqy/systolic_os_routed.eqy.in"), re.M) or [None, None])[1]
         proved = [n for n in names if res.get(n, ("",))[0] == "proved"]
-        not_proved = {n: res.get(n, ("no result", ""))[0] for n in names if n not in proved}
+        not_proved = {n: res.get(n, ("not attempted or stopped by the lock-time budget (no solver result)", ""))[0]
+                      for n in names if n not in proved}
         mac = [n for n in names if ".acc_o." in n]
         values["eqy_routed"] = {
             "status": status, "partitions": len(names), "partitions_proved": len(proved),
             "partitions_not_proved": not_proved,
             "mac_partitions": len(mac), "mac_partitions_proved": len([n for n in mac if n in proved]),
-            "strategies_used": sorted({res[n][1] for n in proved}),
+            "partitions_proved_list": sorted(proved),
+            "engine": f"EQY strategy 'use sby', depth 2, {engine} (x-propagating miter per partition)",
+            "engines_tried": {"smtbmc bitwuzla": "proves a per-PE MAC partition in 4-5 min (used)",
+                              "aiger rIC3": "proved the one MAC partition it was tried on in about 4.5 min",
+                              "smtbmc yices": "no result within 10 min on one MAC partition",
+                              "abc pdr": "stopped after about 4 min without a result (comparison cut short)"},
+            "seconds_per_partition": dict(sorted(seconds.items())),
+            "lock_holds": len(holds),
             "seconds": runtimes.get("eqy_routed"), "chunks": len(chunks),
             "finished": fin.isdigit(),
             "scope": "whole flat routed netlist vs flattened RTL. The routed netlist has no hierarchy, so the "
