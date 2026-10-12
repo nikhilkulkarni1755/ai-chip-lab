@@ -1,0 +1,85 @@
+{
+ "stage": "60_power_activity (input)",
+ "generator": "scripts/t1_power_vcd.sh results/power_vcd",
+ "simulator": "Icarus Verilog, zero-delay gate-level simulation (functional switching only, no glitches)",
+ "design": "routed nangate45 systolic_os, one cell module per instance, cell models generated from the pinned Liberty",
+ "simulated_netlist": "results/part1_snapshot/systolic_os_routed/6_final.v",
+ "simulated_netlist_sha256": "f4976d1a6b34a19700dfb0e6246cb8221cf9792255f28f48e41a69dcbd06e293",
+ "simulated_netlist_sha256_is_expected": true,
+ "vcd_scope": "systolic_os",
+ "testbench": "tb/test_power_vcd.py (results checked against NumPy in the same run)",
+ "seed_rule": "numpy default_rng([1234, 2000000000]), the same stream and schedule for every workload",
+ "note": "each VCD starts with a $date header written by the simulator, so vcd_sha256 identifies these files; a rerun gives the same value changes but a different file hash",
+ "workloads": {
+  "random": {
+   "data": "uniform INT8 operands",
+   "seed": 1234,
+   "cases": {
+    "tiles": 16,
+    "K": 32,
+    "matrix_products": 16,
+    "mac_steps_per_tile": 32
+   },
+   "clock_period_ps": 4000,
+   "clock_cycles": 624,
+   "active_window_ps": [
+    30000.0,
+    2526000.0
+   ],
+   "operand_zero_fraction": 0.003662,
+   "mismatching_elements_vs_numpy": 0,
+   "vcd": "random.vcd",
+   "vcd_bytes": 37329672,
+   "vcd_sha256": "5967f042eafc500dc9f710057a848781b5020a00307c31e34fa022fab21b1cb5",
+   "vcd_timescale": "1ps",
+   "json": "random.json"
+  },
+  "sparse50": {
+   "data": "uniform INT8, each element zeroed with p = 0.5",
+   "seed": 1234,
+   "cases": {
+    "tiles": 16,
+    "K": 32,
+    "matrix_products": 16,
+    "mac_steps_per_tile": 32
+   },
+   "clock_period_ps": 4000,
+   "clock_cycles": 624,
+   "active_window_ps": [
+    30000.0,
+    2526000.0
+   ],
+   "operand_zero_fraction": 0.498535,
+   "mismatching_elements_vs_numpy": 0,
+   "vcd": "sparse50.vcd",
+   "vcd_bytes": 20276323,
+   "vcd_sha256": "7327420575046ebcf4b83174630e64cda608d0e5cdde574afa01734ee998d6a2",
+   "vcd_timescale": "1ps",
+   "json": "sparse50.json"
+  },
+  "allmax": {
+   "data": "every operand 127",
+   "seed": 1234,
+   "cases": {
+    "tiles": 16,
+    "K": 32,
+    "matrix_products": 16,
+    "mac_steps_per_tile": 32
+   },
+   "clock_period_ps": 4000,
+   "clock_cycles": 624,
+   "active_window_ps": [
+    30000.0,
+    2526000.0
+   ],
+   "operand_zero_fraction": 0.0,
+   "mismatching_elements_vs_numpy": 0,
+   "vcd": "allmax.vcd",
+   "vcd_bytes": 13349050,
+   "vcd_sha256": "7e94d65d78f131fa6bde2ccf5c572c17872b5af1383479fe92ec8ca6c67e14d6",
+   "vcd_timescale": "1ps",
+   "json": "allmax.json"
+  }
+ },
+ "ok": true
+}

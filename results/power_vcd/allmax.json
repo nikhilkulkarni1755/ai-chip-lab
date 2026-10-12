@@ -1,0 +1,14 @@
+{
+ "K": 32,
+ "active_window_ps": [
+  30000.0,
+  2526000.0
+ ],
+ "clock_cycles": 624,
+ "clock_period_ps": 4000,
+ "mismatching_elements_vs_numpy": 0,
+ "operand_zero_fraction": 0.0,
+ "seed": 1234,
+ "tiles": 16,
+ "workload": "allmax"
+}

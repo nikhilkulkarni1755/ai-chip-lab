@@ -1,0 +1,36 @@
+{
+ "name": "eqy_neg_netlist_cone",
+ "stage": "11_eqy_routed",
+ "what": "one cell function changed inside a per-PE cone of the routed netlist; only that PE's partition is solved",
+ "partition": "systolic_os.acc_o.0",
+ "mutation": {
+  "output_bit": "acc_o[5]",
+  "accumulator_flop": "\\g_row[0].g_col[0].u_mac.acc[5]$_SDFFE_PP0P_",
+  "output_buffers": [
+   "output534"
+  ],
+  "mutated_cell": "_14041_",
+  "cell_type_before": "AND2_X1",
+  "cell_type_after": "OR2_X1",
+  "cell_pins": {
+   "A1": "net1",
+   "A2": "net55",
+   "ZN": "_01267_"
+  },
+  "combinational_depth_before_flop_D": 7,
+  "netlist_lines_changed": 1,
+  "how_chosen": "first pin-compatible cell at depth >= 3 in a breadth-first search backwards from the D pin of the accumulator register behind this output bit, stopping at flip-flops"
+ },
+ "eqy_exit_code": 2,
+ "eqy_message": "partitions not equivalent",
+ "solver_status": "FAIL",
+ "basecase": "FAIL",
+ "induction": null,
+ "solver_seconds": 8,
+ "hold_seconds": 32,
+ "rejected": true,
+ "rejected_as": "counterexample: the solver found an input sequence on which RTL and mutated netlist differ",
+ "depth": 4,
+ "engine": "sby smtbmc bitwuzla, depth 4 (the proof's strategy with a deeper bounded check, used for this control only)",
+ "command": "NEGCONE_DEPTH=4 scripts/p2_negcone.sh"
+}
