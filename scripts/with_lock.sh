@@ -6,6 +6,9 @@
 # Priority: default "high". Sweep points must use LOCK_PRIO=low: a low-priority job does not take the
 # lock while any live high-priority job is waiting, so stage work is never starved by sweeps.
 # Within one priority the queue is first-come-first-served (by registration time).
+# A low-priority job also waits LOCK_LOW_GRACE seconds (default 45) after a high-priority job has released the
+# lock, so a driver that queues its next high-priority job right after the previous one is not interleaved with
+# long sweep points.
 #
 # Guarantees (each one closes a failure mode found in review, see COORDINATION.md Decision P2-3):
 #  * Stale locks are broken only under a second short mutex and re-checked there, so two waiters can no
@@ -89,6 +92,9 @@ ahead_of_me() {  # 0 = some live job must go first
   local f
   if [ "$prio" = low ]; then
     for f in "$W"/*; do [ -e "$f" ] || continue; marker_live "$f" && return 0; done
+    # grace period: a chain of high-priority jobs (driver loops like `make t3` queue their next job a moment
+    # after the previous one ends) must not be split by a 30-minute sweep point slipping into the gap
+    if [ -e "$C/heavy.lasthigh" ] && [ $(( $(date +%s) - $(stat -f %m "$C/heavy.lasthigh" 2>/dev/null || echo 0) )) -lt "${LOCK_LOW_GRACE:-45}" ]; then return 0; fi
   fi
   for f in $(ls -tr "$Q" 2>/dev/null); do
     [ "$Q/$f" = "$me" ] && return 1
@@ -159,5 +165,6 @@ while :; do
   [ "$sigseen" = 0 ] && break            # real exit status; otherwise wait was interrupted by a signal
   kill -0 "$child" 2>/dev/null || { wait "$child" 2>/dev/null; r2=$?; [ "$r2" != 127 ] && rc=$r2; break; }
 done
+[ "$prio" = high ] && : > "$C/heavy.lasthigh"
 log "FREE $owner rc=$rc ran=$(( $(date +%s) - T0 - waited ))s"
 exit $rc

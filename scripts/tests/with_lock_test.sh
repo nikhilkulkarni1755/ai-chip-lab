@@ -1,7 +1,7 @@
 #!/bin/bash
 # Test harness for scripts/with_lock.sh. Usage: locktest.sh <with_lock.sh> <empty test root dir>
 L="$1"; T="$2"
-export LAB_LOCK_ROOT="$T" LOCK_SKIP_BUSY_CHECK=1 LOCK_POLL=1
+export LAB_LOCK_ROOT="$T" LOCK_SKIP_BUSY_CHECK=1 LOCK_POLL=1 LOCK_LOW_GRACE=0
 cat > "$T/job.sh" <<'EOF'
 #!/bin/bash
 echo "S $1" >> "$2/trace"; sleep 0.4; echo "E $1" >> "$2/trace"
@@ -58,3 +58,13 @@ EON
 perl -e 'alarm 20; exec @ARGV' "$L" outer bash "$T/nest.sh" "$L"; echo "11 nested without env (ancestry): rc=$? (want 0)"
 LAB_LOCK_HELD=1 perl -e 'alarm 20; exec @ARGV' "$L" x echo stale-held-queued; echo "12 stale LAB_LOCK_HELD=1 queues normally: rc=$?"
 grep -E 'WARN' "$T/logs/part2/lock.log" | cut -c1-150
+
+# 13. grace period: chain of high jobs with 2 s gaps must not be split by a waiting low job
+: > "$T/order"
+cat > "$T/chain.sh" <<'EOC'
+#!/bin/bash
+for i in 1 2 3; do "$1" chain bash -c "echo H$i >> $2/order; sleep 1"; sleep 2; done
+EOC
+( LOCK_LOW_GRACE=6 bash "$T/chain.sh" "$L" "$T" ) & sleep 0.5
+LOCK_LOW_GRACE=6 LOCK_PRIO=low "$L" low bash -c "echo L >> $T/order" & wait
+echo "13 low job waits out the grace period after each high job: $(tr '\n' ' ' < "$T/order")(want H1 H2 H3 L)"
