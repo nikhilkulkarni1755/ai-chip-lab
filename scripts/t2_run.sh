@@ -24,10 +24,10 @@ if [ -z "$CFG" ]; then
 fi
 W="$LAB/orfs/work"; SUB="$PLAT/$DES/$VAR"
 TMO="${T2_TIMEOUT:-5400}"   # seconds, whole run
-mkdir -p "$W" "$LAB/logs/20_pnr_ref"
+mkdir -p "$W" "$LAB/logs/part2/20_pnr_ref"
 # clean run: remove every previous artefact of this (platform, design, variant)
 for d in logs objects reports results; do rm -rf "$W/$d/$SUB"; done
-LOGF="$LAB/logs/20_pnr_ref/${PLAT}_${DES}_${VAR}.log"
+LOGF="$LAB/logs/part2/20_pnr_ref/${PLAT}_${DES}_${VAR}.log"
 echo "$(date '+%F %T') t2_run start $SUB cfg=$CFG extra=${EXTRA[*]:-} image=$ORFS_IMAGE" | tee -a "$LAB/logs/run.log" > "$LOGF"
 T0=$(date +%s)
 RTLSHA=$(cat "$LAB/rtl/mac_int8.sv" "$LAB/rtl/systolic_os.sv" 2>/dev/null | shasum -a 256 | cut -d" " -f1)
