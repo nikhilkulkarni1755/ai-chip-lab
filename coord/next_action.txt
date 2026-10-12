@@ -1,0 +1,1 @@
+infra: install Colima/Lima/docker CLI (01_runtime); rtl/arch/pnr authoring in parallel

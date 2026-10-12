@@ -1,0 +1,9 @@
+{
+  "start_epoch": 1791798516,
+  "start": "2026-10-12 02:48:36 PDT",
+  "total_budget_h": 6,
+  "note": "Owner capped the run at 6h (task text says 14h; 6h wrapper instruction wins). Scaled proportionally.",
+  "deadline_baselines_epoch": 1791807516,
+  "deadline_sweeps_stop_epoch": 1791816516,
+  "deadline_final_epoch": 1791820116
+}

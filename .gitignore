@@ -1,0 +1,17 @@
+bin/
+opt/
+downloads/
+logs/
+.colima/
+.lima/
+docker-config/
+.worktrees/
+.venv*/
+__pycache__/
+*.pyc
+sim_build/
+results/**/*.vcd
+results/**/*.gds
+results/**/*.odb
+orfs/work/
+*.lock.d/
