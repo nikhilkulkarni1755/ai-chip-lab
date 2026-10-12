@@ -67,7 +67,9 @@ doc = {
 }
 json.dump(doc, open("results/make_all_failsoft.json", "w"), indent=1)
 if os.path.exists("results/make_recipes.json"):
-    d = json.load(open("results/make_recipes.json")); d["failsoft_test"] = doc
+    d = json.load(open("results/make_recipes.json"))
+    if d.get("failsoft_test"): d.setdefault("failsoft_history", []).append(d["failsoft_test"])
+    d["failsoft_test"] = doc
     json.dump(d, open("results/make_recipes.json.tmp", "w"), indent=1); os.replace("results/make_recipes.json.tmp", "results/make_recipes.json")
 for k, v in checks.items(): print("%-5s %s" % ("OK" if v else "FAIL", k))
 print("fail-soft test: %s (make all exit %d; ran: %s; skipped: %s)" % ("PASS" if doc["pass"] else "FAIL", rc, " ".join(doc["executed_for_real"]) or "-", " ".join(doc["skipped_with_reason"]) or "-"))

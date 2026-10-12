@@ -3,7 +3,7 @@
 # Every recipe runs from the repo root and sources env.sh itself (scripts do `source ~/ai-chip-lab/env.sh`).
 # Cheap/safe to try: make preflight, make smoke, DRY_RUN=1 make t2 t2-stretch sweeps, make -n all.
 SHELL := /bin/bash
-.PHONY: preflight runtime images t1 t1-routed t2 t2-stretch t3 sweeps repro demo all smoke failsoft-test
+.PHONY: preflight runtime images t1 t1-routed t2 t2-stretch t3 t3-clean-first sweeps repro demo all smoke failsoft-test
 STAGES := results/.stages
 
 # `make all` (scripts/make_all.py) runs every stage in order: preflight runtime images t1 t2 t2-stretch t1-routed t3
@@ -63,6 +63,11 @@ t2-stretch:
 t3:
 	T3_LOCK=1 T3_RESUME=$(or $(T3_RESUME),1) scripts/t3_run.sh $(or $(T3_OUT),results/t3)
 	@python3 -c 'import json,os;s=json.load(open(os.environ.get("T3_SUMMARY") or "results/t3_summary.json"));print("t3: pass =",s["pass"],"| state =",s.get("state","-"),"|",s.get("checks"));raise SystemExit(0 if s["pass"] is True else 1)'
+
+# Decision P2-10: clean Task 3 cheap-set FIRST pass on frozen committed inputs (arch's launcher): replaces results/t3
+# with a fresh container-generated run of bundled ws/os/is + fit + 3 CALC runs, single pass, no criterion-A job.
+t3-clean-first:
+	scripts/t3_clean_first.sh
 
 # ---- arch + pnr: 40_sweeps ---------------------------------------------------------------------
 # Starts the two sweep drivers as host processes (every point takes the lock itself at LOCK_PRIO=low), both

@@ -31,7 +31,7 @@ demo:
 all:
 	@MAKE="$(MAKE)" python3 scripts/make_all.py
 EOF
-git init -q . && git add -A && git -c user.email=t@example.invalid -c user.name=t commit -qm init
+git init -q . && git add -A && git -c user.email=none -c user.name=scratch commit -qm init
 ran() { tr '\n' ' ' < ran.log; : > ran.log; }
 ok() { if [ "$2" = "$3" ]; then echo "OK   $1"; else echo "FAIL $1: got [$2] want [$3]"; BAD=1; fi; }
 BAD=0; : > ran.log
