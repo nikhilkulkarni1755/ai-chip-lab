@@ -30,6 +30,8 @@ for d in logs objects reports results; do rm -rf "$W/$d/$SUB"; done
 LOGF="$LAB/logs/20_pnr_ref/${PLAT}_${DES}_${VAR}.log"
 echo "$(date '+%F %T') t2_run start $SUB cfg=$CFG extra=${EXTRA[*]:-} image=$ORFS_IMAGE" | tee -a "$LAB/logs/run.log" > "$LOGF"
 T0=$(date +%s)
+RTLSHA=$(cat "$LAB/rtl/mac_int8.sv" "$LAB/rtl/systolic_os.sv" 2>/dev/null | shasum -a 256 | cut -d" " -f1)
+RTLGIT=$(git -C "$LAB" log -1 --format=%h -- rtl/mac_int8.sv rtl/systolic_os.sv 2>/dev/null)
 CONT="orfs_${PLAT}_${DES}_${VAR}"
 docker rm -f "$CONT" >/dev/null 2>&1
 # watchdog: kill container after timeout
@@ -47,7 +49,7 @@ RC=$?
 kill $WD 2>/dev/null; wait $WD 2>/dev/null
 T1=$(date +%s)
 mkdir -p "$W/reports/$SUB"
-printf '{"platform":"%s","design":"%s","variant":"%s","rc":%d,"wall_s":%d,"start_epoch":%d,"config":"%s","extra":"%s","image":"%s","num_cores":%s}\n' \
-  "$PLAT" "$DES" "$VAR" "$RC" $((T1-T0)) "$T0" "$CFG" "${EXTRA[*]:-}" "$ORFS_IMAGE" "${NUM_CORES:-3}" > "$W/reports/$SUB/t2_run.json"
+printf '{"platform":"%s","design":"%s","variant":"%s","rc":%d,"wall_s":%d,"start_epoch":%d,"config":"%s","extra":"%s","image":"%s","num_cores":%s,"rtl_sha256":"%s","rtl_last_commit":"%s"}\n' \
+  "$PLAT" "$DES" "$VAR" "$RC" $((T1-T0)) "$T0" "$CFG" "${EXTRA[*]:-}" "$ORFS_IMAGE" "${NUM_CORES:-3}" "$RTLSHA" "$RTLGIT" > "$W/reports/$SUB/t2_run.json"
 echo "$(date '+%F %T') t2_run end $SUB rc=$RC wall=$((T1-T0))s" | tee -a "$LAB/logs/run.log" >> "$LOGF"
 exit $RC

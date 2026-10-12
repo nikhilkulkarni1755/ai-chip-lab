@@ -35,12 +35,12 @@ def tool_versions():
                        shell=True, capture_output=True, text=True, executable="/bin/bash")
     vers = [scrub(l) for l in r.stdout.strip().splitlines()]
     tag = re.search(r"tag (\S+),", open(os.path.join(LAB, "coord", "images.env")).read())
-    vers.insert(0, "ORFS image tag " + (tag.group(1) if tag else "?") + " (flow scripts + OpenROAD build of that commit; `openroad -version` prints 'unknown' in this build)")
+    vers.insert(0, "ORFS image tag " + (tag.group(1) if tag else "?") + " (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)")
     return env["ORFS_IMAGE"], vers
 
 def ppa(e):
     m = e["metrics"]
-    return {k: m.get(k) for k in ("area_um2", "utilization_pct", "wns_setup_ns", "tns_setup_ns", "wns_hold_ns",
+    return {k: m.get(k) for k in ("area_um2", "utilization_frac", "wns_setup_ns", "tns_setup_ns", "wns_hold_ns",
             "power_total_w", "power_leakage_w", "cell_count", "stdcell_count", "drc_errors", "wirelength")}
 
 def main():
@@ -68,6 +68,12 @@ def main():
             d["checks"]["deterministic"] = df["identical"]
             rp = X.paths(plat, des, a)["run"]
             d["run1_wall_s"] = json.load(open(rp)).get("wall_s") if os.path.exists(rp) else None
+        if des == "systolic_os":
+            rj = json.load(open(X.paths(plat, des, b)["run"]))
+            if rj.get("rtl_sha256"):
+                d["rtl"] = {"sha256_mac_plus_systolic": rj["rtl_sha256"], "last_rtl_commit": rj.get("rtl_last_commit")}
+            else:  # run predates sha recording: built from the first RTL commit (before 7173c7f)
+                d["rtl"] = {"last_rtl_commit": "a2cf73c", "note": "EARLIER RTL (per-PE valid registers), superseded by 7173c7f; recorded from git history, not hashed at run time"}
         d["pass"] = all(v for v in d["checks"].values() if v is not None)
         if gate: ok_all &= d["pass"]
         S["designs"][key] = d

@@ -16,7 +16,7 @@ WORK = os.path.join(LAB, "orfs", "work")
 KEYS = {
     "area_um2":        ["finish__design__instance__area"],
     "stdcell_area_um2": ["finish__design__instance__area__stdcell"],
-    "utilization_pct": ["finish__design__instance__utilization"],
+    "utilization_frac": ["finish__design__instance__utilization"],
     "wns_setup_ns":    ["finish__timing__setup__ws"],
     "tns_setup_ns":    ["finish__timing__setup__tns"],
     "wns_hold_ns":     ["finish__timing__hold__ws"],
