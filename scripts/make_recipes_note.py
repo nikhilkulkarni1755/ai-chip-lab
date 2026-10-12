@@ -8,6 +8,7 @@ import json, os, time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P = os.path.join(ROOT, "results", "make_recipes.json")
 REQUIRED = ["runtime", "images", "t1", "t2", "t2-stretch", "t3", "repro", "demo"]   # TASK2 P1.2 item 1
+EXTRA_ORDER = ["t1-routed"]
 
 
 def hm(s):
@@ -20,12 +21,18 @@ def main():
     L = ["### Make recipes: what was actually run", ""]
     done = [r for r in REQUIRED if r in rec]
     missing = [r for r in REQUIRED if r not in rec]
+    for r in REQUIRED:   # a recipe that is running again does not count as done
+        run = d.get("running", {}).get(r)
+        if run and r in rec and run["start_epoch"] > rec[r]["end_epoch"]: missing.append(r)
     failed = [r for r in done if rec[r]["exit_code"] != 0]
     L.append("Each recipe below was executed for real as `make <recipe>` from the repo root (recorded by "
              "`scripts/make_record.py`, raw data in `results/make_recipes.json`). Wall time includes waiting in the "
              "one-job-at-a-time queue of this machine; the time without that wait is shown separately.")
     L += ["", "| Recipe | Exit code | Wall time | of which queue wait | Run time | Started | Log |", "|---|---|---|---|---|---|---|"]
     for r in REQUIRED:
+        run = d.get("running", {}).get(r)
+        if run and (r not in rec or run["start_epoch"] > rec[r]["end_epoch"]):
+            L.append("| `make %s` | still running%s | – | – | – | %s | `%s` |" % (r, (" (previous attempt: exit %d)" % rec[r]["exit_code"]) if r in rec else "", run["start"][11:19], run["log"])); continue
         if r not in rec:
             L.append("| `make %s` | not run yet | – | – | – | – | – |" % r); continue
         x = rec[r]

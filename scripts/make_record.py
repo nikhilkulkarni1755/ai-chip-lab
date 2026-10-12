@@ -25,6 +25,25 @@ def sh(cmd):
     return subprocess.run(cmd, shell=True, cwd=LAB, capture_output=True, text=True).stdout.strip()
 
 
+def update(fn):
+    """read-modify-write of results/make_recipes.json under a small mkdir mutex (several recorders may run at once)"""
+    mx = OUT + ".lock.d"
+    for _ in range(600):
+        try: os.mkdir(mx); break
+        except FileExistsError:
+            if time.time() - os.path.getmtime(mx) > 120: os.rmdir(mx)
+            time.sleep(0.2)
+    try:
+        doc = json.load(open(OUT)) if os.path.exists(OUT) else {"stage": "32_make_recipes", "recipes": [], "attempts": []}
+        fn(doc)
+        doc["generated"] = time.strftime("%F %T %Z")
+        doc["how"] = "each entry: `python3 scripts/make_record.py <recipe>` = a real `make <recipe>`; runtime_s is wall time incl. queueing for the heavy-job lock (lock_wait_s)"
+        tmp = OUT + ".tmp"; json.dump(doc, open(tmp, "w"), indent=1); os.replace(tmp, OUT)
+    finally:
+        try: os.rmdir(mx)
+        except OSError: pass
+
+
 def main():
     args = sys.argv[1:]
     note = None
@@ -44,6 +63,7 @@ def main():
     expanded = [l.replace(HOME, "~") for l in expanded.splitlines() if l.strip()]
     env = dict(os.environ, LAB_LOCK_TAG=tag)
     t0 = time.time()
+    update(lambda doc: doc.setdefault("running", {}).__setitem__(recipe, {"command": " ".join(cmd), "start_epoch": int(t0), "start": time.strftime("%F %T %Z", time.localtime(t0)), "log": os.path.relpath(log, LAB), "pid": os.getpid()}))
     with open(log, "w") as f:
         f.write("$ %s   (started %s, lock tag %s)\n" % (" ".join(cmd), time.strftime("%F %T"), tag)); f.flush()
         rc = subprocess.run(cmd, cwd=LAB, env=env, stdout=f, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL).returncode
@@ -78,12 +98,11 @@ def main():
         rec["kept_from_before_this_recipe"] = sorted("%s (finished %s)" % (rel(f), stamp(t)) for f, t in before.items() if after.get(f) == t)
         rec["executed_under_this_recipe"] = sorted("%s (finished %s)" % (rel(f), stamp(t)) for f, t in after.items() if before.get(f) != t)
         rec["watched_gone_at_end"] = sorted(rel(f) for f in before if f not in after)
-    doc = json.load(open(OUT)) if os.path.exists(OUT) else {"stage": "32_make_recipes", "recipes": [], "attempts": []}
-    doc["attempts"].append(rec)
-    doc["recipes"] = [r for r in doc["recipes"] if r["recipe"] != recipe] + [rec]
-    doc["generated"] = time.strftime("%F %T %Z")
-    doc["how"] = "each entry: `python3 scripts/make_record.py <recipe>` = a real `make <recipe>`; runtime_s is wall time incl. queueing for the heavy-job lock (lock_wait_s)"
-    tmp = OUT + ".tmp"; json.dump(doc, open(tmp, "w"), indent=1); os.replace(tmp, OUT)
+    def upd(doc):
+        doc["attempts"].append(rec)
+        doc["recipes"] = [r for r in doc["recipes"] if r["recipe"] != recipe] + [rec]
+        doc.get("running", {}).pop(recipe, None)
+    update(upd)
     print("make %s: exit %d in %.0fs (lock wait %ds) log %s" % (recipe, rc, t1 - t0, sum(waits), rec["log"]))
     sys.exit(rc)
 
