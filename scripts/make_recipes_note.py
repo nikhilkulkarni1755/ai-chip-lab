@@ -25,9 +25,16 @@ def main():
         run = d.get("running", {}).get(r)
         if run and r in rec and run["start_epoch"] > rec[r]["end_epoch"]: missing.append(r)
     failed = [r for r in done if rec[r]["exit_code"] != 0]
-    L.append("Each recipe below was executed for real as `make <recipe>` from the repo root (recorded by "
-             "`scripts/make_record.py`, raw data in `results/make_recipes.json`). Wall time includes waiting in the "
-             "one-job-at-a-time queue of this machine; the time without that wait is shown separately.")
+    resume_r = [r for r in rec if rec[r].get("watch")]
+    L.append("Each row is one recorded invocation of `make` from the repo root with exactly the command shown (recorded by "
+             "`scripts/make_record.py`, raw data in `results/make_recipes.json`). Not every recipe re-executed all of its work: "
+             + ("; ".join("`%s` ran in resume mode (%d step/job results kept from earlier runs of the same day by the identical commands, %d executed under the recipe)"
+                          % (rec[r]["command"], len(rec[r].get("kept_from_before_this_recipe", [])), len(rec[r].get("executed_under_this_recipe", []))) for r in resume_r)
+                or "no recipe used resume mode")
+             + ". Variables on a command line restrict what ran (`T3_USER_DEADLINE=1`: Task 3 criterion-A jobs not started; `T1R_SKIP=gls_verilator`: "
+             "Verilator gate-level simulation not run; `REPRO_PART=t3`: Task 3 rerun only). Wall time includes waiting in the one-job-at-a-time queue of this "
+             "machine; the time without that wait is shown separately. The recipes were not run in the order of the task text; all recorded invocations by start time: "
+             + ", ".join("%s %s (exit %d)" % (a["start"][11:16], a["recipe"], a["exit_code"]) for a in sorted(d.get("attempts", []), key=lambda a: a["start_epoch"])) + ".")
     L += ["", "| Recipe | Exit code | Wall time | of which queue wait | Run time | Started | Log |", "|---|---|---|---|---|---|---|"]
     for r in REQUIRED:
         run = d.get("running", {}).get(r)
@@ -36,12 +43,12 @@ def main():
         if r not in rec:
             L.append("| `make %s` | not run yet | – | – | – | – | – |" % r); continue
         x = rec[r]
-        L.append("| `make %s` | %d | %s | %s | %s | %s | `%s` |" % (r, x["exit_code"], hm(x["runtime_s"]), hm(x["lock_wait_s"]),
+        L.append("| `%s` | %d | %s | %s | %s | %s | `%s` |" % (x["command"], x["exit_code"], hm(x["runtime_s"]), hm(x["lock_wait_s"]),
                  hm(x["runtime_excl_lock_wait_s"]), x["start"][11:19], x["log"]))
     extra = [r for r in rec if r not in REQUIRED]
     for r in extra:
         x = rec[r]
-        L.append("| `make %s` | %d | %s | %s | %s | %s | `%s` |" % (r, x["exit_code"], hm(x["runtime_s"]), hm(x["lock_wait_s"]),
+        L.append("| `%s` | %d | %s | %s | %s | %s | `%s` |" % (x["command"], x["exit_code"], hm(x["runtime_s"]), hm(x["lock_wait_s"]),
                  hm(x["runtime_excl_lock_wait_s"]), x["start"][11:19], x["log"]))
     L.append("")
     if missing: L.append("**Not run as a recipe yet:** " + ", ".join("`make %s`" % m for m in missing) + ".")
@@ -85,8 +92,9 @@ def main():
                      "; ".join("`%s` — %s" % (k, v.split(": ", 1)[-1]) for k, v in excl.items()))
         L.append("%d. *Sweeps were started but not waited for* (`SWEEPS_DETACH=1`), and Task 3's criterion-A jobs were disabled (`T3_USER_DEADLINE=1`)." % (4 if excl else 3))
         L.append("%d. *One assertion was changed while the test was written:* from \"only the forced stage failed\" to \"the forced stage is first in the failed list\", "
-                 "so that a stage failing for its own reasons would be listed instead of failing the test. In this run no other stage failed (%s), so the original, "
-                 "stricter assertion would also have held." % (5 if excl else 4, ft.get("other_stages_that_failed_for_their_own_reasons") or "none"))
+                 "so that a stage failing for its own reasons is listed instead of failing the test. Failed list of this run besides the forced stage: %s.%s"
+                 % (5 if excl else 4, ", ".join(ft.get("other_stages_that_failed_for_their_own_reasons") or []) or "empty",
+                    (" " + ft["known_weakness"]) if ft.get("known_weakness") else ""))
         L.append("")
         L.append("It is therefore a weaker check than a full `make all` with one stage really failing: it verifies the fail-soft bookkeeping and exit status on the "
                  "real Makefile and markers, with %d of %d stages actually executed. Execution of real recipes after a real failure is covered separately by "
@@ -95,6 +103,12 @@ def main():
                  % (len(ft["executed_for_real"]), len(ft["stages"])))
     else:
         L.append("**`make all` fail-soft test:** not run yet.")
+    hist = d.get("failsoft_history", [])
+    if hist:
+        L += ["", "Earlier fail-soft test runs (kept for the record):", ""]
+        for h in hist:
+            L.append("- %s: %s; executed for real: %s; excluded: %s.%s" % (h["generated"][11:16], "PASS" if h["pass"] else "FAIL", ", ".join(h["executed_for_real"]) or "none",
+                     ", ".join(h.get("excluded_from_this_test", {})) or "none", (" " + h["known_weakness"]) if h.get("known_weakness") else ""))
     al = d.get("make_all_run")
     lastp = os.path.join(ROOT, "results", "make_all_last.json")
     if os.path.exists(lastp):
@@ -105,6 +119,8 @@ def main():
         L.append("")
         L.append("**`make all` (%s):** exit %d; failed stages: %s; per stage: %s." % (al.get("mode"), al["exit_code"], ", ".join(al["failed_stages"]) or "none",
                  "; ".join("%s %s%s%s" % (s["stage"], s["action"], (" exit %s" % s["exit_code"]) if s.get("exit_code") not in (None, 0) else "", (" — " + s["reason"]) if s["action"] == "skipped" else "") for s in al["stages"])))
+    if not al:
+        L += ["", "**`make all` run for real once (TASK2 P1.7 / Final steps): not run yet.**"]
     d["pass"] = (not missing) and (not failed) and bool(ft and ft["pass"])
     d["missing_recipes"] = missing; d["failed_recipes"] = failed
     text = "\n".join(L) + "\n"
@@ -123,6 +139,14 @@ def main():
         try: os.rmdir(mx)
         except OSError: pass
     open(os.path.join(ROOT, "results", "make_recipes.md"), "w").write(text)
+    # stage marker follows the verdict (never left at .running)
+    st = os.path.join(ROOT, "results", ".stages", "32_make_recipes")
+    for ext in ("running", "done", "failed"):
+        if os.path.exists(st + "." + ext): os.remove(st + "." + ext)
+    line = "pass=%s; exit codes: %s; not run: %s; fail-soft test: %s; make all for real: %s; %s\n" % (
+        d["pass"], ", ".join("%s=%d" % (r, rec[r]["exit_code"]) for r in rec), ", ".join(missing) or "none",
+        ("PASS" if ft["pass"] else "FAIL") if ft else "not run", "recorded" if al else "not run yet", time.strftime("%F %T"))
+    open(st + (".done" if d["pass"] else ".failed"), "w").write(line)
     print(text)
 
 
