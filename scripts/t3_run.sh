@@ -2,7 +2,8 @@
 # Task 3 (stage 30_arch_model + 31_roofline_fix): SCALE-Sim vs analytic model + pre-registered roofline check.
 #   scripts/t3_run.sh [OUTDIR]        default OUTDIR=results/t3   (relative to the lab / main checkout)
 # Jobs (model/t3_stage.py list): bundled ws/os/is runs, analytic fit, superseded synthetic roofline, 9 USER-bandwidth
-# + 3 CALC-mode ResNet-18 runs. Two full passes + byte-identity compare.  Env:
+# + 3 CALC-mode ResNet-18 runs. Pass 2 re-runs only the cheap jobs (bundled ws/os/is + fit) for in-stage byte identity;
+# the 12 roofline2 runs are compared by `make repro` (decision P2-6); summary says which files were compared where.  Env:
 #   T3_SUMMARY=path   summary JSON (default results/t3_summary.json)     T3_PLOTS=1|0 (default 1)
 #   T3_PASSES=1       single pass (quick/repro mode; identity then trivially true and flagged)
 #   T3_LOCK=1         host mode: every job is its own container run under scripts/with_lock.sh (the CALLER must NOT
@@ -10,6 +11,7 @@
 #   T3_RESUME=1       keep OUTDIR.partial / OUTDIR.rerun.tmp from an interrupted run and skip finished jobs
 set -euo pipefail
 LAB="${LAB:-$HOME/ai-chip-lab}"
+CHEAP="bundled_ws bundled_os bundled_is fit"
 JOBS="bundled_ws bundled_os bundled_is fit roofline_synthetic rl2_user_ws_low rl2_user_ws_mid rl2_user_ws_high rl2_user_os_low rl2_user_os_mid rl2_user_os_high rl2_user_is_low rl2_user_is_mid rl2_user_is_high rl2_calc_ws rl2_calc_os rl2_calc_is"
 OUT_ARG="${1:-results/t3}"; SUMMARY="${T3_SUMMARY:-results/t3_summary.json}"
 FINAL="$OUT_ARG"; OUT="${FINAL}.partial"; RERUN="${FINAL}.rerun.tmp"
@@ -22,8 +24,8 @@ if [ ! -f /.dockerenv ]; then
   if [ "${T3_RESUME:-0}" != "1" ]; then rm -rf "$OUT" "$RERUN"; fi
   for pass in 1 2; do
     [ "$pass" = 2 ] && [ "${T3_PASSES:-2}" -lt 2 ] && break
-    D="$OUT"; [ "$pass" = 2 ] && D="$RERUN"
-    for j in $JOBS; do
+    D="$OUT"; JL="$JOBS"; [ "$pass" = 2 ] && { D="$RERUN"; JL="$CHEAP"; }
+    for j in $JL; do
       if [ -e "$D/.jobs/$j.done" ]; then continue; fi
       echo "== t3 pass $pass job $j $(date +%T)"
       $LK "$dk" python3 model/t3_stage.py job "$j" --out "$D" > "logs/part2/31_roofline_fix/pass${pass}_$j.log" 2>&1 \
@@ -44,7 +46,7 @@ echo "== t3 pass 1 -> $OUT"
 python3 model/t3_stage.py pass --out "$OUT" 2>&1 | tee logs/part2/31_roofline_fix/pass1.log
 if [ "${T3_PASSES:-2}" -ge 2 ]; then
   echo "== t3 pass 2 (rerun) -> $RERUN"
-  python3 model/t3_stage.py pass --out "$RERUN" > logs/part2/31_roofline_fix/pass2.log 2>&1
+  python3 model/t3_stage.py pass --only cheap --out "$RERUN" > logs/part2/31_roofline_fix/pass2.log 2>&1
 else
   rm -rf "$RERUN"; cp -r "$OUT" "$RERUN"   # quick mode: identity trivially true; flagged in summary
 fi

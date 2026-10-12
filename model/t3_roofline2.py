@@ -32,36 +32,111 @@ def jobs():
     return [f"rl2_user_{df}_{b}" for df in DFS for b in BW] + [f"rl2_calc_{df}" for df in DFS]
 
 
-def run_job(job, out):
+NWORKERS = int(os.environ.get("T3_LAYER_WORKERS", "3"))
+MEM_CAP = int(float(os.environ.get("T3_LAYER_MEM_GB", "1.6")) * 2**30)
+
+
+def _job_cfg(job, td):
     parts = job.split("_")
     mode, df = parts[1], parts[2]
-    layers = an.load_topology(TOPO)
+    cfg = sim.make_config(os.path.join(td, "c.cfg"), BASE, ARRAY, ARRAY, df, run_name=job)
+    cp = configparser.ConfigParser(); cp.optionxform = str; cp.read(cfg)
+    if mode == "user":
+        B = BW[parts[3]]
+        cp["run_presets"]["InterfaceBandwidth"] = "USER"
+        cp["architecture_presets"]["Bandwidth"] = str(B)
+        l = cp["layout"]
+        l["IfmapSRAMBankBandwidth"] = l["FilterSRAMBankBandwidth"] = str(B)
+        l["IfmapSRAMBankNum"] = l["FilterSRAMBankNum"] = "1"
+    else:
+        B = None
+        assert cp["run_presets"]["InterfaceBandwidth"] == "CALC"
+    with open(cfg, "w") as f:
+        cp.write(f)
+    return cfg, mode, df, B
+
+
+def _limit_mem():
+    try:
+        import resource
+        resource.setrlimit(resource.RLIMIT_AS, (MEM_CAP, MEM_CAP))
+    except Exception:
+        pass
+
+
+def _layer_task(args):
+    """One layer in its own process. Returns (i, result_dict, report_rows, wall_s, peak_rss_mb)."""
+    import time as _t
+    import resource
+    cfg, i, header, row, cap = args
+    if cap:
+        _limit_mem()
+    t0 = _t.time()
     with tempfile.TemporaryDirectory() as td:
-        cfg = sim.make_config(os.path.join(td, "c.cfg"), BASE, ARRAY, ARRAY, df, run_name=job)
-        cp = configparser.ConfigParser(); cp.optionxform = str; cp.read(cfg)
-        if mode == "user":
-            B = BW[parts[3]]
-            cp["run_presets"]["InterfaceBandwidth"] = "USER"
-            cp["architecture_presets"]["Bandwidth"] = str(B)
-            l = cp["layout"]
-            l["IfmapSRAMBankBandwidth"] = l["FilterSRAMBankBandwidth"] = str(B)
-            l["IfmapSRAMBankNum"] = l["FilterSRAMBankNum"] = "1"
+        t1 = os.path.join(td, "t.csv")
+        open(t1, "w").write(header + "\n" + row + "\n")
+        r, rd = sim.run(cfg, t1, os.path.join(td, "o"), gemm=False)
+        rows = {n: open(os.path.join(rd, n)).read().splitlines() for n in sim_reports()}
+    r[0]["LayerID"] = i
+    return i, r[0], rows, _t.time() - t0, resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
+
+
+def run_job(job, out):
+    """Layers of one job run in parallel (<= NWORKERS processes, largest estimated first, per-process address-space cap;
+    a layer whose worker dies or hits the cap is re-run serially without cap). Each finished layer is written to
+    roofline2/<job>/layers/<i>.json immediately, so a killed job resumes at layer level. Results are bit-identical to a
+    serial run (layers are independent; verified against the serial rl2_user_ws_low result)."""
+    import concurrent.futures as cf
+    import time as _t
+    layers = an.load_topology(TOPO)
+    lines = open(TOPO).read().splitlines()
+    header, rows = lines[0], [l for l in lines[1:] if l.strip()]
+    d = os.path.join(out, "roofline2", job)
+    ld = os.path.join(d, "layers")
+    os.makedirs(ld, exist_ok=True)
+    timing = {}
+
+    def est(i):
+        L = layers[i]
+        return sum(f * (T + 3 * ARRAY) for f, T in [an.shape_map(df_of(job), L["M"], L["N"], L["K"], ARRAY, ARRAY)])
+
+    todo = [i for i in range(len(rows)) if not os.path.exists(os.path.join(ld, f"{i}.json"))]
+    todo.sort(key=est, reverse=True)
+    with tempfile.TemporaryDirectory() as td:
+        cfg, mode, df, B = _job_cfg(job, td)
+
+        def finish(i, res, rep, wall, rss, how):
+            json.dump(dict(res=res, rows=rep), open(os.path.join(ld, f"{i}.json"), "w"), sort_keys=True)
+            timing[layers[i]["name"]] = dict(wall_s=round(wall, 1), peak_rss_mb=round(rss), how=how)
+
+        redo = []
+        if NWORKERS > 1:
+            with cf.ProcessPoolExecutor(NWORKERS) as ex:
+                futs = {ex.submit(_layer_task, (cfg, i, header, rows[i], True)): i for i in todo}
+                for f in cf.as_completed(futs):
+                    i = futs[f]
+                    try:
+                        finish(*f.result(), "parallel")
+                    except Exception as e:      # MemoryError, BrokenProcessPool (killed worker), ...
+                        redo.append(i)
+                        timing[layers[i]["name"]] = dict(parallel_failed=type(e).__name__)
         else:
-            B = None
-            assert cp["run_presets"]["InterfaceBandwidth"] == "CALC"
-        with open(cfg, "w") as f:
-            cp.write(f)
-        # One SCALE-Sim invocation PER LAYER: SCALE-Sim keeps every layer's demand/trace matrices alive until the
-        # run ends (simulator.single_layer_sim_object_list), which OOM-killed the 21-layer run in the 4 GB VM
-        # (exit 137). Layers are independent in SCALE-Sim (no cross-layer state), validated equal in
-        # model/test_perlayer.py.
-        res, per_layer_reports = run_per_layer(cfg, td)
-        d = os.path.join(out, "roofline2", job)
-        os.makedirs(d, exist_ok=True)
-        for r in sim_reports():
-            with open(os.path.join(d, r), "w") as f:
-                f.write(per_layer_reports[r])
+            redo = todo
+        for i in sorted(set(redo), key=est, reverse=True):      # serial fallback, no cap
+            finish(*_layer_task((cfg, i, header, rows[i], False)), "serial")
         shutil.copy(cfg, os.path.join(d, "config.cfg"))
+    # assemble in layer order
+    res, merged = [], {n: None for n in sim_reports()}
+    for i in range(len(rows)):
+        rec = json.load(open(os.path.join(ld, f"{i}.json")))
+        res.append(rec["res"])
+        for n in sim_reports():
+            ls = rec["rows"][n]
+            body = ls[1].split(",", 1)[1]
+            merged[n] = (ls[0] + "\n" if merged[n] is None else merged[n]) + f"{i},{body}\n"
+    for n in sim_reports():
+        open(os.path.join(d, n), "w").write(merged[n])
+    json.dump(timing, open(os.path.join(d, "timing.timing"), "w"), indent=1, sort_keys=True)   # not compared (non-deterministic)
     recs = []
     peak = 2 * ARRAY * ARRAY
     for L, x in zip(layers, res):
@@ -78,6 +153,11 @@ def run_job(job, out):
     json.dump(dict(job=job, mode=mode, dataflow=df, B_words_per_cycle=B, array=f"{ARRAY}x{ARRAY}",
                    peak_flops_per_cycle=peak, layers=recs),
               open(os.path.join(out, "roofline2", job + ".json"), "w"), indent=1, sort_keys=True)
+    shutil.rmtree(ld)   # per-layer partials are only a resume aid; the merged reports carry the same rows
+
+
+def df_of(job):
+    return job.split("_")[2]
 
 
 def run_per_layer(cfg, td, topo=None, gemm=False):

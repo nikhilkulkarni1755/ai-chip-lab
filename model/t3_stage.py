@@ -5,6 +5,7 @@
   t3_stage.py summary --out DIR --rerun DIR2   compare passes, write summary JSON + plots
 """
 import argparse
+import datetime
 import hashlib
 import json
 import os
@@ -34,9 +35,14 @@ def _bundled_one(args):
     return df, res
 
 
-def job_list():
+CHEAP_JOBS = [f"bundled_{df}" for df in DATAFLOWS] + ["fit"]     # re-run in-stage for byte identity
+
+
+def job_list(only=None):
     import t3_roofline2
-    return [f"bundled_{df}" for df in DATAFLOWS] + ["fit", "roofline_synthetic"] + t3_roofline2.jobs()
+    if only == "cheap":
+        return list(CHEAP_JOBS)
+    return CHEAP_JOBS + ["roofline_synthetic"] + t3_roofline2.jobs()
 
 
 def do_job(job, out):
@@ -65,9 +71,9 @@ def do_job(job, out):
     open(mk, "w").write("done\n")
 
 
-def do_pass(out):
+def do_pass(out, only=None):
     """All jobs sequentially in this process tree (single container)."""
-    for j in job_list():
+    for j in job_list(only):
         do_job(j, out)
 
 
@@ -89,23 +95,35 @@ def do_summary(out, rerun):
     if missing:
         raise SystemExit("jobs not finished: %s" % missing)
     a, b = deterministic_files(out), deterministic_files(rerun)
-    a = [x for x in a if not x.startswith("_rerun")]
-    same_set = a == b
-    mism = [x for x in a if x in b and sha(os.path.join(out, x)) != sha(os.path.join(rerun, x))]
-    ident = bool(same_set and not mism and a)
+    # Per decision P2-6 the second in-stage pass covers only the cheap jobs; every other file is compared by
+    # `make repro` (pending_repro here).
+    pending = [x for x in a if x not in b]
+    extra = [x for x in b if x not in a]
+    mism = [x for x in b if x in a and sha(os.path.join(out, x)) != sha(os.path.join(rerun, x))]
+    ident = bool(b and not extra and not mism)
     hashes = {x: sha(os.path.join(out, x)) for x in a}
+    jobs_info = {}
+    for j in job_list():
+        mk = os.path.join(out, ".jobs", j + ".done")
+        jobs_info[j] = dict(completed=datetime.datetime.fromtimestamp(os.path.getmtime(mk)).isoformat(timespec="seconds"),
+                            rerun_in_stage=os.path.exists(os.path.join(rerun, ".jobs", j + ".done")))
     fit = json.load(open(os.path.join(out, "fit.json")))
     runs = {df: json.load(open(os.path.join(out, "scalesim", df, "layers.json"))) for df in DATAFLOWS}
     chk = {}
     chk["bundled_runs_ok"] = all(len(runs[df]) > 0 and all(r["total_cycles"] > 0 for r in runs[df]) for df in DATAFLOWS)
     chk["reports_saved"] = all(os.path.exists(os.path.join(out, "scalesim", df, r)) for df in DATAFLOWS for r in REPORTS)
-    chk["reruns_byte_identical"] = ident
+    chk["reruns_byte_identical"] = ident   # scope: in-stage files only; see identity.pending_repro
     chk["analytic_constants_match_derivation"] = all(v["constants_match_derivation"] for v in fit["dataflows"].values())
     chk["analytic_residuals_stable"] = all(v["residuals_ok"] for v in fit["dataflows"].values())
     summ = dict(
         stage="30_arch_model", scalesim_version="3.0.0",
         bundled=dict(config=BUNDLED_CFG, topology=BUNDLED_TOPO, array="256x256", dataflows=DATAFLOWS),
-        identity=dict(files_compared=len(a), mismatches=mism, same_file_set=same_set, sha256=hashes),
+        identity=dict(state="in_stage_ok_pending_repro" if ident and pending else ("complete" if ident else "mismatch"),
+                      scope_in_stage="bundled ws/os/is runs + analytic fit, pass 2 in the same stage",
+                      files_compared_in_stage=len(b), compared_in_stage=sorted(b), mismatches=mism,
+                      pending_repro=pending, pending_repro_note="compared by make repro (51_repro_full), not yet in this summary",
+                      sha256=hashes),
+        jobs=jobs_info,
         bundled_summary={df: dict(total_cycles=sum(r["total_cycles"] for r in runs[df]),
                                   stall_cycles=sum(r["stall_cycles"] for r in runs[df]))
                          for df in DATAFLOWS},
@@ -137,6 +155,8 @@ def do_summary(out, rerun):
     summ["bundled_config_zero_stalls"] = all(summ["bundled_summary"][df]["stall_cycles"] == 0 for df in DATAFLOWS)
     summ["checks"] = chk
     summ["pass"] = bool(all(chk.values()))
+    summ["complete"] = not pending
+    summ["pending"] = ["repro byte-identity of %d result files" % len(pending)] if pending else []
     return summ
 
 
@@ -146,6 +166,7 @@ if __name__ == "__main__":
     ap.add_argument("name", nargs="?")
     ap.add_argument("--out", default=".")
     ap.add_argument("--rerun")
+    ap.add_argument("--only", choices=["cheap"])
     ap.add_argument("--summary-json")
     a = ap.parse_args()
     if a.cmd == "list":
@@ -154,7 +175,7 @@ if __name__ == "__main__":
     if a.cmd == "job":
         do_job(a.name, a.out)
     elif a.cmd == "pass":
-        do_pass(a.out)
+        do_pass(a.out, a.only)
     else:
         s = do_summary(a.out, a.rerun)
         json.dump(s, open(a.summary_json, "w"), indent=1, sort_keys=True)
