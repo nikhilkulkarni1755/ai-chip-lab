@@ -3,11 +3,11 @@
 # Every recipe runs from the repo root and sources env.sh itself (scripts do `source ~/ai-chip-lab/env.sh`).
 # Cheap/safe to try: make preflight, make smoke, DRY_RUN=1 make t2 t2-stretch sweeps, make -n all.
 SHELL := /bin/bash
-.PHONY: preflight runtime images t1 t2 t2-stretch t3 sweeps repro demo all smoke failsoft-test
+.PHONY: preflight runtime images t1 t1-routed t2 t2-stretch t3 sweeps repro demo all smoke failsoft-test
 STAGES := results/.stages
 
-# `make all` (scripts/make_all.py) runs every stage in order: preflight runtime images t1 t2 t2-stretch t3 sweeps
-# repro demo. Fail-soft: a failing stage (including an honest scientific FAIL verdict) never stops the later ones,
+# `make all` (scripts/make_all.py) runs every stage in order: preflight runtime images t1 t2 t2-stretch t1-routed t3
+# sweeps repro demo. Fail-soft: a failing stage (including an honest scientific FAIL verdict) never stops the later ones,
 # the demo is ALWAYS built last, and the exit status is non-zero with the failed stages listed.
 #   make all            real run of everything          RESUME=1 make all   skip stages whose git-tracked inputs
 #   FORCE=1 make all    rerun everything                                    (scripts/stage_inputs.json) are unchanged
@@ -37,6 +37,11 @@ smoke:
 t1:
 	scripts/t1_run.sh $(or $(T1_CASES),10000) $(or $(T1_OUT),results)
 
+# ---- rtl: 11_eqy_routed (EQY against the routed nangate45 netlist + gate-level simulation) -----
+# Takes its own lock per step; T1R_RESUME=1 continues a partly finished run; T1R_STEPS=gls = simulation only.
+t1-routed:
+	scripts/t1_routed.sh $(or $(T1R_CASES),200) $(or $(T1R_OUT),results)
+
 # ---- pnr: 20_pnr_ref (Task 2) -----------------------------------------------------------------
 # t2: nangate45/gcd and sky130hd/gcd: one clean ORFS run each via pnr's scripts/t2_repro.sh (compared against all
 #     earlier runs; two runs if no earlier run exists or T2_FRESH=1), threshold check, extract, render, summary.
@@ -50,13 +55,14 @@ t2-stretch:
 	scripts/make_t2.sh stretch
 
 # ---- arch: 30_arch_model (Task 3) -------------------------------------------------------------
-# Two full SCALE-Sim passes (ws/os/is) + fit + roofline in lab-sim, ~15-20 min, light (no heavy lock).
-# Rewrites results/t3/ and results/t3_summary.json; T3_PASSES=1 skips the rerun, T3_PLOTS=0 skips plots,
-# T3_OUT/T3_SUMMARY redirect the outputs. The target fails if the run breaks OR if the summary's
-# scientific verdict "pass" is false (the verdict and per-check booleans are printed).
+# Job-based (model/t3_stage.py job <name>): every job is its own lab-sim container under the heavy-job lock
+# (T3_LOCK=1), so other work interleaves; resumable (T3_RESUME=1, default here): jobs already finished in
+# OUT.partial are kept, not rerun. T3_RESUME=0 make t3 starts from scratch. T3_PASSES/T3_PLOTS/T3_OUT/T3_SUMMARY
+# as documented in scripts/t3_run.sh. The target fails if the run breaks OR if the summary's verdict "pass" is
+# false (verdict, state and per-check booleans are printed) — it exits 0 only on a legitimate pass.
 t3:
-	scripts/t3_run.sh $(or $(T3_OUT),results/t3)
-	@python3 -c 'import json,os;s=json.load(open(os.environ.get("T3_SUMMARY") or "results/t3_summary.json"));print("t3: pass =",s["pass"],s.get("checks"));raise SystemExit(0 if s["pass"] else 1)'
+	T3_LOCK=1 T3_RESUME=$(or $(T3_RESUME),1) scripts/t3_run.sh $(or $(T3_OUT),results/t3)
+	@python3 -c 'import json,os;s=json.load(open(os.environ.get("T3_SUMMARY") or "results/t3_summary.json"));print("t3: pass =",s["pass"],"| state =",s.get("state","-"),"|",s.get("checks"));raise SystemExit(0 if s["pass"] is True else 1)'
 
 # ---- arch + pnr: 40_sweeps ---------------------------------------------------------------------
 # Starts the two sweep drivers as host processes (every point takes the lock itself at LOCK_PRIO=low), both

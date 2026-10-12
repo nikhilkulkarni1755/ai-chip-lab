@@ -1,16 +1,165 @@
 {
  "_doc": "Per make stage: the stage marker(s) under results/.stages and the git-tracked inputs it depends on (git pathspecs). Used by scripts/make_all.py for RESUME=1 (skip a stage whose inputs are unchanged since it last succeeded) and printed by the demo page as the reason for a skip. 'always': never skipped. 'dry': the recipe understands DRY_RUN=1.",
- "order": ["preflight", "runtime", "images", "t1", "t2", "t2-stretch", "t3", "sweeps", "repro", "demo"],
+ "order": [
+  "preflight",
+  "runtime",
+  "images",
+  "t1",
+  "t2",
+  "t2-stretch",
+  "t1-routed",
+  "t3",
+  "sweeps",
+  "repro",
+  "demo"
+ ],
  "stages": {
-  "preflight":  {"markers": ["00_preflight"], "dry": false, "inputs": ["scripts/preflight.sh", "env.sh"]},
-  "runtime":    {"markers": ["01_runtime"], "dry": false, "inputs": ["scripts/infra_runtime_install.sh", "scripts/infra_runtime_start.sh", "env.sh"]},
-  "images":     {"markers": ["02_images"], "dry": false, "inputs": ["docker/", "scripts/infra_images.sh", "scripts/infra_build_lab_sim.sh", "scripts/infra_images_lock.sh", "coord/images.env"]},
-  "t1":         {"markers": ["10_rtl_verify"], "dry": false, "inputs": ["rtl/", "tb/", "formal/", "eqy/", "scripts/t1_*", "coord/images.env", "docker/requirements.lock"]},
-  "t2":         {"markers": ["20_pnr_ref"], "dry": true, "inputs": ["scripts/t2_*", "scripts/make_t2.sh", "orfs/render.py", "coord/images.env"]},
-  "t2-stretch": {"markers": [], "dry": true, "inputs": ["orfs/designs/", "rtl/", "scripts/t2_*", "scripts/make_t2.sh", "orfs/render.py", "coord/images.env"]},
-  "t3":         {"markers": ["30_arch_model"], "dry": false, "inputs": ["model/", "arch/", "scripts/t3_*", "coord/images.env", "docker/requirements.lock"]},
-  "sweeps":     {"markers": ["41_sweeps_finish"], "dry": true, "inputs": ["sweeps/arch_sweep.py", "sweeps/phys_sweep.py", "scripts/make_sweeps.sh", "scripts/t2_run.sh", "model/sim.py", "model/analytic.py", "budget_part2.json", "coord/images.env"]},
-  "repro":      {"markers": ["51_repro_full"], "dry": false, "inputs": ["scripts/repro.sh", "scripts/repro_compare.py", "rtl/", "tb/", "formal/", "eqy/", "scripts/t1_*", "model/", "arch/", "scripts/t3_*", "coord/images.env", "docker/requirements.lock"]},
-  "demo":       {"markers": ["60_demo"], "dry": false, "always": true, "inputs": []}
+  "preflight": {
+   "markers": [
+    "00_preflight"
+   ],
+   "dry": false,
+   "inputs": [
+    "scripts/preflight.sh",
+    "env.sh"
+   ]
+  },
+  "runtime": {
+   "markers": [
+    "01_runtime"
+   ],
+   "dry": false,
+   "inputs": [
+    "scripts/infra_runtime_install.sh",
+    "scripts/infra_runtime_start.sh",
+    "env.sh"
+   ]
+  },
+  "images": {
+   "markers": [
+    "02_images"
+   ],
+   "dry": false,
+   "inputs": [
+    "docker/",
+    "scripts/infra_images.sh",
+    "scripts/infra_build_lab_sim.sh",
+    "scripts/infra_images_lock.sh",
+    "coord/images.env"
+   ]
+  },
+  "t1": {
+   "markers": [
+    "10_rtl_verify"
+   ],
+   "dry": false,
+   "inputs": [
+    "rtl/",
+    "tb/",
+    "formal/",
+    "eqy/",
+    "scripts/t1_*",
+    "coord/images.env",
+    "docker/requirements.lock"
+   ]
+  },
+  "t2": {
+   "markers": [
+    "20_pnr_ref"
+   ],
+   "dry": true,
+   "inputs": [
+    "scripts/t2_*",
+    "scripts/make_t2.sh",
+    "orfs/render.py",
+    "coord/images.env"
+   ]
+  },
+  "t2-stretch": {
+   "markers": [],
+   "dry": true,
+   "inputs": [
+    "orfs/designs/",
+    "rtl/",
+    "scripts/t2_*",
+    "scripts/make_t2.sh",
+    "orfs/render.py",
+    "coord/images.env"
+   ]
+  },
+  "t3": {
+   "markers": [
+    "30_arch_model",
+    "31_roofline_fix"
+   ],
+   "dry": false,
+   "inputs": [
+    "model/",
+    "arch/",
+    "scripts/t3_*",
+    "coord/images.env",
+    "docker/requirements.lock"
+   ]
+  },
+  "sweeps": {
+   "markers": [
+    "41_sweeps_finish"
+   ],
+   "dry": true,
+   "inputs": [
+    "sweeps/arch_sweep.py",
+    "sweeps/phys_sweep.py",
+    "scripts/make_sweeps.sh",
+    "scripts/t2_run.sh",
+    "model/sim.py",
+    "model/analytic.py",
+    "budget_part2.json",
+    "coord/images.env"
+   ]
+  },
+  "repro": {
+   "markers": [
+    "51_repro_full"
+   ],
+   "dry": false,
+   "inputs": [
+    "scripts/repro.sh",
+    "scripts/repro_compare.py",
+    "rtl/",
+    "tb/",
+    "formal/",
+    "eqy/",
+    "scripts/t1_*",
+    "model/",
+    "arch/",
+    "scripts/t3_*",
+    "coord/images.env",
+    "docker/requirements.lock"
+   ]
+  },
+  "demo": {
+   "markers": [
+    "60_demo"
+   ],
+   "dry": false,
+   "always": true,
+   "inputs": []
+  },
+  "t1-routed": {
+   "markers": [
+    "11_eqy_routed"
+   ],
+   "dry": false,
+   "inputs": [
+    "rtl/",
+    "tb/",
+    "eqy/",
+    "scripts/t1_routed*",
+    "scripts/t1_run.sh",
+    "orfs/designs/",
+    "coord/images.env",
+    "docker/requirements.lock"
+   ]
+  }
  }
 }

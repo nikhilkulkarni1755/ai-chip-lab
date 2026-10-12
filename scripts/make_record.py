@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Run ONE make recipe for real and record what happened in results/make_recipes.json (stage 32_make_recipes).
 
-  python3 scripts/make_record.py <recipe> [VAR=value ...] [--note "text"]
+  python3 scripts/make_record.py <recipe> [VAR=value ...] [--note "text"] [--watch "<glob of per-job done files>"]
+
+--watch: lists which matching files already existed and were left untouched (work kept from before this recipe,
+with its finish time) and which were created/rewritten while the recipe ran (work executed under the recipe).
 
 The recipe is executed exactly as a user would: `make <recipe> VAR=value ...` from the repo root. Recorded per
 recipe (latest attempt under "recipes", every attempt under "attempts"): the make command line, the commands
@@ -27,7 +30,12 @@ def main():
     note = None
     if "--note" in args:
         i = args.index("--note"); note = args[i + 1]; del args[i:i + 2]
+    watch = None
+    if "--watch" in args:
+        i = args.index("--watch"); watch = args[i + 1]; del args[i:i + 2]
     recipe, mvars = args[0], args[1:]
+    import glob
+    before = {f: os.path.getmtime(f) for f in glob.glob(os.path.join(LAB, watch))} if watch else {}
     os.makedirs(LOGD, exist_ok=True)
     tag = "make-%s-%d" % (recipe, int(time.time()))
     log = os.path.join(LOGD, "%s_%s.log" % (recipe, time.strftime("%H%M%S")))
@@ -62,6 +70,14 @@ def main():
         "log_tail": tail,
     }
     if note: rec["note"] = note
+    if watch:
+        after = {f: os.path.getmtime(f) for f in glob.glob(os.path.join(LAB, watch))}
+        rel = lambda f: os.path.relpath(f, LAB)
+        stamp = lambda t: time.strftime("%F %T", time.localtime(t))
+        rec["watch"] = watch
+        rec["kept_from_before_this_recipe"] = sorted("%s (finished %s)" % (rel(f), stamp(t)) for f, t in before.items() if after.get(f) == t)
+        rec["executed_under_this_recipe"] = sorted("%s (finished %s)" % (rel(f), stamp(t)) for f, t in after.items() if before.get(f) != t)
+        rec["watched_gone_at_end"] = sorted(rel(f) for f in before if f not in after)
     doc = json.load(open(OUT)) if os.path.exists(OUT) else {"stage": "32_make_recipes", "recipes": [], "attempts": []}
     doc["attempts"].append(rec)
     doc["recipes"] = [r for r in doc["recipes"] if r["recipe"] != recipe] + [rec]

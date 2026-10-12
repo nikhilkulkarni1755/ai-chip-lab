@@ -4,6 +4,8 @@
 SRC="$1"; T="$2"; cd "$T" || exit 2
 mkdir -p scripts results/.stages rtl model docker
 cp "$SRC/scripts/make_all.py" "$SRC/scripts/make_all_failsoft_test.sh" "$SRC/scripts/stage_inputs.json" scripts/
+# the fake recipes write one marker per stage
+python3 -c 'import json;p="scripts/stage_inputs.json";c=json.load(open(p));c["stages"]["t3"]["markers"]=["30_arch_model"];json.dump(c,open(p,"w"))'
 echo "module a; endmodule" > rtl/a.sv; echo "x=1" > model/m.py; echo "FROM x" > docker/Dockerfile
 for f in scripts/preflight.sh env.sh scripts/t1_run.sh scripts/t3_run.sh scripts/t2_run.sh scripts/repro.sh; do echo "# $f" > "$f"; done
 # fake recipes: each appends its name to ran.log; a stage fails when FAIL_<name>=1; stages write their .done marker
@@ -20,6 +22,7 @@ $(eval $(call STAGE,images,02_images,images))
 $(eval $(call STAGE,t1,10_rtl_verify,t1))
 $(eval $(call STAGE,t2,20_pnr_ref,t2))
 $(eval $(call STAGE,t2-stretch,xx_stretch,t2stretch))
+$(eval $(call STAGE,t1-routed,11_eqy_routed,t1routed))
 $(eval $(call STAGE,t3,30_arch_model,t3))
 $(eval $(call STAGE,sweeps,41_sweeps_finish,sweeps))
 $(eval $(call STAGE,repro,51_repro_full,repro))
@@ -32,7 +35,7 @@ git init -q . && git add -A && git -c user.email=t@example.invalid -c user.name=
 ran() { tr '\n' ' ' < ran.log; : > ran.log; }
 ok() { if [ "$2" = "$3" ]; then echo "OK   $1"; else echo "FAIL $1: got [$2] want [$3]"; BAD=1; fi; }
 BAD=0; : > ran.log
-ALLS="preflight runtime images t1 t2 t2-stretch t3 sweeps repro demo "
+ALLS="preflight runtime images t1 t2 t2-stretch t1-routed t3 sweeps repro demo "
 
 FAIL_t1=1 make all > out.A 2>&1; rc=$?
 ok "A fail-soft: exit status" "$rc" "2"
@@ -44,7 +47,7 @@ sleep 1
 RESUME=1 make all > out.B 2>&1; rc=$?
 ok "B resume, nothing changed: only demo ran" "$(ran)" "demo "
 ok "B resume: exit 0" "$rc" "0"
-ok "B resume: 9 skips logged with a reason" "$(grep -c 'SKIPPED — inputs' out.B)" "9"
+ok "B resume: 10 skips logged with a reason" "$(grep -c 'SKIPPED — inputs' out.B)" "10"
 
 echo "x=2" > model/m.py
 RESUME=1 make all > out.C 2>&1
@@ -62,8 +65,8 @@ RESUME=1 make all > out.E 2>&1
 ok "E no make records: skip by .done marker mtime (t2-stretch has no stage marker, so it runs)" "$(ran)" "t2-stretch demo "
 sleep 1; echo "module b; endmodule" > rtl/a.sv
 RESUME=1 make all > out.F 2>&1
-ok "F rtl/ touched after .done: t1, t2-stretch, repro rerun" "$(ran)" "t1 t2-stretch repro demo "
-ok "F reason names the newest file" "$(grep -c 'newest: rtl/a.sv' out.F)" "2"
+ok "F rtl/ touched after .done: t1, t2-stretch, t1-routed, repro rerun" "$(ran)" "t1 t2-stretch t1-routed repro demo "
+ok "F reason names the newest file" "$(grep -c 'newest: rtl/a.sv' out.F)" "3"
 
 echo x > results/.stages/30_arch_model.failed
 RESUME=1 make all > out.G 2>&1
