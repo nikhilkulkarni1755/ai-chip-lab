@@ -3,7 +3,9 @@
 #
 #   scripts/t61_run.sh [NCASES=10000] [OUTDIR=results]
 #
-# Runs in the pinned lab-sim container (under scripts/with_lock.sh unless LAB_LOCK_HELD=1):
+# Runs in the pinned lab-sim container.  Every step (lint + oracle cross-check, each
+# simulator, negative control, summary) is its own container job under its own
+# scripts/with_lock.sh acquisition (unless LAB_LOCK_HELD=1), like scripts/t1_run.sh:
 # lint, oracle cross-check (golden vs exact-rational reference), cocotb on Verilator and
 # Icarus, a negative control (tie rule broken in an RTL copy must be detected), then
 # scripts/t61_summary.py fills results into <OUTDIR>/p2_61_pe_bf16_summary.json next to the
@@ -20,26 +22,38 @@ if [ -z "${T61_INSIDE:-}" ]; then
   : "${LAB_SIM_IMAGE:?not set in coord/images.env}"
   case "$OUT_ARG" in "$LAB_DIR"/*) OUT_REL="${OUT_ARG#"$LAB_DIR"/}" ;; /*) echo "OUTDIR must be inside the lab" >&2; exit 2 ;; *) OUT_REL="${OUT_ARG%/}" ;; esac
   LOCK=(); [ "${LAB_LOCK_HELD:-0}" = 1 ] || LOCK=(bash scripts/with_lock.sh rtl env LAB_LOCK_HELD=1)
-  exec "${LOCK[@]}" docker run --rm --platform linux/amd64 --cpus 2 -v "$LAB_DIR":/lab -w /lab \
-    -e T61_INSIDE=1 -e PYTHONHASHSEED=0 -e T61_IMAGE_REF="$LAB_SIM_IMAGE" \
-    -e T61_IMAGE_ID="$(docker image inspect --format '{{.Id}}' "$LAB_SIM_IMAGE" 2>/dev/null || true)" \
-    "$LAB_SIM_IMAGE" bash scripts/t61_run.sh "$NCASES" "$OUT_REL"
+  IMAGE_ID="$(docker image inspect --format '{{.Id}}' "$LAB_SIM_IMAGE" 2>/dev/null || true)"
+  phase() {  # phase <name>: one container job = one lock acquisition
+    ${LOCK[@]+"${LOCK[@]}"} docker run --rm --platform linux/amd64 --cpus 2 -v "$LAB_DIR":/lab -w /lab \
+      -e T61_INSIDE=1 -e T61_PHASE="$1" -e PYTHONHASHSEED=0 -e T61_IMAGE_REF="$LAB_SIM_IMAGE" -e T61_IMAGE_ID="$IMAGE_ID" \
+      "$LAB_SIM_IMAGE" bash scripts/t61_run.sh "$NCASES" "$OUT_REL"
+  }
+  phase prep || exit $?
+  for ph in sim_verilator sim_icarus neg_control; do phase "$ph" || true; done
+  phase finish
+  exit $?
 fi
+PHASE="${T61_PHASE:-all}"
+in_phase() { [ "$PHASE" = all ] || [ "$PHASE" = "$1" ]; }
 cd "$LAB_DIR" || exit 2
 export PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 LC_ALL=C.UTF-8
 OUT="$OUT_ARG"; WORK="$OUT/t61_work"
 OFFICIAL=0; [ "$OUT" = results ] && [ "$NCASES" -ge 10000 ] && OFFICIAL=1
 if [ "$OUT" = results ]; then LOGS="logs/part2/61_pe_bf16"; else LOGS="$WORK/logs"; fi
 STAGE="results/.stages/61_pe_bf16"
-rm -rf "$WORK"; mkdir -p "$OUT" "$WORK" "$LOGS"; echo '*' > "$WORK/.gitignore"
-rm -f "$OUT"/t61_verilator.csv "$OUT"/t61_icarus.csv "$OUT"/t61_coverage_*.json "$OUT"/t61_lint.txt "$LOGS"/step_*.log
+if in_phase prep; then   # a new run starts here: clean slate
+  rm -rf "$WORK"; mkdir -p "$OUT" "$WORK" "$LOGS"; echo '*' > "$WORK/.gitignore"
+  rm -f "$OUT"/t61_verilator.csv "$OUT"/t61_icarus.csv "$OUT"/t61_coverage_*.json "$OUT"/t61_lint.txt "$LOGS"/step_*.log
+  : > "$WORK/steps.tsv"; date +%s > "$WORK/t_start"
+  if [ "$OFFICIAL" = 1 ]; then rm -f "$STAGE.done" "$STAGE.failed"; : > "$STAGE.running"; fi
+fi
+mkdir -p "$OUT" "$WORK" "$LOGS"
 OUT_ABS="$(cd "$OUT" && pwd)"; WORK_ABS="$(cd "$WORK" && pwd)"
-if [ "$OFFICIAL" = 1 ]; then rm -f "$STAGE.done" "$STAGE.failed"; : > "$STAGE.running"; fi
 step() { local name="$1" secs="$2" t0 rc; shift 2; t0=$(date +%s); echo "[t61] $name ..."; TMO="$secs"
   "$@" > "$LOGS/step_$name.log" 2>&1; rc=$?
   printf '%s\t%s\t%s\n' "$name" "$rc" "$(( $(date +%s) - t0 ))" >> "$WORK/steps.tsv"
   echo "[t61] $name: rc=$rc, $(( $(date +%s) - t0 )) s"; return $rc; }
-: > "$WORK/steps.tsv"; T_START=$(date +%s)
+T_START=$(cat "$WORK/t_start" 2>/dev/null || date +%s)
 
 lint() {
   local rc=0 n
@@ -64,11 +78,13 @@ neg() {
   echo "make exit code: $rc (non-zero expected: the testbench must report mismatches)"
   [ $rc -ne 0 ] && [ $rc -ne 124 ]
 }
-step lint 300 lint
-step oracle 900 oracle
-step sim_verilator 2400 sim verilator "" verilator "$NCASES" "$OUT_ABS"
-step sim_icarus 2400 sim icarus "" icarus "$NCASES" "$OUT_ABS"
-step neg_control 900 neg
+# Step time limits stay under the 10-minute lock-hold rule; a simulator that needs longer
+# for NCASES fails its step (reported as such) rather than holding the queue.
+in_phase prep && { step lint 120 lint; step oracle 300 oracle; }
+in_phase sim_verilator && step sim_verilator 570 sim verilator "" verilator "$NCASES" "$OUT_ABS"
+in_phase sim_icarus && step sim_icarus 570 sim icarus "" icarus "$NCASES" "$OUT_ABS"
+in_phase neg_control && step neg_control 300 neg
+in_phase finish || exit 0
 python3 scripts/t61_summary.py --out "$OUT" --work "$WORK" --logs "$LOGS" --ncases "$NCASES" --wall "$(( $(date +%s) - T_START ))"
 RC=$?
 if [ "$OFFICIAL" = 1 ]; then rm -f "$STAGE.running"; echo "$(date +%H:%M:%S) rtl: 61_pe_bf16 verification finished rc=$RC" >> logs/run.log; fi

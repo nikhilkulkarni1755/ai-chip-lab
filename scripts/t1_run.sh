@@ -64,7 +64,7 @@ if [ -z "${T1_INSIDE:-}" ]; then
   LOCK=()
   [ "${LAB_LOCK_HELD:-0}" = 1 ] || LOCK=(bash scripts/with_lock.sh rtl env LAB_LOCK_HELD=1)
   phase() {  # phase <name>: one container job = one lock acquisition
-    "${LOCK[@]}" docker run --rm --platform linux/amd64 --cpus 2 \
+    ${LOCK[@]+"${LOCK[@]}"} docker run --rm --platform linux/amd64 --cpus 2 \
       -v "$LAB_DIR":/lab -w /lab \
       -e T1_INSIDE=1 -e T1_PHASE="$1" -e T1_STEPS="$STEPS" -e PYTHONHASHSEED=0 \
       -e T1_IMAGE_REF="$LAB_SIM_IMAGE" -e T1_IMAGE_ID="$IMAGE_ID" \

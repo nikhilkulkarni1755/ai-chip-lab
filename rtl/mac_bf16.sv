@@ -4,7 +4,7 @@
 // acc  : IEEE-754 binary32 (FP32) accumulator; synchronous `clear` (wins) and `valid`,
 //        exactly like mac_int8.
 //
-// Arithmetic (the Python golden model model/bf16_golden.py applies the same rules):
+// Arithmetic (the Python golden model tb/bf16_golden.py applies the same rules):
 //  * product: 8-bit x 8-bit significands -> at most 16 significant bits, so the
 //    product is EXACT in FP32; no rounding happens in the multiplier.
 //  * sum: FP32 addition, round-to-nearest-even.

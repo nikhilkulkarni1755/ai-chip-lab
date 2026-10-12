@@ -69,7 +69,7 @@ if [ -z "${T1R_INSIDE:-}" ]; then
   [ "${LAB_LOCK_HELD:-0}" = 1 ] || LOCK=(bash scripts/with_lock.sh rtl env LAB_LOCK_HELD=1)
   IMAGE_ID="$(docker image inspect --format '{{.Id}}' "$LAB_SIM_IMAGE" 2>/dev/null || true)"
   phase() {  # phase <name>: one container job = one lock acquisition
-    "${LOCK[@]}" docker run --rm --platform linux/amd64 --cpus 2 \
+    ${LOCK[@]+"${LOCK[@]}"} docker run --rm --platform linux/amd64 --cpus 2 \
       -v "$LAB_DIR":/lab -w /lab \
       -e T1R_INSIDE=1 -e T1R_PHASE="$1" -e T1R_STEPS="$STEPS" -e PYTHONHASHSEED=0 \
       -e T1R_CHUNK_SECONDS="${T1R_CHUNK_SECONDS:-540}" -e T1R_RESUME="${T1R_RESUME:-0}" \
@@ -91,7 +91,7 @@ if [ -z "${T1R_INSIDE:-}" ]; then
   if [ "${T1R_RESUME:-0}" = 1 ] && [ -s "$WORK/steps.tsv" ] && [ -s "$WORK/cells/NangateOpenCellLibrary_typical.lib" ] && [ -s "$WORK/kepler_check.txt" ]; then
     echo "[t1r] Liberty copy and Kepler-Formal check: already done (resume), kept"
   else
-  "${LOCK[@]}" docker run --rm --platform linux/amd64 -v "$LAB_DIR":/lab "$ORFS_IMAGE" bash -c '
+  ${LOCK[@]+"${LOCK[@]}"} docker run --rm --platform linux/amd64 -v "$LAB_DIR":/lab "$ORFS_IMAGE" bash -c '
     cp "$0" "/lab/$1/cells/NangateOpenCellLibrary_typical.lib" || exit 3
     K=/OpenROAD-flow-scripts/tools/install/kepler-formal/bin/kepler-formal
     {
