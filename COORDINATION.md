@@ -40,13 +40,15 @@ If a stage is late, cut scope (documented), never the demo.
 11. **Decisions.** If a decision is not contingent on the owner: find evidence from a reputable source, record it in **Decisions** below (decision, evidence/URL, date/time), and continue. If it genuinely needs the owner (credentials, sudo, spending money, anything outside the lab dir): add it to **Needs owner** below, report it in your final message to the main agent, and keep working on everything that does not depend on it.
 12. **Requests between agents** go in **Requests** below (who → who, what, status). Check it every iteration.
 13. When your queue is empty: re-verify your deliverables, check Requests, then report. The main agent keeps you resumable and will message you with new work — answer with the same context.
+14. **The repo will be made PUBLIC at the end of the run (owner's instruction, 02:58).** Nothing private may be committed: no absolute home paths (`/Users/<name>` → write `~`, `$HOME` or `$LAB`), no hostname, no email addresses, no tokens/credentials, no raw logs that contain any of those (scrub with `sed "s#$HOME#~#g"` before committing; `logs/` stays gitignored). A pre-commit hook rejects such content — fix the content, never use `--no-verify`. Commit identity is already set repo-wide to the GitHub noreply address; do not change it. This also applies to everything under `results/`, `versions.lock`, and `demo/` (generated HTML/README/PNG must show `~`, never the real home path or username).
+15. **Evidence screenshots.** The owner wants screenshots proving each thing builds and runs, for the README. Each agent, when a stage passes, saves the scrubbed, real terminal output of its key verification command(s) (the final PASS table / tool summary, ≤ 60 lines, home path replaced by `~`) to `results/evidence/<stage>_<what>.txt`. The demo agent renders these to PNG. Never fabricate or hand-edit the content beyond the path scrub and trimming.
 
 ## Board
 
 | Agent | Owns (paths) | Stages | Depends on | State |
 |---|---|---|---|---|
 | main | coord/, scripts/status.sh, COORDINATION.md structure, HITL | 00_preflight | – | preflight done |
-| infra | bin/, opt/, docker/, env.sh, versions.lock (runtime+images), Makefile skeleton | 01_runtime, 02_images | – | starting |
+| infra | bin/, opt/, docker/, env.sh, versions.lock (runtime+images), Makefile skeleton | 01_runtime, 02_images | – | **01_runtime DONE 02:57** — docker works (`source env.sh`; DOCKER_HOST set there). Images: pulling ORFS next, then lab-sim |
 | rtl | rtl/, tb/, formal/, eqy/, scripts/t1_* | 10_rtl_verify | lab-sim image (for official run) | starting (authoring) |
 | arch | model/, arch/, sweeps/arch_*, scripts/t3_* | 30_arch_model, 40_sweeps A | lab-sim image (for official run) | starting (authoring) |
 | pnr | orfs/, sweeps/phys_*, scripts/t2_* | 20_pnr_ref, 40_sweeps B | ORFS image; rtl (for stretch) | starting (authoring) |
@@ -69,6 +71,7 @@ Agents update their own row's State cell (short).
 | 2 | 02:48 | main | Route A (Colima vz), VM 3 CPU / 4 GB | macOS 13.7.8 ≥ 13; task §1 sizing rule (half of 8 GB, ncpu−1) |
 | 3 | 02:48 | main | Lima/Colima/Docker state redirected into the lab via LIMA_HOME / COLIMA_HOME / DOCKER_CONFIG | Task rule "stay inside ~/ai-chip-lab" |
 | 4 | 02:48 | main | Private GitHub repo `ai-chip-lab` as `origin` | Owner asked for gh CLI + atomic commits; private = no publication |
+| 5 | 02:58 | main | Repo goes public at the END of the run, after a history scrub (first commits carry a local-hostname author address and home paths) and a full audit; private until then | Owner approved public at 02:58 with the condition that no private info is in the repo; flipping after a single final audit is the only way to guarantee that while 4 agents are still pushing |
 
 ## Needs owner
 
@@ -78,3 +81,5 @@ _(none yet)_
 
 | From → To | What | Status |
 |---|---|---|
+| rtl → infra | lab-sim image needs `make`, `g++` (Verilator compiles its model with the host C++ compiler; cocotb Makefile flow) and `git`; please state the pinned cocotb / cocotb-coverage versions here (I am writing to cocotb 2.x + cocotb-coverage 2.0, latest on PyPI = 2.1.0 / 2.0) | open |
+| pnr → infra | **ORFS image tag: please pull `openroad/orfs:26Q3-600-g3a964e13f` (digest `sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6`, ~1.6 GB), NOT `latest`.** Reason: ORFS removed `rules-base.json`/`checkMetadata.py` (the shipped thresholds) on 2026-09-22 (commit 76be2a8e); every 26Q4-* tag incl. `latest` lacks them (checker now needs an online dashboard). 26Q3-600 is the newest tag still shipping them. Write it as `ORFS_IMAGE=openroad/orfs@sha256:573c...64f6` in coord/images.env. | open |

@@ -16,3 +16,6 @@ results/**/*.odb
 orfs/work/
 *.lock.d/
 .cache/
+STATUS.md
+results/.stages/*.running
+coord/*.lock.d/
