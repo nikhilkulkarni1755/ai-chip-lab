@@ -1,5 +1,5 @@
 {
-  "generated_epoch": 1791807216,
+  "generated_epoch": 1791812386,
   "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
   "tool_versions": [
     "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)",
@@ -22,6 +22,22 @@
         "stdcell_count": 735,
         "drc_errors": 0,
         "wirelength": 4429
+      },
+      "detail": {
+        "reference_clock_period_ns": 0.25,
+        "setup_violating_endpoints": 51,
+        "hold_violating_endpoints": 0,
+        "die_area_um2": 1278.42,
+        "core_area_um2": 1076.77,
+        "instance_area_um2_incl_fill_and_tap": 943.502,
+        "fill_cell_area_um2": 133.266,
+        "tap_cell_area_um2": 12.236,
+        "instance_count_total": 968,
+        "instance_count_stdcell": 735,
+        "fill_cell_count": 233,
+        "tap_cell_count": 46,
+        "timing_closed": false,
+        "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
         "cts": 32.03,
@@ -156,6 +172,22 @@
         "drc_errors": 0,
         "wirelength": 11728
       },
+      "detail": {
+        "reference_clock_period_ns": 1.1,
+        "setup_violating_endpoints": 63,
+        "hold_violating_endpoints": 0,
+        "die_area_um2": 6404,
+        "core_area_um2": 5885.64,
+        "instance_area_um2_incl_fill_and_tap": 5412.69,
+        "fill_cell_area_um2": 472.954,
+        "tap_cell_area_um2": 93.84,
+        "instance_count_total": 752,
+        "instance_count_stdcell": 548,
+        "fill_cell_count": 204,
+        "tap_cell_count": 75,
+        "timing_closed": false,
+        "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
+      },
       "stage_runtime_s": {
         "cts": 28.1,
         "detailedplace": 2.72,
@@ -285,6 +317,22 @@
         "stdcell_count": 11152,
         "drc_errors": 0,
         "wirelength": 144716
+      },
+      "detail": {
+        "reference_clock_period_ns": 4.0,
+        "setup_violating_endpoints": 0,
+        "hold_violating_endpoints": 0,
+        "die_area_um2": 75259.7,
+        "core_area_um2": 73896.9,
+        "instance_area_um2_incl_fill_and_tap": 22712.4,
+        "fill_cell_area_um2": 51184.5,
+        "tap_cell_area_um2": 155.344,
+        "instance_count_total": 29097,
+        "instance_count_stdcell": 11152,
+        "fill_cell_count": 17945,
+        "tap_cell_count": 584,
+        "timing_closed": true,
+        "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
         "cts": 24.58,

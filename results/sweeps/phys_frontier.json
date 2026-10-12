@@ -1,0 +1,64 @@
+{
+  "note": "closed = setup WNS >= 0 per the flow's own report; frontier = smallest swept period that closed. Resolution is the bisection step (0.005-0.01 ns).",
+  "frontier": {
+    "gcd": {
+      "30": {
+        "points": 9,
+        "tightest_swept_period_ns": 0.3,
+        "fastest_closing_period_ns": 0.425,
+        "wns_at_frontier_ns": 0.00273762,
+        "area_um2": 819.28,
+        "power_total_w": 0.00331371,
+        "marginal": true,
+        "next_failing_period_ns": 0.42,
+        "wns_at_next_failing_ns": -0.00382275
+      },
+      "40": {
+        "points": 9,
+        "tightest_swept_period_ns": 0.3,
+        "fastest_closing_period_ns": 0.425,
+        "wns_at_frontier_ns": 0.00304279,
+        "area_um2": 745.332,
+        "power_total_w": 0.00296769,
+        "marginal": true,
+        "next_failing_period_ns": 0.42,
+        "wns_at_next_failing_ns": -0.00314013
+      },
+      "50": {
+        "points": 9,
+        "tightest_swept_period_ns": 0.3,
+        "fastest_closing_period_ns": 0.42,
+        "wns_at_frontier_ns": 5.91194e-05,
+        "area_um2": 773.262,
+        "power_total_w": 0.00309714,
+        "marginal": true,
+        "next_failing_period_ns": 0.41,
+        "wns_at_next_failing_ns": -0.010512
+      },
+      "60": {
+        "points": 8,
+        "tightest_swept_period_ns": 0.35,
+        "fastest_closing_period_ns": 0.425,
+        "wns_at_frontier_ns": 0.00419678,
+        "area_um2": 747.194,
+        "power_total_w": 0.00293746,
+        "marginal": true,
+        "next_failing_period_ns": 0.42,
+        "wns_at_next_failing_ns": -0.00699543
+      }
+    }
+  },
+  "failed_points": [
+    {
+      "design": "gcd",
+      "clock_period_ns": 0.3,
+      "core_utilization": 60,
+      "status": "failed",
+      "flow_rc": 2,
+      "extractor_error": "FileNotFoundError(2, 'No such file or directory')",
+      "flow_error_from_log": "[ERROR DPL-0033] detailed placement checks failed during check placement. | Error: global_route.tcl, 175 DPL-0033",
+      "meaning": "flow aborted before metadata.json existed (extractor FileNotFoundError is a consequence, not the cause); deterministic flow, so a plain rerun is expected to fail identically",
+      "retry": "cd ~/ai-chip-lab && source env.sh && python3 sweeps/phys_sweep.py --design gcd --retry --max-points 1"
+    }
+  ]
+}
