@@ -1,0 +1,190 @@
+{
+ "bundled": {
+  "array": "256x256",
+  "config": "configs/google.cfg",
+  "dataflows": [
+   "ws",
+   "os",
+   "is"
+  ],
+  "topology": "topologies/conv_nets/alexnet.csv"
+ },
+ "bundled_config_zero_stalls": true,
+ "bundled_summary": {
+  "is": {
+   "stall_cycles": 0.0,
+   "total_cycles": 92101.0
+  },
+  "os": {
+   "stall_cycles": 0.0,
+   "total_cycles": 36727.0
+  },
+  "ws": {
+   "stall_cycles": 0.0,
+   "total_cycles": 73747.0
+  }
+ },
+ "checks": {
+  "analytic_constants_match_derivation": true,
+  "analytic_residuals_stable": true,
+  "bundled_runs_ok": true,
+  "reports_saved": true,
+  "reruns_byte_identical": true,
+  "roofline_agreement_is": false,
+  "roofline_agreement_os": false,
+  "roofline_agreement_ws": false,
+  "roofline_agrees": false,
+  "roofline_both_classes_is": true,
+  "roofline_both_classes_os": true,
+  "roofline_both_classes_ws": true,
+  "roofline_rank_corr_is": false,
+  "roofline_rank_corr_os": true,
+  "roofline_rank_corr_ws": false
+ },
+ "fit": {
+  "is": {
+   "derived": {
+    "a": 2,
+    "b": 1,
+    "c": -2,
+    "d": -1
+   },
+   "fitted": {
+    "a": 1.9999999999999982,
+    "b": 1.0000000000000022,
+    "c": -1.9999999999999962,
+    "d": -0.9999999999998981
+   },
+   "heldout_max_abs_residual": 4.547473508864641e-13,
+   "heldout_max_rel_residual": 6.674374034537144e-16,
+   "naive_heldout_max_rel_residual": 0.7260882083913303,
+   "naive_single_constant_k": 1.6357021276595745
+  },
+  "os": {
+   "derived": {
+    "a": 1,
+    "b": 1,
+    "c": -2,
+    "d": -1
+   },
+   "fitted": {
+    "a": 0.999999999999999,
+    "b": 1.000000000000001,
+    "c": -1.9999999999999984,
+    "d": -0.9999999999998777
+   },
+   "heldout_max_abs_residual": 3.410605131648481e-13,
+   "heldout_max_rel_residual": 5.810230207237616e-16,
+   "naive_heldout_max_rel_residual": 0.4541776163133947,
+   "naive_single_constant_k": 17.808315621679064
+  },
+  "ws": {
+   "derived": {
+    "a": 2,
+    "b": 1,
+    "c": -2,
+    "d": -1
+   },
+   "fitted": {
+    "a": 1.999999999999998,
+    "b": 0.9999999999999994,
+    "c": -1.99999999999999,
+    "d": -0.9999999999997607
+   },
+   "heldout_max_abs_residual": 4.547473508864641e-13,
+   "heldout_max_rel_residual": 2.1675278879240424e-16,
+   "naive_heldout_max_rel_residual": 0.7516840124109679,
+   "naive_single_constant_k": 3.111707445409103
+  }
+ },
+ "identity": {
+  "files_compared": 15,
+  "mismatches": [],
+  "same_file_set": true,
+  "sha256": {
+   "bundled_runs.json": "2637860baba5eec3326292ba3560bef0a28756be4245da95d1f0b57c2dcb4a34",
+   "fit.json": "62d0b35e390d89f0b533dc3b64d81b206ab451194d94a0708f2a25738cf53e4c",
+   "roofline.json": "7b9acf9953e899e29ce52e805b86490a01fd21286129e61d6210b8f946930f03",
+   "scalesim/is/BANDWIDTH_REPORT.csv": "5c1b5303fc1a9ca68be34e2013ff7718e76d2591e77fa92902b5e39463c75965",
+   "scalesim/is/COMPUTE_REPORT.csv": "6c9e45b1b151c12c3e79360a0d466d10063bf59afc81c4209902bdf0f80107d7",
+   "scalesim/is/DETAILED_ACCESS_REPORT.csv": "bb571beb86893b1bc48bc3c8226caec6f9e63b43c5b13c5a340bf486b02d4f12",
+   "scalesim/is/config.cfg": "9d1fad1b9414662cbcf37e568ceed3f02bfc4ba6cb50201ccf46b824f2fbb775",
+   "scalesim/os/BANDWIDTH_REPORT.csv": "5e4f7f7022f4a5d573ebdafa614a642915d7aeb3aaa82c3e035d313118eda6e5",
+   "scalesim/os/COMPUTE_REPORT.csv": "68e667f9f364b44e22d910d9b8c73ae54b7b9699da46c82f923a238f3915d1df",
+   "scalesim/os/DETAILED_ACCESS_REPORT.csv": "bd85915afcb2003d1f1bb31a2780fbc08b019b025767f2a7222b5f62e6503a74",
+   "scalesim/os/config.cfg": "8be3cb24654ac25b07dc1025eb6c17b225b6403fdb1cee8fe986bc612ee89da7",
+   "scalesim/ws/BANDWIDTH_REPORT.csv": "585d2634bcaf3001ecb4da04a05103966a1e347767598eccc4eb2ac31a1ca9d2",
+   "scalesim/ws/COMPUTE_REPORT.csv": "660a8fdccc072bc46f65f85b79dcc3f992950389cdff7b8be3f2233b2fcc6c07",
+   "scalesim/ws/DETAILED_ACCESS_REPORT.csv": "1540abaa974a0467b84391859581b633671a002256fd2ae5a4a1ae8faa9209eb",
+   "scalesim/ws/config.cfg": "f8872219bff9d03f9b4f3fbe5962f4e9c794d2706be8baddd2cc041021214937"
+  }
+ },
+ "pass": false,
+ "roofline": {
+  "is": {
+   "agreement_compulsory": 0.4375,
+   "agreement_compulsory_vs_memory_added": 0.875,
+   "agreement_effective": 0.625,
+   "disagreements": [
+    "sq96",
+    "sq64",
+    "sq32",
+    "skinny256x16x16",
+    "skinny16x256x16",
+    "kdeep16x16x256"
+   ],
+   "layers_with_stall_cycles": 9,
+   "n_obs_bound": 9,
+   "n_pred_bound": 15,
+   "ridge_ai": 128.0,
+   "spearman_compulsory": 0.1427264302605202,
+   "spearman_effective": -0.30874813127985057
+  },
+  "os": {
+   "agreement_compulsory": 0.1875,
+   "agreement_compulsory_vs_memory_added": 0.875,
+   "agreement_effective": 0.3125,
+   "disagreements": [
+    "sq128",
+    "sq96",
+    "sq64",
+    "sq32",
+    "tall512x64x64",
+    "wide64x512x64",
+    "kheavy64x64x512",
+    "skinny256x16x16",
+    "skinny16x256x16",
+    "kdeep16x16x256",
+    "rowvec1x1x4096"
+   ],
+   "layers_with_stall_cycles": 5,
+   "n_obs_bound": 5,
+   "n_pred_bound": 16,
+   "ridge_ai": 128.0,
+   "spearman_compulsory": -0.07946174581222,
+   "spearman_effective": -0.6612999066508835
+  },
+  "rule": "Roofline study: arithmetic intensity vs SCALE-Sim's memory-added cycles.\n\nRULES (fixed here, before any result was looked at; the experiment came after the design):\n  workload  : 16 synthetic GEMMs (M,N,K) spanning ~2..170 FLOP/byte (square, skinny, GEMV, K-heavy).\n  machine   : R x C = 16 x 16 array, 1 byte/word (SCALE-Sim word_size=1), 64 kB SRAM per buffer,\n              DRAM interface B = 4 words/cycle. Set through the bundled scale.cfg: InterfaceBandwidth=USER,\n              Bandwidth = IfmapSRAMBankBandwidth = FilterSRAMBankBandwidth = B, SRAM banks = 1.\n              (In the bundled google.cfg SCALE-Sim reports 0 stall cycles for every layer of every\n              dataflow: interface 10 words/cycle with 6 MiB buffers hides everything, so B is lowered.)\n  Two roofline variants are reported:\n   (a) compulsory:  AI = FLOPs / (M*K + K*N + M*N bytes);  peak = 2*R*C FLOP/cycle; ridge = peak / B;\n       predicted bandwidth-bound  <=>  AI < ridge.\n   (b) effective:   traffic = DRAM words actually moved in the SCALE-Sim run (DETAILED_ACCESS_REPORT\n       ifmap+filter reads + ofmap writes, i.e. including re-fetch when 64 kB cannot hold the working set);\n       AI_eff = FLOPs / traffic;  predicted bandwidth-bound  <=>  traffic / B > compute_only cycles\n       (memory time exceeds compute time = AI_eff below the layer's attainable-compute ridge).\n  compute_only = stall-free cycles of the layer from model/analytic.py (validated exact by the fit).\n  SCALE-Sim signal (observed): stall_frac = Stall Cycles / Total Cycles; bandwidth-bound <=> stall_frac > 5 %.\n  Also reported: memory_added = (Total Cycles incl. prefetch - compute_only) / Total Cycles incl. prefetch.\n  CHRONOLOGY (disclosed): the first rule written down used memory_added > 10 % as the observed signal; the\n  first run flagged all 16 layers (the exposed initial prefetch alone exceeds 10 % everywhere), so it could\n  not discriminate, and variant (a) turned out to ignore re-fetch traffic. The stall-based observed signal\n  and variant (b) were therefore adopted afterwards (post-hoc); all variants are kept in roofline.json.\n  Gating checks (variant b): agreement >= 80 % of layers, both classes >= 3 layers,\n  Spearman(AI_eff, stall_frac) <= -0.5, for each dataflow.",
+  "ws": {
+   "agreement_compulsory": 0.4375,
+   "agreement_compulsory_vs_memory_added": 0.875,
+   "agreement_effective": 0.625,
+   "disagreements": [
+    "sq96",
+    "sq64",
+    "sq32",
+    "skinny256x16x16",
+    "skinny16x256x16",
+    "kdeep16x16x256"
+   ],
+   "layers_with_stall_cycles": 9,
+   "n_obs_bound": 9,
+   "n_pred_bound": 15,
+   "ridge_ai": 128.0,
+   "spearman_compulsory": 0.1426118365605834,
+   "spearman_effective": -0.3069615857623519
+  }
+ },
+ "scalesim_version": "3.0.0",
+ "stage": "30_arch_model"
+}

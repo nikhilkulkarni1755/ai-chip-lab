@@ -1,0 +1,8 @@
+$ scripts/t3_run.sh   # fit + residual table (pass 1 log)
+df  fitted(a,b,c,d)            derived        heldout max|res|  max rel   naive-k  naive max rel
+os  (1.000,1.000,-2.000,-1.000)  (1,1,-2,-1)      0.0 cyc       5.81e-16     17.81  45.4%
+ws  (2.000,1.000,-2.000,-1.000)  (2,1,-2,-1)      0.0 cyc       2.17e-16      3.11  75.2%
+is  (2.000,1.000,-2.000,-1.000)  (2,1,-2,-1)      0.0 cyc       6.67e-16      1.64  72.6%
+is heldout max|residual| = 4.55e-13 cycles, naive single-constant model max rel err 72.6%
+os heldout max|residual| = 3.41e-13 cycles, naive single-constant model max rel err 45.4%
+ws heldout max|residual| = 4.55e-13 cycles, naive single-constant model max rel err 75.2%

@@ -1,0 +1,6 @@
+$ scripts/t3_run.sh  # roofline step
+roofline ws: effective-roofline agreement 62% rho -0.31 | compulsory agreement 44% rho 0.14 | bound obs/pred 9/15, stalls in 9 layers; disagree ['sq96', 'sq64', 'sq32', 'skinny256x16x16', 'skinny16x256x16', 'kdeep16x16x256']
+roofline os: effective-roofline agreement 31% rho -0.66 | compulsory agreement 19% rho -0.08 | bound obs/pred 5/16, stalls in 5 layers; disagree ['sq128', 'sq96', 'sq64', 'sq32', 'tall512x64x64', 'wide64x512x64', 'kheavy64x64x512', 'skinny256x16x16', 'skinny16x256x16', 'kdeep16x16x256', 'rowvec1x1x4096']
+roofline is: effective-roofline agreement 62% rho -0.31 | compulsory agreement 44% rho 0.14 | bound obs/pred 9/15, stalls in 9 layers; disagree ['sq96', 'sq64', 'sq32', 'skinny256x16x16', 'skinny16x256x16', 'kdeep16x16x256']
+checks: {'roofline_agreement_is': False, 'roofline_agreement_os': False, 'roofline_agreement_ws': False, 'roofline_agrees': False, 'roofline_both_classes_is': True, 'roofline_both_classes_os': True, 'roofline_both_classes_ws': True, 'roofline_rank_corr_is': False, 'roofline_rank_corr_os': True, 'roofline_rank_corr_ws': False}
+pass = False (roofline_agrees=false; all other checks true)

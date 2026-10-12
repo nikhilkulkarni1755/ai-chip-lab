@@ -1,0 +1,18 @@
+$ scripts/t3_run.sh  # pass 1 vs pass 2 (independent reruns), sha256 compare
+files compared: 15  same file set: True  mismatches: []
+2637860baba5eec3 bundled_runs.json
+62d0b35e390d89f0 fit.json
+7b9acf9953e899e2 roofline.json
+5c1b5303fc1a9ca6 scalesim/is/BANDWIDTH_REPORT.csv
+6c9e45b1b151c12c scalesim/is/COMPUTE_REPORT.csv
+bb571beb86893b1b scalesim/is/DETAILED_ACCESS_REPORT.csv
+9d1fad1b9414662c scalesim/is/config.cfg
+5e4f7f7022f4a5d5 scalesim/os/BANDWIDTH_REPORT.csv
+68e667f9f364b44e scalesim/os/COMPUTE_REPORT.csv
+bd85915afcb2003d scalesim/os/DETAILED_ACCESS_REPORT.csv
+8be3cb24654ac25b scalesim/os/config.cfg
+585d2634bcaf3001 scalesim/ws/BANDWIDTH_REPORT.csv
+660a8fdccc072bc4 scalesim/ws/COMPUTE_REPORT.csv
+1540abaa974a0467 scalesim/ws/DETAILED_ACCESS_REPORT.csv
+f8872219bff9d03f scalesim/ws/config.cfg
+reruns_byte_identical = True

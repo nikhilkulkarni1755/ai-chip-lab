@@ -1,0 +1,3 @@
+[arch_sweep] 26 gemm_test|os|16x16|default ok 15.1s cycles=36607
+[arch_sweep] 27 gemm_test|os|16x16|small ok 15.4s cycles=36607
+[arch_sweep] 28 gemm_test|os|16x16|large ok 11.0s cycles=36607
