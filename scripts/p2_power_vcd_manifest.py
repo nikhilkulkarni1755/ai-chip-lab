@@ -33,6 +33,8 @@ def main():
            "simulated_netlist_sha256_is_expected": nsha == EXPECTED_NETLIST_SHA256,
            "vcd_scope": "systolic_os", "testbench": "tb/test_power_vcd.py (results checked against NumPy in the same run)",
            "seed_rule": "numpy default_rng([1234, 2000000000]), the same stream and schedule for every workload",
+           "note": "each VCD starts with a $date header written by the simulator, so vcd_sha256 identifies these files; "
+                   "a rerun gives the same value changes but a different file hash",
            "workloads": {}}
     ok = man["simulated_netlist_sha256_is_expected"]
     for wl, what in (("random", "uniform INT8 operands"), ("sparse50", "uniform INT8, each element zeroed with p = 0.5"),
