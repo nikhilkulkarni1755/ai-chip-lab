@@ -1,0 +1,32 @@
+# Where to go next
+
+A plan for the next round, ordered by value per unit of effort on this machine. Costs are grounded in what this lab measured: a 2-core / 8 GB MacBook, a Colima VM with 3 CPUs and 4 GB of RAM, one heavy job at a time (`scripts/with_lock.sh`).
+
+Measured reference points from this lab (see `results/t2_summary.json`, `results/t1_summary.json`, `results/sweeps/`):
+
+| Job | Measured |
+|---|---|
+| ORFS nangate45 `gcd`, one full flow | about 5 min (302 s wall) |
+| ORFS sky130hd `gcd`, one full flow | minutes, same order as nangate45 gcd (see `t2_summary.json` `wall_s`) |
+| ORFS nangate45 `systolic_os` 4x4, one full flow | about 28 min (1704 s) |
+| Task 1, 10,000 cases on two simulators | about 25 minutes including formal and equivalence |
+| Formal BMC depth 20 on the MAC | 318 s |
+| One SCALE-Sim ws/os/is stage | about 15-20 min; single-threaded |
+
+How to read the "fits here?" column: **yes** = fits the 4 GB VM and the one-job-at-a-time queue; **tight** = possible but expect hours; **no** = needs different hardware.
+
+| # | Item | Why | Rough cost on this machine | Fits here? |
+|---|---|---|---|---|
+| 1 | Double-buffered SRAM in the RTL (a ping-pong scratchpad feeding `systolic_os`) | The array is only half the chip. A double buffer is what lets compute overlap DRAM traffic, which is exactly the effect the roofline study could not see in the SCALE-Sim sweeps (the CALC bandwidth mode never stalls). Putting it in RTL makes the stall behaviour measurable instead of modelled. | RTL + cocotb: a day of agent time, small sims (minutes). Through ORFS it needs SRAM macros or flop-based memory: flop-based buffers make the design several times larger than `systolic_os` alone (28 min per flow today), so expect 1-2 h per flow. Use CACTI numbers (stage 63) to size it first. | yes, with flop memory and a small buffer; no real SRAM macro on nangate45 here |
+| 2 | LLM-generated RTL scored with this lab's harness (VerilogEval) | Reuses everything already built: Icarus/Verilator, cocotb, formal and EQY make a stricter judge than a single testbench. NVlabs/verilog-eval (v2 harness, `spec-to-rtl` and `code-complete` tasks) needs `iverilog` v12 (v13 development release is not supported), Python 3.11 and an LLM endpoint. This lab's lab-sim image carries a different iverilog version, so pin a v12 build in a second image first. | Image: about 20 min of build under the lock. Runs: the harness is CPU-light (iverilog sims); the cost is LLM API calls, which need credentials the lab does not hold (owner decision). | yes for the harness; LLM access needs the owner |
+| 3 | TVM + VTA (apache/tvm-vta) or an MLIR/CIRCT flow | Closes the loop from a model to the accelerator: VTA is an open accelerator with a TVM-based compiler stack; CIRCT (llvm/circt) is the MLIR-based hardware compiler infrastructure and builds with git, ninja, python3, cmake and a C++ toolchain. Both would let a tiny network, not hand-made GEMMs, drive the array. | CIRCT: an LLVM/MLIR build is the heavy part, typically hours of CPU and several GB of RAM on a laptop-class machine (not measured here). VTA: the simulator target is CPU-only but the full TVM build is similar. Plan for a separate pinned image and overnight builds. | tight (builds); not verified here |
+| 4 | Gemmini / Chipyard (ucb-bar/gemmini, `make CONFIG=GemminiRocketConfig` in `chipyard/sims/verilator`) | Gemmini is the reference systolic-array generator (RoCC accelerator, scratchpad plus accumulator, ws/os dataflows, parameterised data types), the natural "real" counterpart of this lab's hand-written array. | Chipyard's own docs describe a Conda-based setup, a RISC-V toolchain build and a Scala (sbt) precompile that "may take a long time"; elaborating and compiling a Rocket+Gemmini Verilator simulator needs far more RAM than the 4 GB VM, so say it plainly: **it will not fit on this machine** (RAM requirement for the Verilator build is from general experience, not measured or verified here). Propose a 32 GB / 8+ core Linux machine or a cloud instance; budget a day for the first build. | no |
+| 5 | DREAMPlace (limbo018/DREAMPlace) as an alternative global placer | A GPU-accelerated analytical placer; swapping it for OpenROAD's placer would show how much of the frontier is the placer. The repository states it runs on CPU too (multi-threaded) and gets its 30x speedup claims with a Tesla V100; it needs PyTorch, Boost, Bison, a C++ toolchain and prefers GCC 7.5; the test benchmarks are ISPD/ICCAD, not ORFS designs. | CPU-only is possible in principle, but the integration (LEF/DEF in, DEF out into ORFS) is days of work and its speed benefit is lost without a GPU, so there is nothing to measure on a 4-design lab. **A GPU is needed to make it worth doing.** | no (GPU) |
+| 6 | Gate-level power with real activity on the routed netlist (follow-up to stage 60) | Stage 60 uses RTL-level activity; annotating the post-route netlist (SAIF from the gate-level sim of stage 11) removes the glitch-free zero-delay assumption's gap. | One extra GLS run (minutes) plus a power report on the routed design (minutes). | yes |
+| 7 | bf16 / FP8 systolic array, not just one PE | Stage 61 builds one MAC. A 4x4 array of them tests the real cost of floating-point: operand skew, accumulator width, clock closure. | About the cost of `systolic_os` again: roughly 30-60 min of ORFS per flow, plus cocotb regression. | yes |
+| 8 | Larger arrays through ORFS (8x8, 16x16) and a placement-utilization sweep | `systolic_os` 4x4 already takes 28 min and the 2-core machine is the limit; an 8x8 array has about four times the cells. This tells where the lab stops being practical. | 8x8: expect roughly 2 h per flow (extrapolated from 4x4, not measured); 16x16 will not fit the time budget of one run. | tight |
+
+## Notes on what was verified for this plan
+- Verified from the projects' own pages today: Chipyard's setup flow (Conda, `build-setup.sh`, long Scala precompile, Gemmini built with `make CONFIG=GemminiRocketConfig` in `sims/verilator`); DREAMPlace's dependencies, CPU/GPU modes and benchmark sources; VerilogEval's v2 harness (tasks, `iverilog` v12 requirement, Python 3.11, LangChain-based generation).
+- Not verified here: CIRCT build time and memory, TVM/VTA build requirements beyond the repository descriptions, and any RAM figure for Chipyard. Those rows say so.
+- Everything marked "measured" comes from this lab's own result files listed at the top.
