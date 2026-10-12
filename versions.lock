@@ -1,0 +1,30 @@
+# versions.lock — append-by-section. Every value below was read from the tool, registry or release API in this lab.
+
+runtime:   # owner: infra, stage 01_runtime, recorded 2026-10-12 02:55:32 PDT
+  route: "A (Colima + Lima, macOS Virtualization.framework)"
+  why: "macOS 13.7.8 >= 13 so vz works without QEMU; no sudo and no Homebrew needed; Route B (Docker Desktop) needs sudo which is unavailable. Route A worked on the first attempt."
+  artifacts:   # name, version, url, sha256, verified_against
+    - {name: lima, version: "2.2.1", url: "https://github.com/lima-vm/lima/releases/download/v2.2.1/lima-2.2.1-Darwin-x86_64.tar.gz", sha256: 6b776e4bc41f358e6ee01fefcc78e2eb26f11635a0fcff632234af77a566c6c4, verified_against: "https://github.com/lima-vm/lima/releases/download/v2.2.1/SHA256SUMS"}
+    - {name: colima, version: "0.10.3", url: "https://github.com/abiosoft/colima/releases/download/v0.10.3/colima-Darwin-x86_64", sha256: 3082737fe8a98afda11cba7d9a20b6e56fe80c6153464beda04bec630758770b, verified_against: "https://github.com/abiosoft/colima/releases/download/v0.10.3/colima-Darwin-x86_64.sha256sum"}
+    - {name: docker-cli, version: "29.9.0", url: "https://download.docker.com/mac/static/stable/x86_64/docker-29.9.0.tgz", sha256: 65a7885c563226dba96c31d1a7aa78ee098199dc1c1f111582673544c91ad8de, verified_against: "none-published(computed-locally)"}
+    - {name: docker-buildx, version: "0.38.0", url: "https://github.com/docker/buildx/releases/download/v0.38.0/buildx-v0.38.0.darwin-amd64", sha256: b123dc6fb51f88e47d37223938e2acd66edec73105459f65f19f15cc912ee559, verified_against: "github-api-asset-digest(https://api.github.com/repos/docker/buildx/releases/tags/v0.38.0)+codesign(Docker Inc 9BNSXJN65R); not listed in https://github.com/docker/buildx/releases/download/v0.38.0/checksums.txt"}
+  tool_versions:
+    limactl: "limactl version 2.2.1"
+    colima: "colima version v0.10.3 git commit: 00f6c297e92a82c04a4ab507db0a61435650d7e8  runtime: docker arch: x86_64 client: v29.9.0 server: v29.5.2"
+    docker_client: "29.9.0"
+    docker_server: "29.5.2"
+    buildx: "github.com/docker/buildx v0.38.0 0dbe87f36ed472fe36b6796c3f70b4210a731fc5"
+  vm:
+    type: vz
+    arch: x86_64
+    cpus: 3
+    memory_bytes: 4105318400
+    disk_gib: 60          # sparse data disk (/var/lib/docker); root disk 20 GiB (colima default)
+    guest_os: "Ubuntu 24.04.4 LTS"
+    kernel: "6.8.0-117-generic"
+    storage_driver: "overlayfs"
+    mount: "~/ai-chip-lab -> same path in VM, writable, virtiofs (only the lab is mounted, not $HOME)"
+    docker_host: "unix://~/ai-chip-lab/.colima/default/docker.sock"
+  verify:
+    hello_world_digest: "hello-world@sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8"
+    log: logs/01_runtime/start.log
