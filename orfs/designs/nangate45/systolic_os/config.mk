@@ -15,4 +15,5 @@ export CORE_UTILIZATION ?= 30
 export PLACE_DENSITY_LB_ADDON = 0.20
 export TNS_END_PERCENT = 100
 export SYNTH_REPEATABLE_BUILD ?= 1
-export SYNTH_HDL_FRONTEND = slang   # SystemVerilog (packed multi-dim arrays, always_ff) via yosys-slang
+# SystemVerilog (packed multi-dim arrays, always_ff) via yosys-slang (no trailing comment: make keeps trailing spaces)
+export SYNTH_HDL_FRONTEND = slang
