@@ -8,6 +8,7 @@
 #   KEY=VAL    = extra make variables (e.g. CORE_UTILIZATION=40 SDC_FILE=/lab/orfs/sdc_gen/x.sdc)
 # Outputs (host): $LAB/orfs/work/{logs,objects,reports,results}/<platform>/<design>/<variant>/
 # The image stays read-only: WORK_HOME points at the bind-mounted lab dir. Takes the heavy-job lock.
+# LEC_CHECK=0: optional Kepler-Formal equivalence step SIGILLs on this CPU (no AVX-512 in VM); it does not affect PPA.
 # Exit code = flow exit code (metadata checking is a separate step: t2_check.sh).
 set -u
 LAB="$HOME/ai-chip-lab"; source "$LAB/env.sh"; source "$LAB/coord/images.env"
@@ -39,7 +40,7 @@ docker rm -f "$CONT" >/dev/null 2>&1
   "$ORFS_IMAGE" bash -c '
     set -e
     [ -f /OpenROAD-flow-scripts/env.sh ] && source /OpenROAD-flow-scripts/env.sh >/dev/null 2>&1 || true
-    make DESIGN_CONFIG="$0" WORK_HOME=/lab/orfs/work FLOW_VARIANT="$1" NUM_CORES="$NUM_CORES" "${@:2}" finish metadata-generate
+    make DESIGN_CONFIG="$0" WORK_HOME=/lab/orfs/work FLOW_VARIANT="$1" NUM_CORES="$NUM_CORES" LEC_CHECK=0 "${@:2}" finish metadata-generate
   ' "$CFG" "$VAR" "${EXTRA[@]+"${EXTRA[@]}"}" >> "$LOGF" 2>&1
 RC=$?
 kill $WD 2>/dev/null; wait $WD 2>/dev/null
