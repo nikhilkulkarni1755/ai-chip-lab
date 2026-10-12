@@ -281,7 +281,10 @@ def build_rows(L):
                 dn, det.get("reference_clock_period_ns"), fmt_val(pp.get("wns_setup_ns")), fmt_val(pp.get("tns_setup_ns")), det.get("setup_violating_endpoints")))
     rows.append(Row("Task 2: OpenROAD gcd flows within ORFS's shipped regression thresholds", s2,
                     d2 + ("; NOT timing-closed: " + "; ".join(nc) if nc else ""), "results/t2_summary.json"))
-    s3, d3, _ = task_state(L, "30_arch_model", "results/t3_summary.json")
+    s3, d3, t3s = task_state(L, "30_arch_model", "results/t3_summary.json")
+    t3f = sorted(k for k, v in ((t3s or {}).get("checks") or {}).items() if v is False)
+    if t3f:
+        d3 += "; criteria that fail: %s (the roofline-vs-stalls agreement; the analytic cycle model and byte-identity checks pass)" % ", ".join(t3f)
     rows.append(Row("Task 3: SCALE-Sim vs analytical model", s3, d3, "results/t3_summary.json"))
 
     asum = L.jload("results/sweeps/arch_summary.json") or {}
