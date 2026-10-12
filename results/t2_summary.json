@@ -1,5 +1,5 @@
 {
-  "generated_epoch": 1791812386,
+  "generated_epoch": 1791815964,
   "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
   "tool_versions": [
     "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)",
@@ -384,6 +384,89 @@
       },
       "pass": true
     }
+  },
+  "sweep_B": {
+    "frontier_file": "results/sweeps/phys_frontier.json",
+    "data": "results/sweeps/phys.jsonl",
+    "frontier": {
+      "gcd": {
+        "30": {
+          "points": 9,
+          "tightest_swept_period_ns": 0.3,
+          "fastest_closing_period_ns": 0.425,
+          "wns_at_frontier_ns": 0.00273762,
+          "area_um2": 819.28,
+          "power_total_w": 0.00331371,
+          "marginal": true,
+          "bracketed": true,
+          "next_failing_period_ns": 0.42,
+          "wns_at_next_failing_ns": -0.00382275
+        },
+        "40": {
+          "points": 9,
+          "tightest_swept_period_ns": 0.3,
+          "fastest_closing_period_ns": 0.425,
+          "wns_at_frontier_ns": 0.00304279,
+          "area_um2": 745.332,
+          "power_total_w": 0.00296769,
+          "marginal": true,
+          "bracketed": true,
+          "next_failing_period_ns": 0.42,
+          "wns_at_next_failing_ns": -0.00314013
+        },
+        "50": {
+          "points": 9,
+          "tightest_swept_period_ns": 0.3,
+          "fastest_closing_period_ns": 0.42,
+          "wns_at_frontier_ns": 5.91194e-05,
+          "area_um2": 773.262,
+          "power_total_w": 0.00309714,
+          "marginal": true,
+          "bracketed": true,
+          "next_failing_period_ns": 0.41,
+          "wns_at_next_failing_ns": -0.010512
+        },
+        "60": {
+          "points": 8,
+          "tightest_swept_period_ns": 0.35,
+          "fastest_closing_period_ns": 0.425,
+          "wns_at_frontier_ns": 0.00419678,
+          "area_um2": 747.194,
+          "power_total_w": 0.00293746,
+          "marginal": true,
+          "bracketed": true,
+          "next_failing_period_ns": 0.42,
+          "wns_at_next_failing_ns": -0.00699543
+        }
+      },
+      "systolic_os": {
+        "30": {
+          "points": 5,
+          "tightest_swept_period_ns": 1.0,
+          "fastest_closing_period_ns": 1.6,
+          "wns_at_frontier_ns": 0.177248,
+          "area_um2": 22781.8,
+          "power_total_w": 0.0707457,
+          "marginal": false,
+          "bracketed": true,
+          "next_failing_period_ns": 1.2,
+          "wns_at_next_failing_ns": -0.00730405
+        }
+      }
+    },
+    "failed_points": [
+      {
+        "design": "gcd",
+        "clock_period_ns": 0.3,
+        "core_utilization": 60,
+        "status": "failed",
+        "flow_rc": 2,
+        "extractor_error": "FileNotFoundError(2, 'No such file or directory')",
+        "flow_error_from_log": "[ERROR DPL-0033] detailed placement checks failed during check placement. | Error: global_route.tcl, 175 DPL-0033",
+        "meaning": "flow aborted before metadata.json existed (extractor FileNotFoundError is a consequence, not the cause); deterministic flow, so a plain rerun is expected to fail identically",
+        "retry": "cd ~/ai-chip-lab && source env.sh && python3 sweeps/phys_sweep.py --design gcd --retry --max-points 1"
+      }
+    ]
   },
   "pass": true
 }

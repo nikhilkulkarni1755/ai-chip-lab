@@ -10,6 +10,7 @@
         "area_um2": 819.28,
         "power_total_w": 0.00331371,
         "marginal": true,
+        "bracketed": true,
         "next_failing_period_ns": 0.42,
         "wns_at_next_failing_ns": -0.00382275
       },
@@ -21,6 +22,7 @@
         "area_um2": 745.332,
         "power_total_w": 0.00296769,
         "marginal": true,
+        "bracketed": true,
         "next_failing_period_ns": 0.42,
         "wns_at_next_failing_ns": -0.00314013
       },
@@ -32,6 +34,7 @@
         "area_um2": 773.262,
         "power_total_w": 0.00309714,
         "marginal": true,
+        "bracketed": true,
         "next_failing_period_ns": 0.41,
         "wns_at_next_failing_ns": -0.010512
       },
@@ -43,8 +46,23 @@
         "area_um2": 747.194,
         "power_total_w": 0.00293746,
         "marginal": true,
+        "bracketed": true,
         "next_failing_period_ns": 0.42,
         "wns_at_next_failing_ns": -0.00699543
+      }
+    },
+    "systolic_os": {
+      "30": {
+        "points": 5,
+        "tightest_swept_period_ns": 1.0,
+        "fastest_closing_period_ns": 1.6,
+        "wns_at_frontier_ns": 0.177248,
+        "area_um2": 22781.8,
+        "power_total_w": 0.0707457,
+        "marginal": false,
+        "bracketed": true,
+        "next_failing_period_ns": 1.2,
+        "wns_at_next_failing_ns": -0.00730405
       }
     }
   },

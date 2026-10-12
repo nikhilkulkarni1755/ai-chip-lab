@@ -1,0 +1,9 @@
+Sweep B timing-closure frontier (setup WNS >= 0, flow's own report), from results/sweeps/phys.jsonl
+gcd: util% | fastest closing period ns | WNS at it | next failing period | its WNS | bracketed | points
+   30 | 0.425 | 0.00274 | 0.42 | -0.00382275 | True | 9
+   40 | 0.425 | 0.00304 | 0.42 | -0.00314013 | True | 9
+   50 | 0.42 | 0.00006 | 0.41 | -0.010512 | True | 9
+   60 | 0.425 | 0.00420 | 0.42 | -0.00699543 | True | 8
+systolic_os: util% | fastest closing period ns | WNS at it | next failing period | its WNS | bracketed | points
+   30 | 1.6 | 0.17725 | 1.2 | -0.00730405 | True | 5
+failed points: [{"design": "gcd", "clock_period_ns": 0.3, "core_utilization": 60, "flow_error_from_log": "[ERROR DPL-0033] detailed placement checks failed during check placement. | Error: global_route.tcl, 175 DPL-0033"}]
