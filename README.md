@@ -56,7 +56,7 @@ State is computed from the files; diagnosis and next action are explanations wri
 | Repro | PASS | **RUNNING** |
 | Make recipes | Untested | **RUNNING** |
 
-Part 2 elapsed so far (not finished): 4h 15m, from 2026-10-12 09:03:34 PDT to now, budget 14h (Part 1's total runtime stays as recorded in its own section)
+Part 2 elapsed so far (not finished): 4h 16m, from 2026-10-12 09:03:34 PDT to now, budget 14h (Part 1's total runtime stays as recorded in its own section)
 
 Part 2 stage states:
 
