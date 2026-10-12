@@ -12,7 +12,41 @@ import numpy as np
 
 LAB = os.path.expanduser("~/ai-chip-lab")
 rows = [json.loads(l) for l in open(os.path.join(LAB, "results/sweeps/phys.jsonl")) if l.strip()]
+allrows = rows
 rows = [r for r in rows if r.get("status") == "ok" and r.get("wns_setup_ns") is not None]
+# ---- machine-readable frontier table + failed-point diagnosis (for the demo page) ----
+import re
+out = {"note": "closed = setup WNS >= 0 per the flow's own report; frontier = smallest swept period that closed. Resolution is the bisection step (0.005-0.01 ns).",
+       "frontier": {}, "failed_points": []}
+for des in sorted({r["design"] for r in rows}):
+    for u in sorted({r["core_utilization"] for r in rows if r["design"] == des}):
+        P = sorted((r["clock_period_ns"], r) for r in rows if r["design"] == des and r["core_utilization"] == u)
+        ok = [(p, r) for p, r in P if r["wns_setup_ns"] >= 0]
+        bad = [(p, r) for p, r in P if r["wns_setup_ns"] < 0]
+        f = out["frontier"].setdefault(des, {})
+        e = {"points": len(P), "tightest_swept_period_ns": P[0][0]}
+        if ok:
+            p, r = min(ok, key=lambda x: x[0]); e.update(fastest_closing_period_ns=p, wns_at_frontier_ns=r["wns_setup_ns"],
+                area_um2=r.get("area_um2"), power_total_w=r.get("power_total_w"),
+                marginal=r["wns_setup_ns"] < 0.005)
+            nb = [x for x in bad if x[0] < p]
+            if nb: q, rq = max(nb, key=lambda x: x[0]); e.update(next_failing_period_ns=q, wns_at_next_failing_ns=rq["wns_setup_ns"])
+        else:
+            e["fastest_closing_period_ns"] = None
+        f[str(u)] = e
+for r in allrows:
+    if r.get("status") != "ok":
+        lg = os.path.join(LAB, "logs/20_pnr_ref", f"{r['platform']}_{r['design']}_{r['variant']}.log")
+        cause = None
+        if os.path.exists(lg):
+            errs = [l.strip() for l in open(lg, errors="replace") if re.search(r"\[ERROR|^Error:", l)]
+            cause = " | ".join(errs[:2])
+        out["failed_points"].append({"design": r["design"], "clock_period_ns": r["clock_period_ns"], "core_utilization": r["core_utilization"],
+            "status": r["status"], "flow_rc": r.get("rc"), "extractor_error": r.get("error"), "flow_error_from_log": cause,
+            "meaning": "flow aborted before metadata.json existed (extractor FileNotFoundError is a consequence, not the cause); deterministic flow, so a plain rerun is expected to fail identically",
+            "retry": f"cd ~/ai-chip-lab && source env.sh && python3 sweeps/phys_sweep.py --design {r['design']} --retry --max-points 1"})
+json.dump(out, open(os.path.join(LAB, "results/sweeps/phys_frontier.json"), "w"), indent=2)
+
 os.makedirs(os.path.join(LAB, "demo/assets"), exist_ok=True)
 for des in sorted({r["design"] for r in rows}):
     R = [r for r in rows if r["design"] == des]
