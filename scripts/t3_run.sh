@@ -15,7 +15,7 @@ fi
 cd /lab
 export PYTHONHASHSEED=0 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMBA_NUM_THREADS=1 MPLBACKEND=Agg
 OUT="${1:-results/t3}"; SUMMARY="${T3_SUMMARY:-results/t3_summary.json}"
-RERUN="${OUT}.rerun.tmp"
+FINAL="$OUT"; OUT="${FINAL}.partial"; RERUN="${FINAL}.rerun.tmp"
 rm -rf "$OUT" "$RERUN"; mkdir -p logs/30_arch_model
 echo "== t3 pass 1 -> $OUT"
 python3 model/t3_stage.py pass --out "$OUT" 2>&1 | tee logs/30_arch_model/pass1.log
@@ -28,3 +28,5 @@ fi
 python3 model/t3_stage.py summary --out "$OUT" --rerun "$RERUN" --summary-json "$SUMMARY"
 if [ "${T3_PLOTS:-1}" = "1" ] && [ -f model/t3_plots.py ]; then python3 model/t3_plots.py "$OUT" "$SUMMARY"; fi
 rm -rf "$RERUN"
+# publish only a fully finished run (set -e: any failure above leaves only *.partial, never a half-written $FINAL)
+rm -rf "$FINAL"; mv "$OUT" "$FINAL"

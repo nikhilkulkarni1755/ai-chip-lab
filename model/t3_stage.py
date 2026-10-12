@@ -5,7 +5,6 @@
   t3_stage.py summary --out DIR --rerun DIR2   compare passes, write summary JSON + plots
 """
 import argparse
-import concurrent.futures as cf
 import hashlib
 import json
 import os
@@ -37,8 +36,7 @@ def _bundled_one(args):
 
 def do_pass(out):
     os.makedirs(out, exist_ok=True)
-    with cf.ProcessPoolExecutor(2) as ex:
-        runs = dict(ex.map(_bundled_one, [(df, out) for df in DATAFLOWS]))
+    runs = dict(_bundled_one((df, out)) for df in DATAFLOWS)   # sequential: 1 worker (8 GB machine)
     json.dump(runs, open(os.path.join(out, "bundled_runs.json"), "w"), indent=1, sort_keys=True)
     import t3_fit
     fit = t3_fit.run_fit()
