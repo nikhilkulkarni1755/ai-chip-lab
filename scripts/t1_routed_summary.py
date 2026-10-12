@@ -266,13 +266,31 @@ def summary(a):
             ev.append(f"negative control (netlist with swapped register inputs, Icarus): "
                       f"{values['gls_negative_control']['mismatching_elements']} mismatching elements in "
                       f"{values['gls_negative_control']['cases']} cases (must be > 0)")
-            gls_required = [f"gls_{s}_zero_mismatches" for s in SIMS] + [
-                "gls_csv_identical_across_simulators", "gls_csv_equals_official_rtl_prefix",
-                "gls_negative_control_detected", "all_netlist_cells_have_models"]
-            gls_pass = all(checks[c] for c in gls_required)
-            values["gls_routed_pass_by_simulator"] = {
-                s: bool(checks[f"gls_{s}_zero_mismatches"]
-                        and values.get(f"gls_{s}", {}).get("equals_official_rtl_csv_prefix")) for s in SIMS}
+            # First scripted criterion (both simulators); kept as superseded, see Decision P2-R1.
+            checks["gls_both_simulators_as_first_scripted"] = all(
+                checks[c] for c in [f"gls_{s}_zero_mismatches" for s in SIMS] + [
+                    "gls_csv_identical_across_simulators", "gls_csv_equals_official_rtl_prefix",
+                    "gls_negative_control_detected", "all_netlist_cells_have_models"])
+            by_sim = {}
+            for sim in SIMS:
+                rc, secs = step_rc.get(f"gls_{sim}"), runtimes.get(f"gls_{sim}")
+                v = values.get(f"gls_{sim}", {})
+                if "csv_sha256" in v:
+                    by_sim[sim] = "pass" if (checks[f"gls_{sim}_zero_mismatches"]
+                                             and v.get("equals_official_rtl_csv_prefix")) else "fail"
+                elif rc in (124, 143, 137):
+                    by_sim[sim] = (f"not run: the {sim} model build of the routed netlist did not finish within the "
+                                   f"lock hold (stopped after {secs} s, exit code {rc}); no simulation result exists")
+                else:
+                    by_sim[sim] = f"not run: step exit code {rc}"
+            values["gls_routed_by_simulator"] = by_sim
+            checks["gls_icarus_csv_equals_official_rtl_prefix"] = bool(
+                values.get("gls_icarus", {}).get("equals_official_rtl_csv_prefix"))
+            # TASK2 P1.3: Icarus is required, Verilator "if the cell models parse"; a Verilator
+            # result that exists and fails still fails the check.
+            gls_required = ["gls_icarus_zero_mismatches", "gls_icarus_csv_equals_official_rtl_prefix",
+                            "gls_negative_control_detected", "all_netlist_cells_have_models"]
+            gls_pass = all(checks[c] for c in gls_required) and by_sim.get("verilator") != "fail"
         else:
             gls_pass = None
             gls_icarus_only = bool(checks["gls_icarus_zero_mismatches"]
@@ -398,6 +416,7 @@ def summary(a):
         json.dump(result, f, indent=2, sort_keys=True)
         f.write("\n")
     merge_into_t1_summary(out)
+    write_p2(out, result, evidence)
 
     evdir = os.path.join(out, "evidence")
     os.makedirs(evdir, exist_ok=True)
@@ -413,6 +432,81 @@ def summary(a):
     for c in sorted(checks):
         print(f"[t1r]   {'PASS' if checks[c] else 'FAIL'}  {c}")
     return 0 if result["pass_of_steps_run"] else 1
+
+
+CRITERIA_COMMIT = "6f82732"       # scripts/t1_routed.sh + eqy/systolic_os_routed.eqy.in, before the first stage run
+CLOCK_CHECK_COMMIT = "a6cc7d0"    # clock-pin check, before its first run
+
+
+def write_p2(out, r, evidence):
+    """results/p2_11_eqy_routed.json in the common Part 2 schema."""
+    c, v = r["checks"], r["values"]
+    e = v.get("eqy_routed", {})
+    gi = v.get("gls_icarus", {})
+
+    def crit(name, threshold, measured, commit=CRITERIA_COMMIT):
+        return {"name": name, "threshold": threshold, "written_before_run": commit,
+                "measured": measured, "pass": bool(c.get(name))}
+
+    criteria = []
+    if "gls_icarus_zero_mismatches" in c:
+        criteria += [
+            crit("gls_icarus_zero_mismatches", "0 mismatching elements vs NumPy, all cocotb tests pass, N random + 29 directed cases",
+                 f"{gi.get('mismatching_elements')} mismatching elements in {gi.get('cases_total')} cases "
+                 f"({gi.get('cases_random')} random), {gi.get('seconds')} s"),
+            crit("gls_icarus_csv_equals_official_rtl_prefix", "sha256(gate-level CSV) == sha256(first rows of results/t1_icarus.csv)",
+                 f"gate-level {gi.get('csv_sha256')} vs RTL prefix {gi.get('official_rtl_csv_prefix_sha256')}"),
+            crit("gls_negative_control_detected", "netlist copy with two register D inputs swapped must produce mismatches",
+                 f"{v.get('gls_negative_control', {}).get('mismatching_elements')} mismatching elements"),
+        ]
+    if "eqy_routed_all_partitions_proved" in c:
+        criteria += [
+            crit("eqy_routed_all_partitions_proved", "all partitions proven (16 per-PE cones + wrapper) and EQY reports the designs equivalent",
+                 f"{e.get('partitions_proved')} of {e.get('partitions')} partitions proven "
+                 f"({e.get('mac_partitions_proved')} of {e.get('mac_partitions')} per-PE cones); "
+                 f"open: {', '.join(sorted(e.get('partitions_not_proved', {}))) or 'none'}"),
+        ] + [crit(f"eqy_neg_{t}_detected", f"injected bug must not be proven equivalent [{w}]",
+                  f"partition {p}: {v.get('eqy_negative_controls', {}).get(t, {}).get('result')}")
+             for t, p, w in EQY_NEG]
+    criteria += [
+        crit("all_netlist_cells_have_models", "every cell instance of 6_final.v has a Liberty function (no black box)",
+             f"{v.get('netlist_cell_instances')} instances, step exit code {r['step_exit_codes'].get('cells')}"),
+    ]
+    if "clock_check" in r["step_exit_codes"]:
+        criteria.append(crit("all_flops_clocked_by_clk", "clock pin of all 806 flops resolves to port clk through the clock buffers",
+                             f"step exit code {r['step_exit_codes'].get('clock_check')}", CLOCK_CHECK_COMMIT))
+    superseded = []
+    if "gls_both_simulators_as_first_scripted" in c:
+        superseded.append({
+            "name": "gls on both simulators (as first scripted)",
+            "threshold": "Icarus AND Verilator: 0 mismatches, identical CSVs",
+            "measured": json.dumps(v.get("gls_routed_by_simulator")),
+            "pass": bool(c["gls_both_simulators_as_first_scripted"]),
+            "reason": "TASK2 P1.3 requires Icarus and asks for Verilator only 'if the cell models parse'; see "
+                      "COORDINATION.md Decisions (Part 2) P2-R1",
+        })
+    p2 = {
+        "stage": "11_eqy_routed", "pass": r["pass"],
+        "note": r["note"],
+        "eqy_routed_pass": r["eqy_routed_pass"], "gls_routed_pass": r["gls_routed_pass"],
+        "gls_routed_by_simulator": v.get("gls_routed_by_simulator"),
+        "oracle": "NumPy int32 matmul for the gate-level simulation (plus byte-identity with the RTL run's CSV); "
+                  "for the equivalence proof the RTL itself, compared by an SMT solver, with injected-bug negative controls",
+        "criteria": criteria, "superseded": superseded,
+        "scope": e.get("scope_exact"), "cell_treatment": v.get("cell_treatment"), "not_covered": v.get("not_covered"),
+        "eqy_partitions": {"proved": e.get("partitions_proved_list"), "not_proved": e.get("partitions_not_proved"),
+                           "seconds_per_partition": e.get("seconds_per_partition"), "engine": e.get("engine"),
+                           "engines_tried": e.get("engines_tried")},
+        "inputs": r["inputs"], "orfs_builtin_lec": v.get("orfs_builtin_lec"),
+        "commands": ["scripts/t1_routed.sh 200 results",
+                     "T1R_RESUME=1 scripts/t1_routed.sh 200 results   # continue: keeps finished steps and proven partitions",
+                     "T1R_STEPS=gls_icarus scripts/t1_routed.sh 50 <dir>   # quick gate-level simulation only"],
+        "seeds": "1234",
+        "evidence": [f"results/evidence/{n}" for n in sorted(evidence)] + ["results/t1_routed_summary.json"],
+    }
+    with open(os.path.join(out, "p2_11_eqy_routed.json"), "w") as f:
+        json.dump(p2, f, indent=2)
+        f.write("\n")
 
 
 def merge_into_t1_summary(out):
@@ -432,6 +526,9 @@ def merge_into_t1_summary(out):
                                   rs["values"].get("eqy_routed", {}).get("partitions")],
         "gls_scope": "routed netlist + cell models generated from the pinned Liberty, unchanged Task 1 "
                      "cocotb test, zero-delay",
+        "gls_by_simulator": rs["values"].get("gls_routed_by_simulator"),
+        "eqy_scope_exact": rs["values"].get("eqy_routed", {}).get("scope_exact"),
+        "eqy_partitions_not_proved": rs["values"].get("eqy_routed", {}).get("partitions_not_proved"),
         "checks": rs["checks"],
     }
     with open(p, "w") as f:

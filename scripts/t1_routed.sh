@@ -33,7 +33,9 @@
 # summary), so other stages' short jobs interleave.  The lock is re-entrant: a caller
 # that already holds it (LAB_LOCK_HELD=1) gets the same steps without re-locking.
 # T1R_RESUME=1 continues an interrupted or partly failed run: steps that already
-# succeeded (rc 0 in <work>/steps.tsv) are skipped, the others run again.
+# succeeded (rc 0 in <work>/steps.tsv) are skipped, the others run again, proven EQY
+# partitions are kept.  T1R_SKIP="<step names>" leaves those steps as they are.
+# T1R_EQY_BUDGET_SECONDS caps the EQY solver lock time of one invocation.
 set -u -o pipefail
 
 NCASES="${1:-200}"
@@ -67,7 +69,7 @@ if [ -z "${T1R_INSIDE:-}" ]; then
       -v "$LAB_DIR":/lab -w /lab \
       -e T1R_INSIDE=1 -e T1R_PHASE="$1" -e T1R_STEPS="$STEPS" -e PYTHONHASHSEED=0 \
       -e T1R_CHUNK_SECONDS="${T1R_CHUNK_SECONDS:-540}" -e T1R_RESUME="${T1R_RESUME:-0}" \
-      -e T1R_EQY_TARGETS="${T1R_EQY_TARGETS:-}" \
+      -e T1R_EQY_TARGETS="${T1R_EQY_TARGETS:-}" -e T1R_SKIP="${T1R_SKIP:-}" \
       -e T1_ROUTED_NETLIST="${T1_ROUTED_NETLIST:-}" \
       -e T1R_IMAGE_REF="$LAB_SIM_IMAGE" -e T1R_ORFS_IMAGE="$ORFS_IMAGE" -e T1R_LIB_IN_IMAGE="$LIB_IN_IMAGE" \
       -e T1R_IMAGE_ID="$IMAGE_ID" \
@@ -102,15 +104,16 @@ if [ -z "${T1R_INSIDE:-}" ]; then
     # so no hold is cut off in the middle of a proof.  T1R_EQY_BUDGET_SECONDS caps the
     # total lock time spent on EQY solving in this invocation (default: no cap).
     spent=0; budget="${T1R_EQY_BUDGET_SECONDS:-0}"
-    hold() {  # hold <partitions...>
-      local t0; t0=$(date +%s)
+    held() { awk -F'\t' '$1 ~ /^eqy_routed_(hold|chunk)/ {s += $3} END {print s + 0}' "$WORK/steps.tsv" 2>/dev/null || echo 0; }
+    held0=$(held)
+    hold() {  # hold <partitions...>   (lock time = solver step time, queue waits not counted)
       T1R_EQY_TARGETS="$*" phase eqy || true
-      spent=$(( spent + $(date +%s) - t0 ))
+      spent=$(( $(held) - held0 ))
       echo "[t1r] EQY lock time used in this invocation: ${spent} s"
     }
-    todo() {  # todo <grep -E pattern on partition names>: partitions without a PASS/FAIL status
+    todo() {  # todo <grep -E arguments on partition names>: partitions without a PASS/FAIL status
       local p
-      cut -d' ' -f2 "$WORK/eqy_routed/partition.list" 2>/dev/null | grep -E "$1" | sort -t. -k3 -n | while read -r p; do
+      cut -d' ' -f2 "$WORK/eqy_routed/partition.list" 2>/dev/null | grep -E "$@" | sort -t. -k3 -n | while read -r p; do
         grep -qE '^(PASS|FAIL)' "$WORK/eqy_routed/strategies/$p/smt/status" 2>/dev/null || echo "$p"
       done
     }
@@ -120,7 +123,7 @@ if [ -z "${T1R_INSIDE:-}" ]; then
     while :; do
       m="$(todo '\.acc_o\.' | head -n "${T1R_EQY_PARALLEL:-2}" | tr '\n' ' ')"
       [ -n "${m// /}" ] || break
-      if [ "$budget" -gt 0 ] && [ $(( spent + 330 )) -gt "$budget" ]; then
+      if [ "$budget" -gt 0 ] && [ $(( spent + ${T1R_CHUNK_SECONDS:-540} )) -gt "$budget" ]; then
         echo "[t1r] EQY lock budget ($budget s) reached with partitions still open: $(todo '.' | tr '\n' ' ')"; break
       fi
       hold $m
@@ -165,6 +168,8 @@ tmo() { local secs="$1"; shift; timeout "$secs" "$@"; }
 want() { case " $STEPS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 step() {  # step <name> <timeout-seconds> <function> [args]
   local name="$1" secs="$2" t0 rc; shift 2
+  case " ${T1R_SKIP:-} " in *" $name "*)
+    echo "[t1r] $name: skipped on request (T1R_SKIP), earlier result kept"; return 0 ;; esac
   if [ "$RESUME" = 1 ] && grep -q "^$name	0	" "$WORK/steps.tsv"; then
     echo "[t1r] $name: already done in this run (resume), skipped"; return 0
   fi
@@ -311,8 +316,20 @@ python3 scripts/t1_routed_summary.py summary --out "$OUT" --work "$WORK" --logs 
 RC=$?
 if [ "$OFFICIAL" = 1 ]; then
   rm -f "$STAGE.running" "$STAGE.done" "$STAGE.failed"
-  python3 -c "import json;d=json.load(open('results/t1_routed_summary.json'));print('pass', d['pass'], 'eqy_routed_pass', d['eqy_routed_pass'], 'gls_routed_pass', d['gls_routed_pass'])" \
-    > "$STAGE.$([ $RC -eq 0 ] && echo done || echo failed)"
+  python3 - > "$STAGE.$([ $RC -eq 0 ] && echo done || echo failed)" <<'PY'
+import json
+d = json.load(open("results/t1_routed_summary.json"))
+e = d["values"].get("eqy_routed", {})
+print("pass", d["pass"], "eqy_routed_pass", d["eqy_routed_pass"], "gls_routed_pass", d["gls_routed_pass"])
+print("gls by simulator:", json.dumps(d["values"].get("gls_routed_by_simulator")))
+print("eqy partitions proven:", e.get("partitions_proved"), "of", e.get("partitions"))
+if not d["pass"]:
+    print("failed checks:", ", ".join(k for k, v in sorted(d["checks"].items()) if not v))
+    print("open partitions:", ", ".join(sorted(e.get("partitions_not_proved", {}))) or "none")
+    print("diagnosis: a partition without a solver result was not attempted or its lock hold ended first; "
+          "no partition has a counterexample unless listed as 'solver status FAIL' in results/t1_routed_summary.json")
+    print("continue with: T1R_RESUME=1 T1R_SKIP=gls_verilator scripts/t1_routed.sh 200 results")
+PY
   echo "$(date +%H:%M:%S) rtl: 11_eqy_routed finished rc=$RC ($(( $(date +%s) - T_START )) s incl. lock waits)" >> logs/run.log
 fi
 exit $RC
