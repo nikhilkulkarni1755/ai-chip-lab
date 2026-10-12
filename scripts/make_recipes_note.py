@@ -74,8 +74,8 @@ def main():
         L.append("1. *The failure is injected by a hook, not by a failing recipe.* `MAKE_ALL_FAIL=%s` makes `scripts/make_all.py` skip that stage's recipe, "
                  "switch its marker from `.done` to `.failed` and count the stage as failed. This matches the specification (\"forcing a stage marker to fail\"); "
                  "it does not show a recipe that fails by itself." % ft["forced_stage"])
-        L.append("2. *Most later stages were skipped, not executed.* The run used the marker-only resume (`RESUME=markers`): the %d stages that had already "
-                 "succeeded today (%s) were skipped without checking whether their inputs had changed%s. Reason: a full pass costs about 3 hours of the single "
+        L.append("2. *Most later stages were skipped, not executed.* The run used the marker-only resume (`RESUME=markers`): the %d stages that already had a `.done` marker or a recorded "
+                 "successful run (%s) were skipped without checking whether their inputs had changed%s. Reason: a full pass costs about 3 hours of the single "
                  "heavy-job queue (Decision P2-1). Consequence: the test shows the control flow continuing past the failure and reaching the end; it does "
                  "**not** show a heavy stage being executed after a failure. Executed for real after the forced failure: %s."
                  % (n_skip, ", ".join(ft["skipped_with_reason"]), (" (the input-aware rule of `RESUME=1` would have rerun: %s)" % ", ".join(would_run)) if would_run else "",
@@ -91,7 +91,7 @@ def main():
         L.append("It is therefore a weaker check than a full `make all` with one stage really failing: it verifies the fail-soft bookkeeping and exit status on the "
                  "real Makefile and markers, with %d of %d stages actually executed. Execution of real recipes after a real failure is covered separately by "
                  "(a) the unit test `scripts/tests/make_all_test.sh` on a scratch repository (cases A and J: every later recipe runs after one or two failing "
-                 "recipes; 23 checks) and (b) the recorded `make all` run below, when present, in which a stage fails with its own exit code."
+                 "recipes) and (b) the recorded `make all` run below, when present, in which a stage fails with its own exit code."
                  % (len(ft["executed_for_real"]), len(ft["stages"])))
     else:
         L.append("**`make all` fail-soft test:** not run yet.")
