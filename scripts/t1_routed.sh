@@ -1,0 +1,249 @@
+#!/usr/bin/env bash
+# Stage 11_eqy_routed: the Task 1 design checked against the ROUTED nangate45 netlist.
+#
+#   scripts/t1_routed.sh [NCASES=200] [OUTDIR=results]
+#
+# LOGICAL checks only (zero-delay cell functions).  Nothing here checks timing.
+#
+#  gls : post-route gate-level simulation -- routed netlist + nangate45 cell models
+#        through the unchanged Task 1 cocotb test (seed 1234) on Icarus and Verilator,
+#        0 mismatches vs NumPy, and the CSV must equal the first rows of the official
+#        RTL CSV (results/t1_icarus.csv).  Plus a negative control: a netlist with two
+#        register inputs swapped must produce mismatches.
+#  eqy : EQY RTL == routed netlist (eqy/systolic_os_routed.eqy.in), plus negative
+#        controls (bug injected into the RTL MAC, into an RTL operand register and
+#        into the routed netlist: each must be rejected).
+#
+# Inputs
+#  * routed netlist: $T1_ROUTED_NETLIST, default the snapshot of the final-RTL ORFS
+#    run, results/part1_snapshot/systolic_os_routed/6_final.v (sha256 recorded).
+#  * cell models: NangateOpenCellLibrary_typical.lib copied at run time out of the
+#    pinned ORFS image ($ORFS_IMAGE in coord/images.env).  The ORFS nangate45 platform
+#    ships no Verilog simulation library, so the Verilog cell models used for the
+#    gate-level simulation are generated from that Liberty file with Yosys.
+#
+# Environment: T1R_STEPS = subset of "gls eqy" (default both; "gls" alone is the
+# quick demo check).
+#
+# Lock use: the stage runs as several short container jobs, each under its own
+# scripts/with_lock.sh acquisition, so shorter jobs of other stages can interleave:
+#   1. cell models + gate-level simulation,
+#   2. EQY in resumable chunks of at most T1R_CHUNK_SECONDS (default 540 s; `eqy -c`
+#      continues with the partitions that are not finished yet),
+#   3. negative controls + summary.
+# A caller that already holds the lock (LAB_LOCK_HELD=1) gets the same phases without
+# re-locking.
+set -u -o pipefail
+
+NCASES="${1:-200}"
+OUT_ARG="${2:-results}"
+STEPS="${T1R_STEPS:-gls eqy}"
+case "$NCASES" in ''|*[!0-9]*) echo "NCASES must be a non-negative integer" >&2; exit 2 ;; esac
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LAB_DIR="$(cd "$SELF_DIR/.." && pwd)"
+LIB_IN_IMAGE=/OpenROAD-flow-scripts/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib
+
+# ------------------------------------------------------------------ host side
+if [ -z "${T1R_INSIDE:-}" ]; then
+  cd "$LAB_DIR" || exit 2
+  # shellcheck disable=SC1091
+  [ -f env.sh ] && source ./env.sh
+  case "$OUT_ARG" in
+    "$LAB_DIR"/*) OUT_REL="${OUT_ARG#"$LAB_DIR"/}" ;;
+    /*) echo "OUTDIR must be inside the lab directory" >&2; exit 2 ;;
+    *) OUT_REL="${OUT_ARG%/}" ;;
+  esac
+  # shellcheck disable=SC1091
+  source coord/images.env
+  : "${LAB_SIM_IMAGE:?not set in coord/images.env}" "${ORFS_IMAGE:?not set in coord/images.env}"
+  WORK="$OUT_REL/t1_routed_work"
+  mkdir -p "$WORK/cells"; echo '*' > "$WORK/.gitignore"
+  LOCK=()
+  [ "${LAB_LOCK_HELD:-0}" = 1 ] || LOCK=(bash scripts/with_lock.sh rtl env LAB_LOCK_HELD=1)
+  IMAGE_ID="$(docker image inspect --format '{{.Id}}' "$LAB_SIM_IMAGE" 2>/dev/null || true)"
+  phase() {  # phase <name>: one container job = one lock acquisition
+    "${LOCK[@]}" docker run --rm --platform linux/amd64 --cpus 2 \
+      -v "$LAB_DIR":/lab -w /lab \
+      -e T1R_INSIDE=1 -e T1R_PHASE="$1" -e T1R_STEPS="$STEPS" -e PYTHONHASHSEED=0 \
+      -e T1R_CHUNK_SECONDS="${T1R_CHUNK_SECONDS:-540}" \
+      -e T1_ROUTED_NETLIST="${T1_ROUTED_NETLIST:-}" \
+      -e T1R_IMAGE_REF="$LAB_SIM_IMAGE" -e T1R_ORFS_IMAGE="$ORFS_IMAGE" -e T1R_LIB_IN_IMAGE="$LIB_IN_IMAGE" \
+      -e T1R_IMAGE_ID="$IMAGE_ID" \
+      "$LAB_SIM_IMAGE" bash scripts/t1_routed.sh "$NCASES" "$OUT_REL"
+  }
+  # Cell library straight out of the pinned ORFS image (nothing is downloaded), and
+  # step 1 of the task: can ORFS's built-in LEC (Kepler-Formal) run on this CPU?
+  "${LOCK[@]}" docker run --rm --platform linux/amd64 -v "$LAB_DIR":/lab "$ORFS_IMAGE" bash -c '
+    cp "$0" "/lab/$1/cells/NangateOpenCellLibrary_typical.lib" || exit 3
+    K=/OpenROAD-flow-scripts/tools/install/kepler-formal/bin/kepler-formal
+    {
+      echo "# ORFS built-in LEC = Kepler-Formal ($K), enabled by LEC_CHECK=1 (flow/scripts/formal_check.tcl):"
+      echo "# it compares 1_synth_lec.v with 6_final_lec.v (netlist vs netlist, never the RTL)."
+      echo "\$ $K --version"
+      "$K" --version 2>&1 | head -5
+      echo "kepler-formal exit code: ${PIPESTATUS[0]}   (132 = 128 + SIGILL, illegal instruction)"
+      echo "zmm instructions: $(objdump -d "$K" 2>/dev/null | grep -c zmm)   (AVX-512 register operands in the binary)"
+      echo "cpu: $(grep -m1 "model name" /proc/cpuinfo | cut -d: -f2-)"
+      if grep -m1 flags /proc/cpuinfo | grep -qw avx512f; then echo "cpu avx512f: yes"; else echo "cpu avx512f: no"; fi
+    } > "/lab/$1/kepler_check.txt" 2>&1
+  ' "$LIB_IN_IMAGE" "$WORK" || { echo "cannot copy Liberty from ORFS image" >&2; exit 3; }
+  phase prep || true
+  if [[ " $STEPS " == *" eqy "* ]]; then
+    for chunk in $(seq 1 "${T1R_MAX_CHUNKS:-12}"); do
+      [ -f "$WORK/eqy_routed.finished" ] && break
+      echo "[t1r] EQY chunk $chunk"
+      phase eqy || true
+    done
+  fi
+  phase finish
+  exit $?
+fi
+
+# --------------------------------------------------------- inside (container)
+cd "$LAB_DIR" || exit 2
+export PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 LC_ALL=C.UTF-8
+OUT="$OUT_ARG"
+WORK="$OUT/t1_routed_work"
+NETLIST="${T1_ROUTED_NETLIST:-results/part1_snapshot/systolic_os_routed/6_final.v}"
+LIB="$WORK/cells/NangateOpenCellLibrary_typical.lib"
+CELLS_V="$WORK/cells/nangate45_cells_from_liberty.v"
+OFFICIAL=0
+[ "$OUT" = "results" ] && [ "$NCASES" -ge 200 ] && [ "$STEPS" = "gls eqy" ] && [ -z "${T1_ROUTED_NETLIST:-}" ] && OFFICIAL=1
+if [ "$OUT" = "results" ]; then LOGS="logs/part2/11_eqy_routed"; else LOGS="$WORK/logs"; fi
+STAGE="results/.stages/11_eqy_routed"
+[ -f "$NETLIST" ] || { echo "routed netlist not found: $NETLIST" >&2; exit 3; }
+
+PHASE="${T1R_PHASE:-all}"
+mkdir -p "$OUT" "$WORK" "$LOGS"
+OUT_ABS="$(cd "$OUT" && pwd)"; WORK_ABS="$(cd "$WORK" && pwd)"
+NETLIST_ABS="$(cd "$(dirname "$NETLIST")" && pwd)/$(basename "$NETLIST")"
+if [ "$PHASE" = prep ] || [ "$PHASE" = all ]; then      # a new run starts here: clean slate
+  find "$WORK" -mindepth 1 -maxdepth 1 ! -name cells ! -name .gitignore ! -name kepler_check.txt -exec rm -rf {} +
+  rm -f "$OUT"/t1_routed_gls_*.csv "$OUT"/t1_routed_summary.json "$CELLS_V" "$LOGS"/step_*.log
+  : > "$WORK/steps.tsv"; date +%s > "$WORK/t_start"
+  if [ "$OFFICIAL" = 1 ]; then
+    rm -f "$STAGE.done" "$STAGE.failed"; : > "$STAGE.running"
+    echo "$(date +%H:%M:%S) rtl: 11_eqy_routed started (N=$NCASES)" >> logs/run.log
+  fi
+fi
+in_phase() { [ "$PHASE" = all ] || [ "$PHASE" = "$1" ]; }
+
+tmo() { local secs="$1"; shift; timeout "$secs" "$@"; }
+want() { case " $STEPS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
+step() {  # step <name> <timeout-seconds> <function> [args]
+  local name="$1" secs="$2" t0 rc; shift 2
+  t0=$(date +%s); echo "[t1r] $name ..."
+  TMO="$secs"
+  "$@" > "$LOGS/step_$name.log" 2>&1
+  rc=$?
+  printf '%s\t%s\t%s\n' "$name" "$rc" "$(( $(date +%s) - t0 ))" >> "$WORK/steps.tsv"
+  echo "[t1r] $name: rc=$rc, $(( $(date +%s) - t0 )) s"
+  return $rc
+}
+T_START=$(cat "$WORK/t_start" 2>/dev/null || date +%s)
+
+# ------------------------------------------------------- 0. cell models
+# Verilog cell models generated from the Liberty functions, and a check that every
+# cell instantiated by the routed netlist has a function (none is a black box).
+cells() {
+  tmo "$TMO" yosys -q -l "$WORK/cells_from_liberty.log" -p "read_liberty -ignore_miss_func $LIB; proc; opt_clean; write_verilog -noattr $CELLS_V" || return 1
+  tmo "$TMO" yosys -q -l "$WORK/netlist_cells.log" -p "read_liberty -ignore_miss_func $LIB; read_verilog $NETLIST; hierarchy -check -top systolic_os; tee -q -o $WORK/netlist_stat.json stat -json; flatten; select -assert-none t:* t:\$* %d; proc; opt_merge; opt_clean; tee -q -o $WORK/netlist_flat_stat.json stat -json"
+}
+in_phase prep && { step cells 600 cells || echo "[t1r] cell models failed; later steps will fail too"; }
+
+# -------------------------------------------------- 1. gate-level simulation
+gls() {  # gls <sim> <netlist> <csv tag> <ncases>
+  T1_NCASES="$4" T1_SEED=1234 \
+  T1_CSV="$OUT_ABS/t1_routed_gls_$3.csv" T1_COV="$WORK_ABS/coverage_gls_$3.json" \
+    tmo "$TMO" make -C tb SIM="$1" SIM_BUILD="$WORK_ABS/sim_$3" COCOTB_RESULTS_FILE="$WORK_ABS/results_$3.xml" \
+      T1_GATE_NETLIST="$2" T1_GATE_CELLS="$WORK_ABS/cells/nangate45_cells_from_liberty.v"
+}
+# Negative control: swap the D inputs of two operand-register flops in a copy of the
+# netlist; the simulation must then report mismatches (make exits non-zero).
+gls_neg() {
+  python3 scripts/t1_routed_summary.py mutate "$NETLIST" "$WORK/netlist_swapped_d.v" || return 90
+  T1_NCASES=20 T1_SEED=1234 \
+  T1_CSV="$WORK_ABS/gls_neg.csv" T1_COV="$WORK_ABS/coverage_gls_neg.json" \
+    tmo "$TMO" make -C tb SIM=icarus SIM_BUILD="$WORK_ABS/sim_neg" COCOTB_RESULTS_FILE="$WORK_ABS/results_neg.xml" \
+      T1_GATE_NETLIST="$WORK_ABS/netlist_swapped_d.v" T1_GATE_CELLS="$WORK_ABS/cells/nangate45_cells_from_liberty.v"
+  local rc=$?
+  echo "make exit code: $rc (non-zero expected: the testbench must report mismatches)"
+  [ $rc -ne 0 ] && [ $rc -ne 124 ]
+}
+if want gls && in_phase prep; then
+  step gls_icarus 1800 gls icarus "$NETLIST_ABS" icarus "$NCASES"
+  step gls_verilator 2400 gls verilator "$NETLIST_ABS" verilator "$NCASES"
+  step gls_neg 900 gls_neg
+fi
+
+# ------------------------------------------------------------------- 2. EQY
+mkeqy() {  # mkeqy <rtl dir> <netlist> <out file>
+  sed -e "s#@RTL@#$1#g" -e "s#@LIB@#$WORK_ABS/cells/NangateOpenCellLibrary_typical.lib#g" -e "s#@NETLIST@#$2#g" \
+    eqy/systolic_os_routed.eqy.in > "$3"
+}
+# Resumable: each call runs EQY for at most T1R_CHUNK_SECONDS; `eqy -c` continues an
+# existing work directory, re-running only the partitions without a result.
+equiv() {
+  local cont=(-f) rc
+  if [ -d "$WORK/eqy_routed/partitions" ]; then cont=(-c); else mkeqy "$LAB_DIR/rtl" "$NETLIST_ABS" "$WORK/routed.eqy"; fi
+  timeout "${T1R_CHUNK_SECONDS:-540}" eqy "${cont[@]}" -j 2 -d "$WORK/eqy_routed" "$WORK/routed.eqy"
+  rc=$?
+  if grep -q "DONE (" "$WORK/eqy_routed/logfile.txt" 2>/dev/null && [ $rc -ne 124 ]; then
+    echo "$rc" > "$WORK/eqy_routed.finished"
+  fi
+  echo "eqy chunk exit code: $rc (124 = chunk time limit, continued in the next chunk)"
+  cat "$WORK/eqy_routed/logfile.txt" >> "$WORK/eqy_routed_all_chunks.log" 2>/dev/null
+  return 0
+}
+# Negative controls: one injected bug, only the partition that contains it is solved
+# (apply <partition>, the rest goes to a dummy strategy); EQY must not prove it.
+equiv_neg() {  # equiv_neg <tag> <partition> rtl <file> <sed expr> | netlist
+  local d="$WORK_ABS/neg_$1" net="$NETLIST_ABS" rc
+  rm -rf "$d"; mkdir -p "$d/rtl"
+  cp rtl/mac_int8.sv rtl/systolic_os.sv "$d/rtl/"
+  if [ "$3" = rtl ]; then
+    sed -e "$5" "rtl/$4" > "$d/rtl/$4"
+    if cmp -s "rtl/$4" "$d/rtl/$4"; then echo "mutation did not apply to $4"; return 90; fi
+    echo "injected bug (RTL):"; diff "rtl/$4" "$d/rtl/$4"
+  else
+    python3 scripts/t1_routed_summary.py mutate "$NETLIST" "$d/netlist_swapped_d.v" || return 90
+    net="$d/netlist_swapped_d.v"
+  fi
+  mkeqy "$d/rtl" "$net" "$d/routed.eqy"
+  printf 'apply %s\n\n[strategy skip]\nuse dummy\n' "$2" >> "$d/routed.eqy"
+  tmo "$TMO" eqy -f -j 2 -d "$d/eqy" "$d/routed.eqy"
+  rc=$?
+  echo "eqy exit code: $rc (non-zero expected)"
+  [ $rc -ne 0 ] && [ $rc -ne 124 ]
+}
+if want eqy && in_phase eqy && [ ! -f "$WORK/eqy_routed.finished" ]; then
+  n=$(grep -c '^eqy_routed_chunk' "$WORK/steps.tsv" 2>/dev/null || true)
+  step "eqy_routed_chunk$(( ${n:-0} + 1 ))" 900 equiv
+fi
+if want eqy && [ "$PHASE" = all ]; then      # caller holds the lock: finish the chunks here
+  for _ in $(seq 1 12); do
+    [ -f "$WORK/eqy_routed.finished" ] && break
+    n=$(grep -c '^eqy_routed_chunk' "$WORK/steps.tsv" 2>/dev/null || true)
+    step "eqy_routed_chunk$(( ${n:-0} + 1 ))" 900 equiv
+  done
+fi
+if want eqy && in_phase finish; then
+  step eqy_neg_rtl_mac 600 equiv_neg rtl_mac systolic_os.acc_o.0 rtl mac_int8.sv \
+    "s/acc <= acc + 32'(prod);/acc <= acc + 32'(prod) + 32'sd1;/"
+  step eqy_neg_rtl_reg 300 equiv_neg rtl_reg systolic_os.g_row.0.g_col.0.g_east.a_q.0 rtl systolic_os.sv \
+    "s/a_q <= a_w\\[i\\]\\[j\\];/a_q <= a_w[i][j] ^ 8'd1;/"
+  step eqy_neg_netlist 300 equiv_neg netlist systolic_os.g_row.0.g_col.0.g_east.a_q.0 netlist
+fi
+
+# --------------------------------------------------------------- 3. summary
+in_phase finish || exit 0
+python3 scripts/t1_routed_summary.py summary --out "$OUT" --work "$WORK" --logs "$LOGS" \
+  --ncases "$NCASES" --steps "$STEPS" --netlist "$NETLIST" --wall "$(( $(date +%s) - T_START ))"
+RC=$?
+if [ "$OFFICIAL" = 1 ]; then
+  rm -f "$STAGE.running" "$STAGE.done" "$STAGE.failed"
+  python3 -c "import json;d=json.load(open('results/t1_routed_summary.json'));print('pass', d['pass'], 'eqy_routed_pass', d['eqy_routed_pass'], 'gls_routed_pass', d['gls_routed_pass'])" \
+    > "$STAGE.$([ $RC -eq 0 ] && echo done || echo failed)"
+  echo "$(date +%H:%M:%S) rtl: 11_eqy_routed finished rc=$RC ($(( $(date +%s) - T_START )) s incl. lock waits)" >> logs/run.log
+fi
+exit $RC

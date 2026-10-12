@@ -127,8 +127,9 @@ class Array:
 
     def __init__(self, dut):
         self.dut = dut
-        self.R = int(dut.R.value)
-        self.C = int(dut.C.value)
+        # array size from the port widths (a gate-level netlist has no parameters)
+        self.R = len(dut.a_i) // 8
+        self.C = len(dut.b_i) // 8
         self.cycles = 0
 
     async def start(self):

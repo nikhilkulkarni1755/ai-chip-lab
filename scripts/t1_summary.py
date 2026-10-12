@@ -345,6 +345,11 @@ def main():
         json.dump(summary, f, indent=2, sort_keys=True)
         f.write("\n")
 
+    # Part 2: keep the routed-netlist fields (stage 11_eqy_routed) when this file is rewritten
+    if os.path.exists(os.path.join(out, "t1_routed_summary.json")):
+        subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                     "t1_routed_summary.py"), "merge", out], check=False)
+
     evdir = os.path.join(out, "evidence")
     os.makedirs(evdir, exist_ok=True)
     for name, text in evidence.items():
