@@ -16,6 +16,7 @@ import html
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 
@@ -139,13 +140,33 @@ class Row:
 STALE_INPUTS = {"10_rtl_verify": ["rtl", "tb", "formal", "eqy"]}
 
 
+def _git(L, *args):
+    try:
+        r = subprocess.run(["git", "-C", L.lab] + list(args), capture_output=True, text=True, timeout=30)
+        return r.stdout.strip() if r.returncode == 0 else None
+    except Exception:
+        return None
+
+
 def stale_inputs(L, stage, summary_rel):
-    """Input files (relative paths) that are newer than the summary: the recorded result predates them."""
-    sm = L.mtime(summary_rel)
-    if sm is None:
+    """Input paths changed after the recorded result. Uses git commit times (a fresh clone has no meaningful mtimes);
+    uncommitted edits to the inputs count as newer. Falls back to mtimes only when the summary itself is untracked."""
+    ins = STALE_INPUTS.get(stage, [])
+    if not ins or L.mtime(summary_rel) is None:
         return []
+    dirty = _git(L, "status", "--porcelain", "--", *ins)
+    if dirty:
+        return [ln[3:] for ln in dirty.splitlines()][:6]
+    if _git(L, "ls-files", "--error-unmatch", summary_rel) is not None:
+        sct = _git(L, "log", "-1", "--format=%ct", "--", summary_rel)
+        ict = _git(L, "log", "-1", "--format=%ct", "--", *ins)
+        if sct and ict and int(ict) > int(sct):
+            return ["inputs last committed %s, summary last committed %s" % (
+                time.strftime("%H:%M:%S", time.localtime(int(ict))), time.strftime("%H:%M:%S", time.localtime(int(sct))))]
+        return []
+    sm = L.mtime(summary_rel)  # untracked summary: compare file mtimes
     newer = []
-    for d in STALE_INPUTS.get(stage, []):
+    for d in ins:
         for base, _, fs in os.walk(L.p(d)):
             if "work" in base.split(os.sep) or "sim_build" in base:
                 continue
@@ -160,7 +181,7 @@ def stale_inputs(L, stage, summary_rel):
 
 
 def task_state(L, stage, summary_rel):
-    """PASS only with a .done marker AND summary pass==true. Returns (state, detail, summary_dict)."""
+    """PASS needs the stage marker .done AND summary pass==true AND no input changed since the result. Returns (state, detail, summary_dict)."""
     r = _task_state(L, stage, summary_rel)
     if r[0] in ("PASS", "FAIL") and stage_marker(L, stage)[0] != "failed":
         nw = stale_inputs(L, stage, summary_rel)
@@ -179,7 +200,7 @@ def _task_state(L, stage, summary_rel):
     if st == "blocked":
         return "BLOCKED", "marker .blocked: " + first, s
     if isinstance(s, dict) and isinstance(s.get("pass"), bool):
-        if s["pass"] and st in ("done", "none"):
+        if s["pass"] and st == "done":
             return "PASS", "%s: pass=true" % summary_rel.split("/")[-1], s
         if s["pass"] and st == "running":
             return "RUNNING", "summary says pass=true but a re-run is in progress", s
@@ -188,6 +209,8 @@ def _task_state(L, stage, summary_rel):
         return "RUNNING", "stage in progress" + (": " + first if first else ""), s
     if st == "done":
         return "UNKNOWN", "stage .done but %s missing or has no boolean 'pass'" % summary_rel, s
+    if isinstance(s, dict) and st == "none":
+        return "UNKNOWN", "%s exists but the stage has no .done marker" % summary_rel, s
     return "PENDING", "no marker and no %s yet" % summary_rel, s
 
 
@@ -370,7 +393,7 @@ TREE = [
     ("coord/images.env", "The two container images (lab-sim build, ORFS pinned by digest) that every script sources."),
     ("COORDINATION.md", "How the agents divided the work: rules, decisions with evidence, requests between agents."),
     ("docker/lab-sim/Dockerfile", "Recipe for the simulation image (OSS CAD Suite, Verible, Python venv)."),
-    ("docker/requirements.lock", "Hash-locked Python dependencies installed in the lab-sim image."),
+    ("docker/requirements.lock", "Hash-locked Python dependencies installed in the lab-sim image (it lives under docker/, not at the repo root)."),
     ("rtl/mac_int8.sv", "The multiply-accumulate unit: signed INT8 x INT8 into an INT32 accumulator."),
     ("rtl/systolic_os.sv", "R x C output-stationary systolic array built from MAC processing elements."),
     ("tb/test_systolic.py", "cocotb testbench: random + directed cases checked against NumPy, with functional coverage."),
@@ -398,8 +421,8 @@ TREE = [
 CONCEPTS = [
     ("MAC: multiply-accumulate",
      "The atom of neural-network arithmetic: <code>acc = acc + a*b</code>. A matrix product is nothing but many of "
-     "these. Here a and b are signed 8-bit integers and the accumulator is 32-bit, so a long sum cannot overflow "
-     "(127*127*K stays far below 2<sup>31</sup> for any realistic K).",
+     "these. Here a and b are signed 8-bit integers and the accumulator is 32-bit, so a long sum does not overflow in practice: the worst case is (&minus;128)&sup2; = 16,384 per step, "
+     "and a signed 32-bit accumulator only wraps after 131,072 such accumulations (2<sup>31</sup> / 2<sup>14</sup>).",
      ["rtl/mac_int8.sv", "formal/"]),
     ("PE: processing element",
      "A MAC plus the registers that hold its accumulator and pass operands on. In an output-stationary design each PE "
@@ -471,18 +494,19 @@ TESTS = [
     ("Task 1 - INT8 systolic array", "10_rtl_verify", "results/t1_summary.json",
      "Integer matrix multiplication done by NumPy (<code>A.astype(int32) @ B.astype(int32)</code>), which is exact. "
      "Second oracles: a second simulator, a formal proof and a netlist equivalence proof.",
-     "make t1 (runs scripts/t1_run.sh inside the lab-sim image).",
+     "make t1 (scripts/t1_run.sh 10000 results inside the lab-sim image).",
      "Random INT8 matrices from seed 1234, tiled onto the 4x4 array, plus directed cases (all -128, all 127, zeros, identity, "
      "clear mid-stream, K=1, shapes not a multiple of the array size). Run on Verilator and Icarus.",
      "0 mismatches on both simulators; sha256 of the two result CSVs equal; formal proof passes; EQY passes."),
     ("Task 2 - OpenROAD reference flow", "20_pnr_ref", "results/t2_summary.json",
      "Published thresholds shipped with ORFS (<code>rules-base.json</code>), checked by ORFS's own <code>checkMetadata.py</code>.",
-     "make t2 (runs scripts/t2_run.sh and scripts/t2_check.sh with the pinned ORFS image).",
+     "make t2 (scripts/make_t2.sh ref: both gcd designs twice from clean with the pinned ORFS image, threshold check, summary; about 35 min of ORFS) and make t2-stretch for systolic_os (about 30 min).",
      "nangate45 gcd (and sky130hd gcd if time allowed), each twice from a clean directory with the same image digest and core count.",
      "All metrics within thresholds; final DRC count 0; GDS exists; the two runs give identical metrics."),
     ("Task 3 - SCALE-Sim vs analytical model", "30_arch_model", "results/t3_summary.json",
-     "A closed-form model (folds x (K + fill/drain)) and the roofline model, both in <code>model/analytic.py</code>.",
-     "make t3 (runs scripts/t3_run.sh in the lab-sim image).",
+     "No independent oracle exists for this task: a closed-form cycle model whose constants were derived from SCALE-Sim's own source (so agreement validates the derivation, not the simulator), "
+     "plus a roofline model compared with the simulator's stall counts. Both are in <code>model/analytic.py</code> and <code>model/t3_roofline.py</code>.",
+     "make t3 (scripts/t3_run.sh in the lab-sim image: two SCALE-Sim passes, fit, roofline; exits non-zero while the roofline criterion fails).",
      "Bundled TPU-like config and bundled topology for ws, os and is; synthetic GEMMs for the fit; array and K doubled to test that residuals stay stable.",
      "Two reruns byte-identical; analytic model within the fitted constant with stable residuals; roofline classification agrees with stalls."),
 ]
@@ -670,6 +694,35 @@ def repro_table(L, rr):
 
 
 
+def frontier_text(L):
+    rows = []
+    for ln in L.read("results/sweeps/phys.jsonl").splitlines():
+        try:
+            rows.append(json.loads(ln))
+        except Exception:
+            pass
+    rows = [r for r in rows if r.get("design") == "gcd" and r.get("status") == "ok" and "clock_period_ns" in r]
+    if not rows:
+        return ""
+    h = ["<h3>Timing-closure frontier per utilization (gcd, from results/sweeps/phys.jsonl)</h3><div class='tw'><table><thead><tr><th>core utilization</th>"
+         "<th>fastest closing period (ns)</th><th>setup WNS there (ns)</th><th>next tighter period tried (ns)</th><th>its WNS (ns)</th></tr></thead><tbody>"]
+    for u in sorted({r.get("core_utilization") for r in rows}):
+        rs = sorted((r for r in rows if r.get("core_utilization") == u), key=lambda r: r["clock_period_ns"])
+        closed = [r for r in rs if r.get("wns_setup_ns") is not None and r["wns_setup_ns"] >= 0]
+        if not closed:
+            h.append("<tr><td>%s %%</td><td>none closes</td><td>-</td><td>-</td><td>-</td></tr>" % u)
+            continue
+        best = closed[0]
+        tight = [r for r in rs if r["clock_period_ns"] < best["clock_period_ns"]]
+        nx = tight[-1] if tight else None
+        margin = " (closes with essentially zero margin)" if best["wns_setup_ns"] < 0.001 else ""
+        h.append("<tr><td>%s %%</td><td>%s</td><td>%s%s</td><td>%s</td><td>%s</td></tr>" % (
+            u, e(fmt_val(best["clock_period_ns"])), e(fmt_val(best["wns_setup_ns"])), margin,
+            e(fmt_val(nx["clock_period_ns"])) if nx else "-", e(fmt_val(nx["wns_setup_ns"])) if nx else "-"))
+    h.append("</tbody></table></div>")
+    return "".join(h)
+
+
 FORMULA = {"os": ("M, N", "K", "ceil(M/R)*ceil(N/C)", "T + R + C - 2"),
            "ws": ("K, N", "M", "ceil(K/R)*ceil(N/C)", "T + 2R + C - 2"),
            "is": ("K, M", "N", "ceil(K/R)*ceil(M/C)", "T + 2R + C - 2")}
@@ -692,7 +745,8 @@ def t3_block(L, s3):
         h.append("<p><b>Analytic model.</b> Each fold takes <code>T + a*R + b*C + c</code> cycles and the total is "
                  "<code>folds*(T + aR + bC + c) + d</code>; (a,b,c,d) were read off the SCALE-Sim source and then re-estimated by least "
                  "squares from simulator runs, as a check. The task's single-constant formula <code>folds*(K + k)</code> is shown for "
-                 "comparison: it is wrong because the streamed dimension T is not always K and fill/drain depends on R and C.</p>")
+                 "comparison: it is wrong because the streamed dimension T is not always K and fill/drain depends on R and C. The constants (a,b,c,d) were derived by reading the "
+                 "SCALE-Sim source itself (model/analytic.py), so agreement with the simulator validates that derivation, not an independent oracle.</p>")
         h.append("<div class='tw'><table><thead><tr><th>dataflow</th><th>rows, cols mapped</th><th>streamed T</th><th>folds</th><th>cycles per fold</th>"
                  "<th>derived (a,b,c,d)</th><th>fitted (a,b,c,d)</th><th>held-out max |residual| (cycles)</th>"
                  "<th>single-constant formula, worst relative error</th></tr></thead><tbody>")
@@ -701,6 +755,9 @@ def t3_block(L, s3):
             if not f:
                 continue
             fm = FORMULA[df]
+            drv = [f["derived"][k] for k in "abcd"]
+            if drv[2] != -2 or drv[3] != -1:
+                fm = (fm[0], fm[1], fm[2], "see model/analytic.py (table text out of date)")
             h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%.0f %%</td></tr>" % (
                 df, e(fm[0]), e(fm[1]), e(fm[2]), e(fm[3]),
                 e(fmt_val([f["derived"][k] for k in "abcd"])), e(", ".join("%.4f" % f["fitted"][k] for k in "abcd")),
@@ -708,9 +765,17 @@ def t3_block(L, s3):
         h.append("</tbody></table></div>")
     rf = s3.get("roofline") or {}
     if rf:
-        h.append("<p><b>Roofline versus SCALE-Sim stalls.</b> Gate: agreement of the predicted bandwidth-bound / compute-bound label with the "
-                 "stall-based observed label on at least 80 %% of 16 synthetic layers, both classes present, Spearman &le; -0.5. "
-                 "<b>This gate fails</b>, as measured:</p><div class='tw'><table><thead><tr><th>dataflow</th><th>agreement (effective traffic)</th>"
+        rule = rf.get("rule") or ""
+        m_ag = re.search(r"agreement\s*>=\s*(\d+)\s*%", rule); m_n = re.search(r"(\d+)\s+synthetic GEMMs", rule)
+        m_sp = re.search(r"Spearman\(.*?\)\s*<=\s*(-?[\d.]+)", rule)
+        gate = "agreement of the predicted label with the stall-based observed label" + (" on at least %s %% of %s layers" % (m_ag.group(1), m_n.group(1)) if m_ag and m_n else "") + \
+               ((", Spearman correlation &le; %s" % m_sp.group(1)) if m_sp else "") + " (as written in the rule text below)"
+        nfalse = sorted(k for k, v in chk.items() if k.startswith("roofline") and v is False)
+        met = chk.get("roofline_agrees")
+        h.append("<p><b>Roofline versus SCALE-Sim stalls.</b> Gate: %s. Verdict from the summary: <b>%s</b>. "
+                 "The stage marker's &quot;N of M criteria&quot; counts the whole roofline study as one criterion; in the table above that criterion appears as %d "
+                 "false per-dataflow booleans (%s).</p>" % (gate, "gate met" if met else ("gate NOT met" if met is False else "not reported"), len(nfalse), e(", ".join(nfalse)) or "none"))
+        h.append("<div class='tw'><table><thead><tr><th>dataflow</th><th>agreement (effective traffic)</th>"
                  "<th>agreement (compulsory traffic)</th><th>Spearman (AI, stall fraction)</th><th>layers with stalls</th><th>predicted bound</th><th>observed bound</th></tr></thead><tbody>")
         for df in ("ws", "os", "is"):
             r = rf.get(df)
@@ -721,16 +786,23 @@ def t3_block(L, s3):
         h.append("</tbody></table></div>")
         if s3.get("bundled_config_zero_stalls"):
             h.append("<p><b>Finding:</b> with the bundled TPU-like configuration SCALE-Sim reports <b>zero stall cycles</b> for all three dataflows "
-                     "(%s), so the bundled run alone cannot test the roofline; the roofline study therefore uses a 16x16 array with a lowered DRAM "
-                     "interface bandwidth, a setting disclosed in the rule below.</p>" % e(fmt_val({k: v.get("total_cycles") for k, v in (s3.get("bundled_summary") or {}).items()})))
+                     "(total cycles: %s; stall cycles: %s), so the bundled run alone cannot test the roofline; the roofline study therefore uses a 16x16 array with a lowered DRAM "
+                     "interface bandwidth, a setting disclosed in the rule below.</p>" % (
+                         e(", ".join("%s %s" % (k, fmt_val(v.get("total_cycles"))) for k, v in (s3.get("bundled_summary") or {}).items())),
+                         e(", ".join("%s %s" % (k, fmt_val(v.get("stall_cycles"))) for k, v in (s3.get("bundled_summary") or {}).items()))))
         if rf.get("rule"):
+            h.append("<div class='note'><b>Editor's note (added by the demo build, not part of the verbatim text):</b> the opening words of the rule below, "
+                     "&quot;fixed here, before any result was looked at&quot;, are inaccurate as written. The rule's own CHRONOLOGY paragraph at the end records that the first "
+                     "observed signal could not discriminate and that the stall-based observed signal and the effective-traffic roofline were adopted afterwards (post-hoc). "
+                     "The code was left unchanged so that the repeatability run stays valid.</div>")
             h.append("<details open><summary>Roofline rule and chronology, verbatim from t3_summary.json (includes the disclosed post-hoc change of the observed signal)</summary><pre>%s</pre></details>" % e(rf["rule"]))
     return "".join(h)
 
 
 def sweep_audit(L):
-    """Non-ok sweep points and grid coverage, computed from the JSONL files."""
+    """Facts computed from the sweep JSONL files, the t2 summary and the drivers' own docstrings."""
     out = []
+    rowsd = {}
     for name in ("arch", "phys"):
         rows = []
         for ln in L.read("results/sweeps/%s.jsonl" % name).splitlines():
@@ -738,27 +810,40 @@ def sweep_audit(L):
                 rows.append(json.loads(ln))
             except Exception:
                 pass
-        if not rows:
-            continue
-        bad = [r for r in rows if r.get("status") not in ("ok", None)]
-        for r in bad:
-            out.append("sweep %s: point <code>%s</code> status <b>%s</b>%s after %s s; it has no metrics." % (
-                name, e(str(r.get("key") or r.get("variant"))), e(str(r.get("status"))),
-                (" (" + e(str(r.get("error")))[:120] + ")") if r.get("error") else "", e(str(r.get("wall_s", "?")))))
-        if name == "arch":
-            ax = {k: sorted({str(r.get(k)) for r in rows if r.get(k) is not None}) for k in ("topo", "dataflow", "sram")}
-            sz = sorted({"%sx%s" % (r.get("rows"), r.get("cols")) for r in rows})
-            out.append("sweep arch covers %d points: topologies %s, dataflows %s, SRAM levels %s, arrays %s. Anything outside that grid was not run "
-                       "(grid cut for time; a point not listed is absent, not zero)." % (len(rows), ", ".join(ax["topo"]), ", ".join(ax["dataflow"]),
-                                                                                     ", ".join(ax["sram"]), ", ".join(sz)))
-        else:
-            per = [r["clock_period_ns"] for r in rows if "clock_period_ns" in r]
-            ut = sorted({r.get("core_utilization") for r in rows})
-            clo = [r for r in rows if r.get("closed")]
-            out.append("sweep phys covers %d points: designs %s, clock periods %.3g to %.3g ns, core utilization %s %%; %d point(s) close timing (WNS &ge; 0). "
-                       "Fastest closing period in the data: %s." % (len(rows), ", ".join(sorted({"%s/%s" % (r.get("platform"), r.get("design")) for r in rows})),
-                                                                  min(per), max(per), ", ".join(str(u) for u in ut), len(clo),
-                                                                  ("%.3g ns" % min(r["clock_period_ns"] for r in clo)) if clo else "none yet"))
+        rowsd[name] = rows
+        for r in [r for r in rows if r.get("status") not in ("ok", None)]:
+            key = str(r.get("key") or r.get("variant"))
+            fix = ("delete its line from results/sweeps/arch.jsonl and rerun <code>make sweeps</code> (the driver skips completed keys; it starts no point after the "
+                   "sweep deadline in budget.json, so extend <code>deadline_sweeps_stop_epoch</code> first)") if name == "arch" else \
+                  "rerun with <code>python3 sweeps/phys_sweep.py --retry</code> (same deadline rule)"
+            out.append("sweep %s: point <code>%s</code> has status <b>%s</b> after %s s with error text %s; the cause was not verified. It has no metrics. To retry: %s." % (
+                name, e(key), e(str(r.get("status"))), e(str(r.get("wall_s", "?"))), ("&quot;%s&quot;" % e(str(r.get("error")))) if r.get("error") else "empty", fix))
+    rows = rowsd["arch"]
+    if rows:
+        ax = {k: sorted({str(r.get(k)) for r in rows if r.get(k) is not None}) for k in ("dataflow", "sram")}
+        by_topo = {}
+        for r in rows:
+            by_topo.setdefault(str(r.get("topo")), set()).add("%sx%s" % (r.get("rows"), r.get("cols")))
+        nl = {t: sorted({r.get("n_layers") for r in rows if str(r.get("topo")) == t and r.get("n_layers") is not None}) for t in by_topo}
+        out.append("sweep arch covers %d points: dataflows %s, SRAM levels %s. Arrays per workload: %s. Layers per workload: %s. Workloads are not run on every array size, so comparisons "
+                   "across array sizes mix workloads; a point not listed is absent, not zero." % (
+                       len(rows), ", ".join(ax["dataflow"]), ", ".join(ax["sram"]),
+                       "; ".join("%s: %s" % (t, ", ".join(sorted(v))) for t, v in sorted(by_topo.items())),
+                       "; ".join("%s: %s" % (t, ", ".join(str(x) for x in v)) for t, v in sorted(nl.items()))))
+        if all(r.get("stall_cycles") == 0 for r in rows if r.get("status") == "ok"):
+            doc = re.sub(r"\s+", " ", L.read("sweeps/arch_sweep.py"))
+            m = re.search(r"CALC interface-bandwidth mode[^.]*\.[^.]*\.", doc)
+            out.append("every sweep A point reports <code>stall_cycles = 0</code>: this is structural, not a finding. From sweeps/arch_sweep.py: &quot;%s&quot;" % (
+                e(m.group(0)) if m else "see the driver's docstring"))
+    rows = rowsd["phys"]
+    if rows:
+        t2 = L.jload("results/t2_summary.json") or {}
+        ref = (((t2.get("designs") or {}).get("nangate45/gcd") or {}).get("detail") or {})
+        per = [r["clock_period_ns"] for r in rows if "clock_period_ns" in r and r.get("design") == "gcd"]
+        if per and ref.get("reference_clock_period_ns") is not None:
+            out.append("sweep B for gcd runs periods %.3g to %.3g ns, looser than the %s ns reference clock%s." % (
+                min(per), max(per), ref["reference_clock_period_ns"], ", which does not close timing" if ref.get("timing_closed") is False else ""))
+        out.append("sweep B systolic_os slice: %d point(s) on disk." % len([r for r in rows if r.get("design") == "systolic_os"]))
     return out
 
 
@@ -783,7 +868,7 @@ def build_html(L, rows, vm):
         lk = (" " + link(L, r.link, "file")) if r.link else ""
         h.append("<tr><td>%s</td><td>%s</td><td>%s%s</td></tr>" % (e(r.label), badge(r.state), e(r.detail), lk))
     h.append("</tbody></table></div>")
-    h.append("<p class='sub'>PASS needs the stage's .done marker and <code>\"pass\": true</code> in its summary JSON; "
+    h.append("<p class='sub'>PASS needs the stage's .done marker, no input file committed or edited after the result (else it shows RUNNING), and <code>\"pass\": true</code> in its summary JSON; "
              "a missing piece is shown as PENDING, RUNNING, BLOCKED or UNKNOWN, never assumed.</p>")
     route = ""
     m = re.search(r'route:\s*"([^"]+)"', L.read("versions.lock"))
@@ -827,8 +912,8 @@ def build_html(L, rows, vm):
         h.append("<h3>%s %s</h3><table class='kv'><tbody>" % (e(title), badge(state)))
         h.append("<tr><th>oracle (what is right)</th><td>%s</td></tr><tr><th>command</th><td>%s</td></tr>"
                  "<tr><th>inputs and seeds</th><td>%s</td></tr><tr><th>pass criteria</th><td>%s</td></tr>"
-                 "<tr><th>result file</th><td>%s</td></tr></tbody></table>" % (
-                     oracle, e(cmd), e(inputs), e(crit), link(L, summ)))
+                 "<tr><th>result file</th><td>%s</td></tr><tr><th>logs (local to the lab machine, not in the repository)</th><td><code>logs/%s/</code></td></tr></tbody></table>" % (
+                     oracle, e(cmd), e(inputs), e(crit), link(L, summ), e(stage)))
         if isinstance(s, dict) and stage == "10_rtl_verify":
             h.append("<p><b>Actual result</b> (picked from the values in t1_summary.json)</p>" + t1_block(L, s))
         elif isinstance(s, dict) and stage == "30_arch_model":
@@ -865,6 +950,7 @@ def build_html(L, rows, vm):
     rest = [r for r in all_result_images(L) if r not in used]
     if rest:
         h.append("<h3>Other plots</h3><div class='gal'>%s</div>" % "".join(img(L, r, caption_of(r)) for r in rest))
+    h.append(frontier_text(L))
     h.append("<h3>PPA (power, performance, area) table</h3>")
     s2 = L.jload("results/t2_summary.json")
     if isinstance(s2, dict):
@@ -918,16 +1004,24 @@ def build_html(L, rows, vm):
                  "with timestamps zeroed they are identical and all compared metric fields match (see the determinism evidence images).</li>")
     for line in sweep_audit(L):
         items.append("<li>%s</li>" % line)
-    items.append("<li>Notes passed on by the coordinator from the arch and pnr agents (not computed here): the architecture sweep point alexnet_part 8x8 ws was killed by its "
-                 "per-point timeout (about 605 s); small arrays were run on a separately labelled, smaller workload; sweep B starts at clock periods looser than the "
-                 "0.25 ns reference because the reference does not close timing; a systolic_os slice of sweep B is run only if time allows.</li>")
     t1v = ((L.jload("results/t1_summary.json") or {}).get("values") or {})
     if t1v.get("eqy_scope"):
         items.append("<li>Equivalence scope as recorded by Task 1: <code>%s</code>. If this says per-PE or partial, the full 4x4 multiplier "
                      "cones did not close in the time available and the claim is limited to what is stated.</li>" % e(str(t1v["eqy_scope"])))
     items.append("<li><code>demo/run_demo.sh</code> runs only the sby tasks <code>prove</code> (unbounded induction) and <code>cover</code>; "
-                 "the full BMC depth-20 run is part of <code>make t1</code> and takes about 9 minutes on this machine. "
-                 "Measured run time of the short demo: %s</li>" % e(demo_timing(L)))
+                 "the full BMC depth-20 run is part of <code>make t1</code> (%s s in the official run). %s</li>" % (
+                     e(str(t1v.get("formal_bmc_seconds", "?"))), e(demo_timing(L))))
+    items.append("<li>EQY compares the RTL with Yosys's generic-gate netlist (<code>synth; abc; opt</code>, no liberty cells). The placed-and-routed nangate45 netlist has no "
+                 "equivalence proof: ORFS's own logic-equivalence step is disabled.</li>")
+    d11 = re.search(r"^\| 11 \|.*$", L.read("COORDINATION.md"), re.M)
+    if d11:
+        cmd = re.search(r"`(scripts/with_lock.sh[^`]*)`", d11.group(0))
+        items.append("<li>Timeloop/Accelergy (optional in the task) was <b>skipped</b> (COORDINATION.md Decision 11). To add it: <code>%s</code></li>" % (
+            e(cmd.group(1)) if cmd else "see Decision 11 in COORDINATION.md"))
+    items.append("<li>Task 2 'PASS' means the metrics satisfy ORFS's shipped regression thresholds (<code>rules-base.json</code>); both gcd reference designs have negative setup slack at their reference "
+                 "clocks and are not timing-closed (table in section 6). 'WNS &ge; 0 means timing is met' in the concepts section is the general definition, not what the reference runs achieve.</li>")
+    items.append("<li>Logs under <code>logs/</code> are local to the machine that ran the lab and are not part of the repository; links to them on this page only work there. Some stage logs "
+                 "are overwritten by reruns (for example <code>logs/30_arch_model/</code> by the repro run).</li>")
     items.append("<li>ORFS is pinned to image tag 26Q3-600 because newer tags removed the shipped threshold files (<code>rules-base.json</code>, "
                  "<code>checkMetadata.py</code>) that Task 2 compares against (COORDINATION.md Decision 6).</li>")
     items.append("<li>The optional Kepler logic-equivalence step inside the ORFS flow is disabled (<code>LEC_CHECK=0</code>) because it "
@@ -960,11 +1054,15 @@ def md_table(rows):
     return "\n".join(out)
 
 
+def bmc_secs(L):
+    return str(((L.jload("results/t1_summary.json") or {}).get("values") or {}).get("formal_bmc_seconds", "?"))
+
+
 def demo_timing(L):
     t = L.jload(".cache/demo_run/timing.json")
     if not t:
-        return "Measured run time: not measured yet (run it once; the result is recorded in .cache/demo_run/timing.json)."
-    return ("Last measured run time: %s s with %s cases (finished %s, load average at the end: %s). The load average reflects "
+        return "Short demo run time: not measured yet (run it once; the result is recorded in .cache/demo_run/timing.json)."
+    return ("Last measured run time of the short demo: %s s with %s cases (finished %s, load average at the end: %s). The load average reflects "
             "other jobs on the same 2-core machine, so a quiet machine is faster." % (t.get("total_s"), t.get("cases"), t.get("finished"), t.get("load_average")))
 
 
@@ -993,12 +1091,13 @@ RE-RUN THE SHORT DEMO
   source ~/ai-chip-lab/env.sh && bash demo/run_demo.sh
   Runs: Task 1 on 200 cases (Verilator + Icarus), the formal MAC proof restricted to the sby tasks "prove" (unbounded
   induction) and "cover", one SCALE-Sim run vs the analytic model, and ORFS's threshold check on the existing outputs.
-  The full BMC-20 formal run is part of `make t1`, not of this cut (it takes ~9 minutes on this machine).
+  The full BMC-20 formal run is part of `make t1`, not of this cut (%s s in the official run).
   %s
 
 FREE DISK AFTERWARDS (all inside ~/ai-chip-lab; nothing outside the lab was changed)
   Safe to delete (re-creatable, results already saved under results/ and demo/):
-    orfs/work/        ORFS working directories (large)
+    orfs/work/        ORFS working directories (large) - BUT demo/run_demo.sh step 4 reads orfs/work/reports/nangate45/gcd/base/metadata.json from it
+                      (unless results/t2/ holds a committed copy and scripts/t2_check.sh uses it); delete it only after you are done with the demo
     logs/             raw run logs (not committed)
     downloads/        installer archives
     .venv*/           local Python environments
@@ -1006,7 +1105,7 @@ FREE DISK AFTERWARDS (all inside ~/ai-chip-lab; nothing outside the lab was chan
     the whole VM:     source env.sh && colima delete    (removes the VM disk, up to 60 GiB sparse)
   Keep: results/, demo/, versions.lock, the source directories (rtl/ tb/ formal/ eqy/ model/ arch/ orfs/ sweeps/ scripts/).
   Safe to remove everything: delete the ~/ai-chip-lab directory after `colima delete`.
-""" % ("\n".join("  %-8s %s - %s" % (r.state, r.label, r.detail) for r in rows), el_s, machine_str(L), vmtxt, demo_timing(L))
+""" % ("\n".join("  %-8s %s - %s" % (r.state, r.label, r.detail) for r in rows), el_s, machine_str(L), vmtxt, bmc_secs(L), demo_timing(L))
 
 
 def build_root_readme(L, rows, vm):
@@ -1026,12 +1125,19 @@ def build_root_readme(L, rows, vm):
     for rel, what in TREE:
         h.append("| `%s` | %s |" % (rel, what))
     h.append("\n## Reproduce\n\n```sh\nsource env.sh                 # lab-local PATH; all VM/Docker state stays inside this directory\n"
-             "make preflight runtime images # Colima VM + pinned images (digests in coord/images.env, versions.lock)\n"
-             "make t1 t2 t3                 # Task 1 (RTL vs NumPy, formal, equivalence), Task 2 (OpenROAD), Task 3 (SCALE-Sim)\n"
-             "make sweeps                   # architecture and physical sweeps\n"
-             "make repro                    # clean-directory rerun, writes results/repro_report.json\n"
-             "make demo                     # regenerate demo/index.html and this README\n"
-             "bash demo/run_demo.sh         # the 5-minute cut (cached images, scratch output dir)\n```\n")
+             "make preflight                # machine facts\n"
+             "make runtime images           # Colima VM + pinned images (digests in coord/images.env, versions.lock)\n"
+             "make t1                       # Task 1: RTL vs NumPy on 2 simulators, formal, equivalence (full run incl. BMC-20)\n"
+             "make t2                       # Task 2: gcd on nangate45 + sky130hd, twice from clean (about 35 min of ORFS)\n"
+             "make t2-stretch               # systolic_os through ORFS (about 30 min)\n"
+             "make t3                       # Task 3: SCALE-Sim vs analytic model + roofline (exits non-zero while the roofline criterion fails)\n"
+             "make sweeps                   # architecture + physical sweeps; they start no new point after the sweep deadline in budget.json\n"
+             "make repro                    # reruns Tasks 1 and 3 clean and compares; Task 2 reuses its own two-run check\n"
+             "make demo                     # plots + evidence PNGs + demo/index.html + this README\n"
+             "make all                      # fail-soft loop over the above, always builds the demo, exits non-zero listing failed stages\n"
+             "bash demo/run_demo.sh         # short cut (cached images, scratch output dir); needs the VM running\n```\n\n"
+             "Honesty note on the recipes: in the original run the stages were executed through their scripts; of the `make` recipes only `make preflight` "
+             "was executed as such, the others (`t2`, `t2-stretch`, `t3`, `sweeps`, `all`) were dry-run verified.\n")
     ev = sorted(glob.glob(L.p("results/evidence/*.txt")))
     h.append("## Evidence that it builds and runs\n\nTerminal output saved by each stage, rendered to images from the saved text (not OS screenshots).\n")
     got = False
@@ -1068,7 +1174,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--lab", default=os.environ.get("LAB", HOME_LAB))
     ap.add_argument("--out", default=None)
-    ap.add_argument("--vm", choices=["running", "stopped"], default="running")
+    ap.add_argument("--vm", choices=["running", "stopped"], default=None)
     a = ap.parse_args()
     L = Lab(os.path.abspath(a.lab), os.path.abspath(a.out or a.lab))
     rows = build_rows(L)

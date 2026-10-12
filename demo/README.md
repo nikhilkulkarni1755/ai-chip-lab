@@ -11,28 +11,29 @@ STATUS
   PASS     Task 1: RTL = netlist equivalence (EQY) - checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true; scope: split proof (1) mac_int8 incl. multiplier, (2) full 4x4 array with mac_int8 black-boxed; compared against the generic-gate Yosys netlist (synth; abc; opt), NOT the placed-and-routed nangate45 netlist (the ORFS logic-equivalence step is disabled, see caveats)
   PASS     Task 2: OpenROAD gcd flows within ORFS's shipped regression thresholds - t2_summary.json: pass=true; NOT timing-closed: nangate45/gcd misses timing at its 0.25 ns reference clock (WNS -0.161583 ns, TNS -7.08646 ns, 51 violating endpoints); sky130hd/gcd misses timing at its 1.1 ns reference clock (WNS -1.45954 ns, TNS -64.9417 ns, 63 violating endpoints)
   FAIL     Task 3: SCALE-Sim vs analytical model - marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes).
-  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 140 point(s) in results/sweeps/arch.jsonl
+  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 142 point(s) in results/sweeps/arch.jsonl
   RUNNING  Sweep B: physical (ORFS) - sweep in progress; 38 point(s) in results/sweeps/phys.jsonl
   PASS     Repeatability rerun (repro) - repro_report.json: pass=true; 10 of 10 checks identical. Scope: Tasks 1 and 3 were re-run from clean directories; Task 2 reuses the two original clean runs (nangate45/gcd and sky130hd/gcd, not a third run); systolic_os has a single run, so it has no determinism verdict
 
-Elapsed: 4h 11m since start (2026-10-12 02:48:36 PDT), budget 6h
+Elapsed: 4h 14m since start (2026-10-12 02:48:36 PDT), budget 6h
 Machine: Intel(R) Core(TM) i7-7660U CPU @ 2.50GHz, 2 physical / 4 logical cores, 8 GB RAM, macOS 13.7.8 (x86_64)
 
 START / STOP THE VM
   source ~/ai-chip-lab/env.sh && colima start      # starts the Linux VM that runs the containers
   source ~/ai-chip-lab/env.sh && colima stop       # stops it (frees RAM and CPU)
-  The Colima VM is left RUNNING at the end of the run because demo/run_demo.sh needs it. Stop it with: source ~/ai-chip-lab/env.sh && colima stop
+  Final VM state is not recorded yet (it is written at final packaging); check with `colima status`.
 
 RE-RUN THE SHORT DEMO
   source ~/ai-chip-lab/env.sh && bash demo/run_demo.sh
   Runs: Task 1 on 200 cases (Verilator + Icarus), the formal MAC proof restricted to the sby tasks "prove" (unbounded
   induction) and "cover", one SCALE-Sim run vs the analytic model, and ORFS's threshold check on the existing outputs.
-  The full BMC-20 formal run is part of `make t1`, not of this cut (it takes ~9 minutes on this machine).
-  Last measured run time: 128 s with 200 cases (finished 2026-10-12 06:34:23, load average at the end: 4.89 5.21 7.45). The load average reflects other jobs on the same 2-core machine, so a quiet machine is faster.
+  The full BMC-20 formal run is part of `make t1`, not of this cut (318 s in the official run).
+  Last measured run time of the short demo: 128 s with 200 cases (finished 2026-10-12 06:34:23, load average at the end: 4.89 5.21 7.45). The load average reflects other jobs on the same 2-core machine, so a quiet machine is faster.
 
 FREE DISK AFTERWARDS (all inside ~/ai-chip-lab; nothing outside the lab was changed)
   Safe to delete (re-creatable, results already saved under results/ and demo/):
-    orfs/work/        ORFS working directories (large)
+    orfs/work/        ORFS working directories (large) - BUT demo/run_demo.sh step 4 reads orfs/work/reports/nangate45/gcd/base/metadata.json from it
+                      (unless results/t2/ holds a committed copy and scripts/t2_check.sh uses it); delete it only after you are done with the demo
     logs/             raw run logs (not committed)
     downloads/        installer archives
     .venv*/           local Python environments

@@ -6,7 +6,7 @@ Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, t
 
 ## Status
 
-Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 4h 11m since start (2026-10-12 02:48:36 PDT), budget 6h).
+Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 4h 14m since start (2026-10-12 02:48:36 PDT), budget 6h).
 
 | Check | Status | Detail |
 |---|---|---|
@@ -17,7 +17,7 @@ Generated from the files in this repository by `python3 scripts/demo_build.py` (
 | Task 1: RTL = netlist equivalence (EQY) | **PASS** | checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true; scope: split proof (1) mac_int8 incl. multiplier, (2) full 4x4 array with mac_int8 black-boxed; compared against the generic-gate Yosys netlist (synth; abc; opt), NOT the placed-and-routed nangate45 netlist (the ORFS logic-equivalence step is disabled, see caveats) |
 | Task 2: OpenROAD gcd flows within ORFS's shipped regression thresholds | **PASS** | t2_summary.json: pass=true; NOT timing-closed: nangate45/gcd misses timing at its 0.25 ns reference clock (WNS -0.161583 ns, TNS -7.08646 ns, 51 violating endpoints); sky130hd/gcd misses timing at its 1.1 ns reference clock (WNS -1.45954 ns, TNS -64.9417 ns, 63 violating endpoints) |
 | Task 3: SCALE-Sim vs analytical model | **FAIL** | marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes). |
-| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 140 point(s) in results/sweeps/arch.jsonl |
+| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 142 point(s) in results/sweeps/arch.jsonl |
 | Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 38 point(s) in results/sweeps/phys.jsonl |
 | Repeatability rerun (repro) | **PASS** | repro_report.json: pass=true; 10 of 10 checks identical. Scope: Tasks 1 and 3 were re-run from clean directories; Task 2 reuses the two original clean runs (nangate45/gcd and sky130hd/gcd, not a third run); systolic_os has a single run, so it has no determinism verdict |
 
@@ -34,7 +34,7 @@ PASS means the stage's `.done` marker exists and its summary JSON says `"pass": 
 | `coord/images.env` | The two container images (lab-sim build, ORFS pinned by digest) that every script sources. |
 | `COORDINATION.md` | How the agents divided the work: rules, decisions with evidence, requests between agents. |
 | `docker/lab-sim/Dockerfile` | Recipe for the simulation image (OSS CAD Suite, Verible, Python venv). |
-| `docker/requirements.lock` | Hash-locked Python dependencies installed in the lab-sim image. |
+| `docker/requirements.lock` | Hash-locked Python dependencies installed in the lab-sim image (it lives under docker/, not at the repo root). |
 | `rtl/mac_int8.sv` | The multiply-accumulate unit: signed INT8 x INT8 into an INT32 accumulator. |
 | `rtl/systolic_os.sv` | R x C output-stationary systolic array built from MAC processing elements. |
 | `tb/test_systolic.py` | cocotb testbench: random + directed cases checked against NumPy, with functional coverage. |
@@ -62,13 +62,20 @@ PASS means the stage's `.done` marker exists and its summary JSON says `"pass": 
 
 ```sh
 source env.sh                 # lab-local PATH; all VM/Docker state stays inside this directory
-make preflight runtime images # Colima VM + pinned images (digests in coord/images.env, versions.lock)
-make t1 t2 t3                 # Task 1 (RTL vs NumPy, formal, equivalence), Task 2 (OpenROAD), Task 3 (SCALE-Sim)
-make sweeps                   # architecture and physical sweeps
-make repro                    # clean-directory rerun, writes results/repro_report.json
-make demo                     # regenerate demo/index.html and this README
-bash demo/run_demo.sh         # the 5-minute cut (cached images, scratch output dir)
+make preflight                # machine facts
+make runtime images           # Colima VM + pinned images (digests in coord/images.env, versions.lock)
+make t1                       # Task 1: RTL vs NumPy on 2 simulators, formal, equivalence (full run incl. BMC-20)
+make t2                       # Task 2: gcd on nangate45 + sky130hd, twice from clean (about 35 min of ORFS)
+make t2-stretch               # systolic_os through ORFS (about 30 min)
+make t3                       # Task 3: SCALE-Sim vs analytic model + roofline (exits non-zero while the roofline criterion fails)
+make sweeps                   # architecture + physical sweeps; they start no new point after the sweep deadline in budget.json
+make repro                    # reruns Tasks 1 and 3 clean and compares; Task 2 reuses its own two-run check
+make demo                     # plots + evidence PNGs + demo/index.html + this README
+make all                      # fail-soft loop over the above, always builds the demo, exits non-zero listing failed stages
+bash demo/run_demo.sh         # short cut (cached images, scratch output dir); needs the VM running
 ```
+
+Honesty note on the recipes: in the original run the stages were executed through their scripts; of the `make` recipes only `make preflight` was executed as such, the others (`t2`, `t2-stretch`, `t3`, `sweeps`, `all`) were dry-run verified.
 
 ## Evidence that it builds and runs
 
@@ -167,6 +174,6 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 ## Notes
 
 - Versions, image digests, URLs and SHA256s: `versions.lock`, `coord/images.env`.
-- The Colima VM is left RUNNING at the end of the run because demo/run_demo.sh needs it. Stop it with: source ~/ai-chip-lab/env.sh && colima stop
+- VM end-state is stated at final packaging; start/stop commands are in `demo/README.md`.
 - No personal paths, hostnames or credentials are stored in this repository; a pre-commit hook and `scripts/evidence_privacy.py` enforce that.
 
