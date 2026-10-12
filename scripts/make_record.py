@@ -95,9 +95,11 @@ def main():
         rel = lambda f: os.path.relpath(f, LAB)
         stamp = lambda t: time.strftime("%F %T", time.localtime(t))
         rec["watch"] = watch
-        rec["kept_from_before_this_recipe"] = sorted("%s (finished %s)" % (rel(f), stamp(t)) for f, t in before.items() if after.get(f) == t)
-        rec["executed_under_this_recipe"] = sorted("%s (finished %s)" % (rel(f), stamp(t)) for f, t in after.items() if before.get(f) != t)
-        rec["watched_gone_at_end"] = sorted(rel(f) for f in before if f not in after)
+        # classified by finish time (file mtime) against the recipe start, so a job directory that the recipe
+        # renames at its end (results/t3.partial -> results/t3) is not mistaken for newly executed work
+        rec["kept_from_before_this_recipe"] = sorted("%s (finished %s)" % (rel(f), stamp(t)) for f, t in after.items() if t < t0)
+        rec["executed_under_this_recipe"] = sorted("%s (finished %s)" % (rel(f), stamp(t)) for f, t in after.items() if t >= t0)
+        rec["watched_gone_at_end"] = sorted(rel(f) for f in before if f not in after and not any(os.path.basename(g) == os.path.basename(f) for g in after))
     def upd(doc):
         doc["attempts"].append(rec)
         doc["recipes"] = [r for r in doc["recipes"] if r["recipe"] != recipe] + [rec]
