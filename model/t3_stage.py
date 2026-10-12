@@ -64,7 +64,9 @@ def do_job(job, out):
         t3_roofline.run(out)
     elif job.startswith("rl2_"):
         import t3_roofline2
-        t3_roofline2.run_job(job, out)
+        if not t3_roofline2.run_job(job, out):
+            print(f"job {job}: partial (time budget for this lock hold used); call again")
+            sys.exit(75)
     else:
         raise SystemExit("unknown job " + job)
     os.makedirs(os.path.dirname(mk), exist_ok=True)
@@ -156,6 +158,7 @@ def do_summary(out, rerun):
     summ["checks"] = chk
     summ["pass"] = bool(all(chk.values()))
     summ["complete"] = not pending
+    summ["state"] = summ["identity"]["state"]
     summ["pending"] = ["repro byte-identity of %d result files" % len(pending)] if pending else []
     return summ
 

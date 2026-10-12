@@ -6,6 +6,7 @@ Jobs (one SCALE-Sim run each, ResNet-18 bundled topology, 128x128 array, 64 kB S
   rl2_calc_<df>                 bundled scale.cfg unchanged (InterfaceBandwidth=CALC)
 """
 import configparser
+import time as _time
 import json
 import os
 import shutil
@@ -32,8 +33,9 @@ def jobs():
     return [f"rl2_user_{df}_{b}" for df in DFS for b in BW] + [f"rl2_calc_{df}" for df in DFS]
 
 
-NWORKERS = int(os.environ.get("T3_LAYER_WORKERS", "3"))
-MEM_CAP = int(float(os.environ.get("T3_LAYER_MEM_GB", "1.6")) * 2**30)
+NWORKERS = int(os.environ.get("T3_LAYER_WORKERS", "2"))
+MEM_CAP = int(float(os.environ.get("T3_LAYER_MEM_GB", "2.0")) * 2**30)
+HOLD_BUDGET_S = int(os.environ.get("T3_HOLD_BUDGET_S", "420"))   # stop STARTING new layers after this (lock holds stay ~<= 10 min)
 
 
 def _job_cfg(job, td):
@@ -94,7 +96,6 @@ def run_job(job, out):
     d = os.path.join(out, "roofline2", job)
     ld = os.path.join(d, "layers")
     os.makedirs(ld, exist_ok=True)
-    timing = {}
 
     def est(i):
         L = layers[i]
@@ -102,29 +103,44 @@ def run_job(job, out):
 
     todo = [i for i in range(len(rows)) if not os.path.exists(os.path.join(ld, f"{i}.json"))]
     todo.sort(key=est, reverse=True)
+    t_hold = _time.time()
     with tempfile.TemporaryDirectory() as td:
         cfg, mode, df, B = _job_cfg(job, td)
 
         def finish(i, res, rep, wall, rss, how):
             json.dump(dict(res=res, rows=rep), open(os.path.join(ld, f"{i}.json"), "w"), sort_keys=True)
-            timing[layers[i]["name"]] = dict(wall_s=round(wall, 1), peak_rss_mb=round(rss), how=how)
+            tp = os.path.join(d, "timing.timing")
+            tm = json.load(open(tp)) if os.path.exists(tp) else {}
+            tm[layers[i]["name"]] = dict(wall_s=round(wall, 1), peak_rss_mb=round(rss), how=how)
+            json.dump(tm, open(tp, "w"), indent=1, sort_keys=True)
+            print(f"  layer {layers[i]['name']} done {wall:.0f}s rss {rss:.0f} MB ({how}) elapsed {_time.time() - t_hold:.0f}s", flush=True)
 
         redo = []
-        if NWORKERS > 1:
-            with cf.ProcessPoolExecutor(NWORKERS) as ex:
-                futs = {ex.submit(_layer_task, (cfg, i, header, rows[i], True)): i for i in todo}
-                for f in cf.as_completed(futs):
-                    i = futs[f]
+        queue = list(todo)
+        pend = {}
+        with cf.ProcessPoolExecutor(NWORKERS) as ex:
+            while queue or pend:
+                while queue and len(pend) < NWORKERS and _time.time() - t_hold < HOLD_BUDGET_S:
+                    i = queue.pop(0)
+                    pend[ex.submit(_layer_task, (cfg, i, header, rows[i], True))] = i
+                if not pend:
+                    break                      # budget used up: remaining layers are for the next hold
+                done, _ = cf.wait(list(pend), return_when=cf.FIRST_COMPLETED)
+                for f in done:
+                    i = pend.pop(f)
                     try:
                         finish(*f.result(), "parallel")
-                    except Exception as e:      # MemoryError, BrokenProcessPool (killed worker), ...
+                    except Exception as e:     # MemoryError / killed worker: serial, uncapped, next
                         redo.append(i)
-                        timing[layers[i]["name"]] = dict(parallel_failed=type(e).__name__)
-        else:
-            redo = todo
-        for i in sorted(set(redo), key=est, reverse=True):      # serial fallback, no cap
-            finish(*_layer_task((cfg, i, header, rows[i], False)), "serial")
+                        print(f"  layer {layers[i]['name']} parallel failed: {type(e).__name__}", flush=True)
+                if any(isinstance(getattr(f, "_exception", None), BaseException) for f in done) and False:
+                    pass
+        for i in sorted(set(redo), key=est, reverse=True):
+            if _time.time() - t_hold < HOLD_BUDGET_S + 240:
+                finish(*_layer_task((cfg, i, header, rows[i], False)), "serial")
         shutil.copy(cfg, os.path.join(d, "config.cfg"))
+    if any(not os.path.exists(os.path.join(ld, f"{i}.json")) for i in range(len(rows))):
+        return False                           # partial: call again (next lock hold)
     # assemble in layer order
     res, merged = [], {n: None for n in sim_reports()}
     for i in range(len(rows)):
@@ -136,7 +152,6 @@ def run_job(job, out):
             merged[n] = (ls[0] + "\n" if merged[n] is None else merged[n]) + f"{i},{body}\n"
     for n in sim_reports():
         open(os.path.join(d, n), "w").write(merged[n])
-    json.dump(timing, open(os.path.join(d, "timing.timing"), "w"), indent=1, sort_keys=True)   # not compared (non-deterministic)
     recs = []
     peak = 2 * ARRAY * ARRAY
     for L, x in zip(layers, res):
@@ -154,6 +169,7 @@ def run_job(job, out):
                    peak_flops_per_cycle=peak, layers=recs),
               open(os.path.join(out, "roofline2", job + ".json"), "w"), indent=1, sort_keys=True)
     shutil.rmtree(ld)   # per-layer partials are only a resume aid; the merged reports carry the same rows
+    return True
 
 
 def df_of(job):

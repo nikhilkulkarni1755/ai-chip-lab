@@ -27,9 +27,15 @@ if [ ! -f /.dockerenv ]; then
     D="$OUT"; JL="$JOBS"; [ "$pass" = 2 ] && { D="$RERUN"; JL="$CHEAP"; }
     for j in $JL; do
       if [ -e "$D/.jobs/$j.done" ]; then continue; fi
-      echo "== t3 pass $pass job $j $(date +%T)"
-      $LK "$dk" python3 model/t3_stage.py job "$j" --out "$D" > "logs/part2/31_roofline_fix/pass${pass}_$j.log" 2>&1 \
-        || { echo "JOB FAILED: $j (see logs/part2/31_roofline_fix/pass${pass}_$j.log)"; tail -20 "logs/part2/31_roofline_fix/pass${pass}_$j.log"; exit 1; }
+      while [ ! -e "$D/.jobs/$j.done" ]; do
+        echo "== t3 pass $pass job $j $(date +%T)"
+        rc=0
+        $LK "$dk" python3 model/t3_stage.py job "$j" --out "$D" >> "logs/part2/31_roofline_fix/pass${pass}_$j.log" 2>&1 || rc=$?
+        # rc 75 = partial: the job used its time budget for this lock hold; call it again (lock released in between)
+        if [ "$rc" != 0 ] && [ "$rc" != 75 ]; then
+          echo "JOB FAILED: $j rc=$rc (see logs/part2/31_roofline_fix/pass${pass}_$j.log)"; tail -20 "logs/part2/31_roofline_fix/pass${pass}_$j.log"; exit 1
+        fi
+      done
     done
   done
   if [ "${T3_PASSES:-2}" -lt 2 ]; then rm -rf "$RERUN"; cp -r "$OUT" "$RERUN"; fi   # quick mode: identity trivially true
