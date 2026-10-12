@@ -1,0 +1,7 @@
+# ORFS built-in LEC = Kepler-Formal (/OpenROAD-flow-scripts/tools/install/kepler-formal/bin/kepler-formal), enabled by LEC_CHECK=1 (flow/scripts/formal_check.tcl):
+# it compares 1_synth_lec.v with 6_final_lec.v (netlist vs netlist, never the RTL).
+$ /OpenROAD-flow-scripts/tools/install/kepler-formal/bin/kepler-formal --version
+kepler-formal exit code: 132   (132 = 128 + SIGILL, illegal instruction)
+zmm instructions: 1274   (AVX-512 register operands in the binary)
+cpu:  Intel(R) Core(TM) i7-7660U CPU @ 2.50GHz
+cpu avx512f: no

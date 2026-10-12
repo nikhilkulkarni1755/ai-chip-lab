@@ -1,0 +1,19 @@
+# post-route gate-level simulation, logical check (zero-delay cell functions), not a timing check
+# netlist results/part1_snapshot/systolic_os_routed/6_final.v sha256 f4976d1a6b34a19700dfb0e6246cb8221cf9792255f28f48e41a69dcbd06e293
+$ make -C tb SIM=icarus T1_GATE_NETLIST=<routed 6_final.v> T1_GATE_CELLS=<cells from Liberty>   (T1_NCASES=200, seed 1234)
+********************************************************************************************
+** TEST                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+********************************************************************************************
+** test_systolic.test_directed          PASS       11565.00           2.06       5603.11  **
+** test_systolic.test_clear_midstream   PASS        3025.00           0.98       3093.80  **
+** test_systolic.test_random            PASS      207055.00          55.70       3717.16  **
+** test_systolic.test_zz_report         PASS           0.00           0.02          0.00  **
+********************************************************************************************
+** TESTS=4 PASS=4 FAIL=0 SKIP=0                   221645.00          58.77       3771.49  **
+********************************************************************************************
+$ make -C tb SIM=verilator T1_GATE_NETLIST=<routed 6_final.v> T1_GATE_CELLS=<cells from Liberty>   (T1_NCASES=200, seed 1234)
+(no cocotb result table: the step did not complete)
+# sha256 of the gate-level CSVs vs the first rows of the official RTL CSVs
+icarus: gate-level 3ad48040f6aca529ba72004653467070d6eb1635526624a1d488367243bc22b0  official-RTL-prefix 3ad48040f6aca529ba72004653467070d6eb1635526624a1d488367243bc22b0  equal=True  cases=229 mismatching_elements=0
+verilator: gate-level None  official-RTL-prefix None  equal=None  cases=None mismatching_elements=None
+negative control (netlist with swapped register inputs, Icarus): 286 mismatching elements in 49 cases (must be > 0)

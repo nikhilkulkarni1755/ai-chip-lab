@@ -1,0 +1,492 @@
+{
+  "checks": {
+    "all_flops_clocked_by_clk": true,
+    "all_netlist_cells_have_models": true,
+    "eqy_neg_netlist_detected": true,
+    "eqy_neg_rtl_mac_detected": true,
+    "eqy_neg_rtl_reg_detected": true,
+    "eqy_routed_all_partitions_proved": false,
+    "gls_both_simulators_as_first_scripted": false,
+    "gls_csv_equals_official_rtl_prefix": false,
+    "gls_csv_identical_across_simulators": false,
+    "gls_icarus_csv_equals_official_rtl_prefix": true,
+    "gls_icarus_zero_mismatches": true,
+    "gls_negative_control_detected": true,
+    "gls_verilator_zero_mismatches": false
+  },
+  "complete": true,
+  "config": {
+    "ncases": 200,
+    "seed": 1234
+  },
+  "eqy_routed_pass": false,
+  "gls_routed_pass": true,
+  "image": {
+    "id": "sha256:c17110ff83f92b2b8da336ef44264f999d23a5fdedd4fc6f2c37588998fdcc3b",
+    "ref": "lab-sim:20261012b"
+  },
+  "inputs": {
+    "gls_sources": {
+      "icarus": "routed netlist as written by OpenROAD + one Verilog cell module per instance",
+      "verilator": "the same netlist with the cell functions inlined by Yosys (flatten only, no optimisation); per-instance cell modules take > 30 min to compile with Verilator here"
+    },
+    "gold_rtl": [
+      "rtl/mac_int8.sv",
+      "rtl/systolic_os.sv"
+    ],
+    "gold_rtl_sha256": [
+      "64bef8a984c06f2003d6fc90492dc7dd3c418b08b4a76fd4a366f24e85ba0708",
+      "d120526f5c74ce45a54211e91b17399badb2188dacbcf38c75b1789a2f695ad0"
+    ],
+    "liberty_path_in_orfs_image": "/OpenROAD-flow-scripts/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib",
+    "liberty_sha256": "8d540a4d4cf6d09d27c87ad067857a9c0c2eeb023ab7a56e058cd3113db4e9b1",
+    "orfs_image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
+    "routed_netlist": "results/part1_snapshot/systolic_os_routed/6_final.v",
+    "routed_netlist_bytes": 1160879,
+    "routed_netlist_sha256": "f4976d1a6b34a19700dfb0e6246cb8221cf9792255f28f48e41a69dcbd06e293",
+    "verilog_cell_models": "generated from the Liberty functions with Yosys (read_liberty; proc; write_verilog); the ORFS nangate45 platform ships no Verilog simulation library",
+    "verilog_cell_models_sha256": "92e45ce72944545d0f18227f11d2b2c6940ae3c3d2c1884e68779afd3bfa9486"
+  },
+  "note": "logical check (zero-delay cell functions), not a timing check",
+  "pass": false,
+  "pass_of_steps_run": false,
+  "runtimes_seconds": {
+    "cells": 3,
+    "clock_check": 5,
+    "eqy_neg_netlist": 71,
+    "eqy_neg_rtl_mac": 87,
+    "eqy_neg_rtl_reg": 70,
+    "eqy_routed": 4072,
+    "eqy_routed_chunk1": 540,
+    "eqy_routed_chunk2": 540,
+    "eqy_routed_chunk3": 540,
+    "eqy_routed_hold10": 345,
+    "eqy_routed_hold4": 539,
+    "eqy_routed_hold5": 541,
+    "eqy_routed_hold6": 22,
+    "eqy_routed_hold7": 333,
+    "eqy_routed_hold8": 330,
+    "eqy_routed_hold9": 342,
+    "eqy_routed_verdict": 0,
+    "gls_icarus": 67,
+    "gls_neg": 18,
+    "gls_verilator": 544,
+    "total_wall": 16432
+  },
+  "stage": "11_eqy_routed",
+  "step_exit_codes": {
+    "cells": 0,
+    "clock_check": 0,
+    "eqy_neg_netlist": 0,
+    "eqy_neg_rtl_mac": 0,
+    "eqy_neg_rtl_reg": 0,
+    "eqy_routed": 3,
+    "eqy_routed_chunk1": 0,
+    "eqy_routed_chunk2": 0,
+    "eqy_routed_chunk3": 0,
+    "eqy_routed_hold10": 0,
+    "eqy_routed_hold4": 0,
+    "eqy_routed_hold5": 0,
+    "eqy_routed_hold6": 0,
+    "eqy_routed_hold7": 0,
+    "eqy_routed_hold8": 0,
+    "eqy_routed_hold9": 0,
+    "eqy_routed_verdict": 3,
+    "gls_icarus": 0,
+    "gls_neg": 0,
+    "gls_verilator": 124
+  },
+  "steps_run": [
+    "gls",
+    "eqy"
+  ],
+  "values": {
+    "cell_treatment": {
+      "buffers (BUF_*), incl. timing-repair and output buffers": "Liberty function Z = A (identity); kept in the netlist, part of the proof and of the simulation",
+      "clock-tree buffers (CLKBUF_*)": "Liberty function Z = A; simulated as the real clock path in the gate-level simulation; the equivalence proof assumes one global clock, so the clock tree is covered by the separate structural check all_flops_clocked_by_clk (every flop's clock pin resolves to the port clk), not by the SMT proof",
+      "fill / tap / antenna cells": "not present in 6_final.v: ORFS writes the netlist without physical-only cells, which have no logic pins; nothing was removed by this stage",
+      "flip-flops (DFF_X1)": "Liberty ff(IQ, IQN) group, next_state D, clocked_on CK; Yosys builds two identical registers per cell (Q and QN), opt_merge folds them into one; 806 registers remain",
+      "logic gates, full/half adders, resized gates (X1/X2/X4 variants)": "function taken from the Liberty file; part of the proof and of the simulation",
+      "tie cells (LOGIC0/LOGIC1)": "none instantiated in this netlist (count in netlist_tie_cells)"
+    },
+    "eqy_negative_controls": {
+      "netlist": {
+        "basecase": "FAIL",
+        "bug": "routed netlist: D inputs of a_q[0] and a_q[1] of PE(0,0) swapped",
+        "eqy_status": "FAIL",
+        "induction": null,
+        "partition": "systolic_os.g_row.0.g_col.0.g_east.a_q.0",
+        "rejected_as": "counterexample: the solver found an input sequence on which the two sides differ (partitions not equivalent)",
+        "result": "not proved: partitions not equivalent",
+        "solver_seconds": 12,
+        "solver_status": "FAIL"
+      },
+      "rtl_mac": {
+        "basecase": "pass",
+        "bug": "RTL: acc <= acc + prod + 1 in mac_int8 (checked on PE(0,0))",
+        "eqy_status": "FAIL",
+        "induction": "FAIL",
+        "partition": "systolic_os.acc_o.0",
+        "rejected_as": "not proven equivalent: the depth-2 base case passes and the induction step fails with a counterexample-to-induction trace (solver finished, no timeout)",
+        "result": "not proved: equivalence unknown",
+        "solver_seconds": 24,
+        "solver_status": "UNKNOWN"
+      },
+      "rtl_reg": {
+        "basecase": "FAIL",
+        "bug": "RTL: operand register a_q <= a_w ^ 1",
+        "eqy_status": "FAIL",
+        "induction": null,
+        "partition": "systolic_os.g_row.0.g_col.0.g_east.a_q.0",
+        "rejected_as": "counterexample: the solver found an input sequence on which the two sides differ (partitions not equivalent)",
+        "result": "not proved: partitions not equivalent",
+        "solver_seconds": 7,
+        "solver_status": "FAIL"
+      }
+    },
+    "eqy_routed": {
+      "chunks": 10,
+      "engine": "EQY strategy 'use sby', depth 2, smtbmc bitwuzla (x-propagating miter per partition)",
+      "engines_tried": {
+        "abc pdr": "stopped after about 4 min without a result (comparison cut short)",
+        "aiger rIC3": "proved the one MAC partition it was tried on in about 4.5 min",
+        "smtbmc bitwuzla": "proves a per-PE MAC partition in 4-5 min (used)",
+        "smtbmc yices": "no result within 10 min on one MAC partition"
+      },
+      "finished": false,
+      "lock_holds": 10,
+      "mac_partitions": 16,
+      "mac_partitions_proved": 13,
+      "partitions": 27,
+      "partitions_not_proved": {
+        "systolic_os.acc_o.416": "not attempted or stopped by the lock-time budget (no solver result)",
+        "systolic_os.acc_o.448": "not attempted or stopped by the lock-time budget (no solver result)",
+        "systolic_os.acc_o.480": "not attempted or stopped by the lock-time budget (no solver result)"
+      },
+      "partitions_proved": 24,
+      "partitions_proved_list": [
+        "systolic_os.acc_o.0",
+        "systolic_os.acc_o.100",
+        "systolic_os.acc_o.128",
+        "systolic_os.acc_o.160",
+        "systolic_os.acc_o.192",
+        "systolic_os.acc_o.224",
+        "systolic_os.acc_o.256",
+        "systolic_os.acc_o.288",
+        "systolic_os.acc_o.32",
+        "systolic_os.acc_o.320",
+        "systolic_os.acc_o.352",
+        "systolic_os.acc_o.384",
+        "systolic_os.acc_o.64",
+        "systolic_os.busy",
+        "systolic_os.g_a_skew.2.g_dly.a_sr.0",
+        "systolic_os.g_b_skew.2.g_dly.b_sr.0",
+        "systolic_os.g_row.0.g_col.0.g_east.a_q.0",
+        "systolic_os.g_row.0.g_col.0.g_south.b_q.0",
+        "systolic_os.g_row.0.g_col.1.u_mac.valid",
+        "systolic_os.g_row.0.g_col.2.u_mac.valid",
+        "systolic_os.g_row.0.g_col.3.u_mac.valid",
+        "systolic_os.g_row.1.g_col.3.u_mac.valid",
+        "systolic_os.g_row.2.g_col.3.u_mac.valid",
+        "systolic_os.g_row.3.g_col.3.u_mac.valid"
+      ],
+      "per_partition": {
+        "systolic_os.acc_o.0": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 300
+        },
+        "systolic_os.acc_o.100": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 312
+        },
+        "systolic_os.acc_o.128": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 267
+        },
+        "systolic_os.acc_o.160": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 239
+        },
+        "systolic_os.acc_o.192": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 334
+        },
+        "systolic_os.acc_o.224": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 288
+        },
+        "systolic_os.acc_o.256": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 223
+        },
+        "systolic_os.acc_o.288": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 331
+        },
+        "systolic_os.acc_o.32": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 537
+        },
+        "systolic_os.acc_o.320": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 327
+        },
+        "systolic_os.acc_o.352": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 339
+        },
+        "systolic_os.acc_o.384": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 341
+        },
+        "systolic_os.acc_o.416": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "no solver result (not attempted, or its lock hold ended first)",
+          "solver_seconds": null
+        },
+        "systolic_os.acc_o.448": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "no solver result (not attempted, or its lock hold ended first)",
+          "solver_seconds": null
+        },
+        "systolic_os.acc_o.480": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "no solver result (not attempted, or its lock hold ended first)",
+          "solver_seconds": null
+        },
+        "systolic_os.acc_o.64": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "per-PE MAC cone",
+          "result": "proved",
+          "solver_seconds": 530
+        },
+        "systolic_os.busy": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 2
+        },
+        "systolic_os.g_a_skew.2.g_dly.a_sr.0": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 2
+        },
+        "systolic_os.g_b_skew.2.g_dly.b_sr.0": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 3
+        },
+        "systolic_os.g_row.0.g_col.0.g_east.a_q.0": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 7
+        },
+        "systolic_os.g_row.0.g_col.0.g_south.b_q.0": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 6
+        },
+        "systolic_os.g_row.0.g_col.1.u_mac.valid": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 2
+        },
+        "systolic_os.g_row.0.g_col.2.u_mac.valid": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 1
+        },
+        "systolic_os.g_row.0.g_col.3.u_mac.valid": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 1
+        },
+        "systolic_os.g_row.1.g_col.3.u_mac.valid": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 1
+        },
+        "systolic_os.g_row.2.g_col.3.u_mac.valid": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 1
+        },
+        "systolic_os.g_row.3.g_col.3.u_mac.valid": {
+          "engine": "sby smtbmc bitwuzla, depth 2",
+          "kind": "wrapper",
+          "result": "proved",
+          "solver_seconds": 1
+        }
+      },
+      "scope": "whole flat routed netlist vs flattened RTL. The routed netlist has no hierarchy, so the Part 1 split is applied by name: 16 per-PE partitions, each = the 32 acc_o bits of one PE with accumulator register + INT8 multiplier + 32-bit adder + clear/valid gating (i.e. 'mac_int8 incl. multiplier', proven 16 times, cut at the operand/valid registers), plus the wrapper partitions (skew registers, operand registers, valid delay line, busy). Operand/skew/valid registers correspond by net name, accumulators by the output port bit they drive",
+      "scope_exact": {
+        "cell_models": "nangate45 cell functions from NangateOpenCellLibrary_typical.lib of the pinned ORFS image (path and sha256 in inputs)",
+        "cut_points": "operand registers (a_q, b_q), skew registers (a_sr, b_sr), valid delay line, primary inputs",
+        "gate": "flat routed netlist 6_final.v (one module, no mac_int8 hierarchy), sha256 in inputs.routed_netlist_sha256",
+        "gold": "rtl/systolic_os.sv + rtl/mac_int8.sv, flattened (R=4, C=4)",
+        "kind": "zero-delay logical (sequential, x-propagating) equivalence per partition; not a timing check",
+        "partitions": "27 = 16 per-PE cones (accumulator register + 8x8 signed multiplier + 32-bit adder + clear/valid gating, i.e. mac_int8 including the multiplier, once per PE) + 11 wrapper partitions (a_sr, b_sr, a_q, b_q register banks, 6 valid taps, busy)",
+        "register_correspondence": "806 flops matched by name: operand, skew and valid registers by the RTL name on their Q net; the 512 accumulator bits by the output port bit they drive (acc_o[32*(4*i+j)+b]), since the router renamed their Q nets"
+      },
+      "seconds": 4072,
+      "seconds_per_partition": {
+        "systolic_os.acc_o.0": 300,
+        "systolic_os.acc_o.100": 312,
+        "systolic_os.acc_o.128": 267,
+        "systolic_os.acc_o.160": 239,
+        "systolic_os.acc_o.192": 334,
+        "systolic_os.acc_o.224": 288,
+        "systolic_os.acc_o.256": 223,
+        "systolic_os.acc_o.288": 331,
+        "systolic_os.acc_o.32": 537,
+        "systolic_os.acc_o.320": 327,
+        "systolic_os.acc_o.352": 339,
+        "systolic_os.acc_o.384": 341,
+        "systolic_os.acc_o.64": 530,
+        "systolic_os.busy": 2,
+        "systolic_os.g_a_skew.2.g_dly.a_sr.0": 2,
+        "systolic_os.g_b_skew.2.g_dly.b_sr.0": 3,
+        "systolic_os.g_row.0.g_col.0.g_east.a_q.0": 7,
+        "systolic_os.g_row.0.g_col.0.g_south.b_q.0": 6,
+        "systolic_os.g_row.0.g_col.1.u_mac.valid": 2,
+        "systolic_os.g_row.0.g_col.2.u_mac.valid": 1,
+        "systolic_os.g_row.0.g_col.3.u_mac.valid": 1,
+        "systolic_os.g_row.1.g_col.3.u_mac.valid": 1,
+        "systolic_os.g_row.2.g_col.3.u_mac.valid": 1,
+        "systolic_os.g_row.3.g_col.3.u_mac.valid": 1
+      },
+      "status": "UNKNOWN"
+    },
+    "gls_icarus": {
+      "cases_random": 200,
+      "cases_total": 229,
+      "cocotb_failed_tests": [],
+      "csv_sha256": "3ad48040f6aca529ba72004653467070d6eb1635526624a1d488367243bc22b0",
+      "equals_official_rtl_csv_prefix": true,
+      "mismatching_elements": 0,
+      "official_rtl_csv_prefix_sha256": "3ad48040f6aca529ba72004653467070d6eb1635526624a1d488367243bc22b0",
+      "seconds": 67
+    },
+    "gls_negative_control": {
+      "bug": "D inputs of a_q[0] and a_q[1] of PE(0,0) swapped in a copy of the routed netlist",
+      "cases": 49,
+      "mismatching_elements": 286
+    },
+    "gls_routed_by_simulator": {
+      "icarus": "pass",
+      "verilator": "not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists"
+    },
+    "gls_verilator": {
+      "error": "no CSV produced",
+      "log_tail": "g++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__3.cpp\ng++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__4.cpp\ng++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__5.cpp\ng++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__6.cpp\ng++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__7.cpp\ng++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__8.cpp\nmake[1]: *** [/opt/oss-cad-suite/share/verilator/include/verilated.mk:303: Vtop___024root__8.o] Terminated\nmake: *** [/opt/venv/lib/python3.12/site-packages/cocotb_tools/makefiles/simulators/Makefile.verilator:69: $LAB/results/t1_routed_work/sim_verilator/Vtop] Terminated"
+    },
+    "netlist_buffers": 893,
+    "netlist_cell_instances": 10568,
+    "netlist_cells_by_type": {
+      "AND2_X1": 1093,
+      "AND2_X2": 15,
+      "AND3_X1": 69,
+      "AND4_X1": 12,
+      "AOI211_X2": 24,
+      "AOI21_X1": 854,
+      "AOI21_X2": 5,
+      "AOI221_X1": 45,
+      "AOI221_X2": 6,
+      "AOI222_X1": 1,
+      "AOI22_X1": 18,
+      "AOI22_X2": 1,
+      "BUF_X1": 647,
+      "BUF_X2": 26,
+      "BUF_X4": 14,
+      "CLKBUF_X1": 29,
+      "CLKBUF_X3": 177,
+      "DFF_X1": 806,
+      "FA_X1": 2192,
+      "HA_X1": 1104,
+      "INV_X1": 591,
+      "INV_X2": 41,
+      "INV_X4": 4,
+      "MUX2_X1": 56,
+      "NAND2_X1": 908,
+      "NAND3_X1": 214,
+      "NAND4_X1": 92,
+      "NAND4_X4": 2,
+      "NOR2_X1": 240,
+      "NOR2_X2": 2,
+      "NOR3_X1": 94,
+      "NOR4_X1": 36,
+      "NOR4_X2": 5,
+      "NOR4_X4": 1,
+      "OAI211_X2": 8,
+      "OAI21_X1": 499,
+      "OAI21_X2": 7,
+      "OAI221_X1": 60,
+      "OAI221_X2": 3,
+      "OAI22_X1": 13,
+      "OAI33_X1": 2,
+      "OR2_X1": 52,
+      "OR3_X1": 43,
+      "OR3_X2": 1,
+      "OR4_X1": 20,
+      "OR4_X2": 2,
+      "XNOR2_X1": 326,
+      "XOR2_X1": 108
+    },
+    "netlist_clock_buffers": 206,
+    "netlist_fill_tap_cells": 0,
+    "netlist_flat_primitives": 37942,
+    "netlist_flat_registers_after_merge": 806,
+    "netlist_flops": 806,
+    "netlist_tie_cells": 0,
+    "not_covered": [
+      "timing of any kind (setup/hold, clock skew, glitches): all checks are zero-delay",
+      "physical correctness (DRC, LVS, the GDS itself): only the Verilog netlist 6_final.v is checked",
+      "power/ground connectivity (the netlist has no supply pins)",
+      "library cells the netlist does not instantiate (cells without a Liberty function are black boxes; the run fails if the netlist uses one)",
+      "behaviour before the first clear: registers start undefined in both designs (x-propagating proof; the simulation starts with clear)"
+    ],
+    "orfs_builtin_lec": {
+      "cpu_has_avx512": false,
+      "kepler_formal_avx512_instructions": 1274,
+      "kepler_formal_exit_code": 132,
+      "usable_here": false,
+      "what": "ORFS LEC_CHECK=1 runs Kepler-Formal on 1_synth_lec.v vs 6_final_lec.v (synthesis netlist vs final netlist; it never compares against the RTL)"
+    }
+  }
+}
