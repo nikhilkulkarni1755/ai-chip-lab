@@ -83,7 +83,7 @@ def read(p):
         return ""
 
 
-def result(d, part, info_path, rc, secs, out):
+def result(d, part, info_path, rc, secs, out, depth="2"):
     log = read(f"{d}/logfile.txt")
     sdir = f"{d}/strategies/{part}/smt"
     slog = read(f"{sdir}/{part}/logfile.txt")
@@ -103,7 +103,7 @@ def result(d, part, info_path, rc, secs, out):
         how = "counterexample: the solver found an input sequence on which RTL and mutated netlist differ"
         rejected = True
     elif sstat == "UNKNOWN" and ind and ind.group(1) == "FAIL":
-        how = ("not proven equivalent: the depth-2 base case passes and the induction step fails with a "
+        how = (f"not proven equivalent: the depth-{depth} base case passes and the induction step fails with a "
                "counterexample-to-induction trace (solver finished, no timeout); this is weaker than a counterexample")
         rejected = True
     else:
@@ -116,8 +116,10 @@ def result(d, part, info_path, rc, secs, out):
          "solver_status": sstat, "basecase": base.group(1) if base else None,
          "induction": ind.group(1) if ind else None, "solver_seconds": int(el.group(1)) if el else None,
          "hold_seconds": int(secs), "rejected": rejected, "rejected_as": how,
-         "engine": "sby smtbmc bitwuzla, depth 2 (same strategy as the proof)",
-         "command": "scripts/p2_negcone.sh"}
+         "depth": int(depth),
+         "engine": "sby smtbmc bitwuzla, depth %s%s" % (depth, " (same strategy as the proof)" if depth == "2" else
+                                                        " (the proof's strategy with a deeper bounded check, used for this control only)"),
+         "command": ("" if depth == "2" else f"NEGCONE_DEPTH={depth} ") + "scripts/p2_negcone.sh"}
     json.dump(r, open(out, "w"), indent=1)
     open(out, "a").write("\n")
     print(json.dumps({k: r[k] for k in ("partition", "solver_status", "basecase", "induction", "rejected", "rejected_as")}, indent=1))
@@ -128,4 +130,4 @@ if __name__ == "__main__":
     if sys.argv[1] == "mutate":
         mutate(sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]) if len(sys.argv) > 5 else 5)
     else:
-        sys.exit(result(*sys.argv[2:8]))
+        sys.exit(result(*sys.argv[2:9]))

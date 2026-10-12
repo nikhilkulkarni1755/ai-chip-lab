@@ -6,6 +6,11 @@
 # the proof.  One lock hold, at most 9 minutes; no result within the hold is recorded as such.
 #
 #   scripts/p2_negcone.sh          -> results/p2_11_negcone.json, work in .cache/rtl_negcone
+#   NEGCONE_DEPTH=4 scripts/p2_negcone.sh -> results/p2_11_negcone_depth4.json: the same mutated
+#       netlist and partition with the bounded check extended from 2 to 4 cycles.  At depth 2
+#       (the proof's setting) the base case cannot reach the bug: the accumulators start
+#       undefined, so a difference needs clear, then one valid cycle, then one cycle to observe
+#       it.  The deeper run asks the solver for a concrete input sequence from the start state.
 #
 # Reads (never writes) the stage's inputs: the routed netlist snapshot, the Liberty copy in
 # results/t1_routed_work/cells and eqy/systolic_os_routed.eqy.in.
@@ -20,22 +25,29 @@ if [ -z "${NEGCONE_INSIDE:-}" ]; then
   LOCK=(); [ "${LAB_LOCK_HELD:-0}" = 1 ] || LOCK=(bash scripts/with_lock.sh rtl env LAB_LOCK_HELD=1)
   mkdir -p "$W"
   ${LOCK[@]+"${LOCK[@]}"} docker run --rm --platform linux/amd64 --cpus 2 -v "$LAB_DIR":/lab -w /lab \
-    -e NEGCONE_INSIDE=1 -e PYTHONHASHSEED=0 "$LAB_SIM_IMAGE" bash scripts/p2_negcone.sh
+    -e NEGCONE_INSIDE=1 -e NEGCONE_DEPTH="${NEGCONE_DEPTH:-2}" -e PYTHONHASHSEED=0 "$LAB_SIM_IMAGE" bash scripts/p2_negcone.sh
   exit $?
 fi
 cd "$LAB_DIR" || exit 2
 NET=results/part1_snapshot/systolic_os_routed/6_final.v
 LIB="$LAB_DIR/results/t1_routed_work/cells/NangateOpenCellLibrary_typical.lib"
 [ -s "$LIB" ] || { echo "Liberty copy missing: $LIB" >&2; exit 3; }
-D="$LAB_DIR/$W/run"
+DEPTH="${NEGCONE_DEPTH:-2}"
+case "$DEPTH" in ''|*[!0-9]*) echo "NEGCONE_DEPTH must be a number" >&2; exit 2 ;; esac
+if [ "$DEPTH" = 2 ]; then D="$LAB_DIR/$W/run"; OUTJ=results/p2_11_negcone.json
+else D="$LAB_DIR/$W/run_depth$DEPTH"; OUTJ="results/p2_11_negcone_depth$DEPTH.json"; fi
 mkdir -p "$D"
 python3 scripts/p2_negcone.py mutate "$NET" "$D/netlist_cone_bug.v" "$D/mutation.json" 5 || exit 90
 sed -e "s#@RTL@#$LAB_DIR/rtl#g" -e "s#@LIB@#$LIB#g" -e "s#@NETLIST@#$D/netlist_cone_bug.v#g" \
   eqy/systolic_os_routed.eqy.in > "$D/routed.eqy"
+if [ "$DEPTH" != 2 ]; then
+  sed -e "s/^depth 2\$/depth $DEPTH/" "$D/routed.eqy" > "$D/routed.eqy.tmp" && mv "$D/routed.eqy.tmp" "$D/routed.eqy"
+  grep -qx "depth $DEPTH" "$D/routed.eqy" || { echo "depth override did not apply" >&2; exit 91; }
+fi
 printf 'apply %s\n\n[strategy skip]\nuse dummy\n' "$PART" >> "$D/routed.eqy"
 t0=$(date +%s)
 timeout 540 eqy -f -j 2 -d "$D/eqy" "$D/routed.eqy" > "$D/eqy.log" 2>&1
 rc=$?
 grep -E "Could not prove|Proved equivalence|DONE|Failed to prove" "$D/eqy.log" | grep -v "strategy 'skip'" | tail -5
 echo "eqy exit code: $rc (non-zero expected; 124 = hold time limit)"
-python3 scripts/p2_negcone.py result "$D/eqy" "$PART" "$D/mutation.json" "$rc" "$(( $(date +%s) - t0 ))" results/p2_11_negcone.json
+python3 scripts/p2_negcone.py result "$D/eqy" "$PART" "$D/mutation.json" "$rc" "$(( $(date +%s) - t0 ))" "$OUTJ" "$DEPTH"
