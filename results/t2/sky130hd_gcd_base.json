@@ -1,0 +1,62 @@
+{
+  "platform": "sky130hd",
+  "design": "gcd",
+  "variant": "base",
+  "metrics": {
+    "area_um2": 5412.69,
+    "stdcell_area_um2": 5412.69,
+    "utilization_frac": 0.919643,
+    "wns_setup_ns": -1.45954,
+    "tns_setup_ns": -64.9417,
+    "wns_hold_ns": 0.532397,
+    "tns_hold_ns": 0,
+    "power_total_w": 0.00985037,
+    "power_internal_w": 0.00620481,
+    "power_switching_w": 0.00364557,
+    "power_leakage_w": 2.34514e-09,
+    "cell_count": 752,
+    "stdcell_count": 548,
+    "drc_errors": 0,
+    "antenna_violating_nets": 0,
+    "wirelength": 11728,
+    "synth_area_um2": 2313.47
+  },
+  "missing": [
+    "clock_period_ns"
+  ],
+  "stage_runtime_s": {
+    "cts": 28.1,
+    "detailedplace": 2.72,
+    "finish": 7.33,
+    "finish_merge": 4.18,
+    "floorplan": 5.05,
+    "globalplace": 3.9,
+    "globalplace_io": 1.67,
+    "globalplace_skip_io": 2.05,
+    "globalroute": 127.98,
+    "placeopt": 2.72,
+    "synth": 9.33
+  },
+  "total_elapsed_s_flow": 195.03,
+  "run": {
+    "platform": "sky130hd",
+    "design": "gcd",
+    "variant": "base",
+    "rc": 0,
+    "wall_s": 646,
+    "start_epoch": 1791802377,
+    "config": "/OpenROAD-flow-scripts/flow/designs/sky130hd/gcd/config.mk",
+    "extra": "",
+    "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
+    "num_cores": 3
+  },
+  "gds": {
+    "path": "orfs/work/results/sky130hd/gcd/base/6_final.gds",
+    "bytes": 974128,
+    "sha256": "ebc1e0bff33fb35838d0b673877e37d14d2a96e7a0668495a62a1cfbd9ea2524",
+    "sha256_timestamps_zeroed": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809"
+  },
+  "flow_version": "unknown",
+  "n_metadata_fields": 520,
+  "deterministic_fields_sha256": "b8c1b0ef48a65c7dbf07566f7650b750648cf23c68d9825499b5fe6065d9be88"
+}

@@ -5,7 +5,7 @@
   "metrics": {
     "area_um2": 22961.1,
     "stdcell_area_um2": 22961.1,
-    "utilization_pct": 0.307407,
+    "utilization_frac": 0.307407,
     "wns_setup_ns": 2.02852,
     "tns_setup_ns": 0,
     "wns_hold_ns": 0.0760753,
