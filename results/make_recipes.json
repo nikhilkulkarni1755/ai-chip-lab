@@ -88,6 +88,35 @@
     "t2 (ref): results/t2_summary.json pass=True (flow/check exit status: 0)"
    ],
    "note": "one fresh clean ORFS run per reference design (run 4 for gcd on both platforms, after the two Part 1 runs and pnr's P1.4 rerun), compared against all earlier runs by scripts/t2_repro.sh"
+  },
+  {
+   "recipe": "t2-stretch",
+   "name": "t2-stretch",
+   "command": "make t2-stretch",
+   "executed": [
+    "scripts/make_t2.sh stretch"
+   ],
+   "start_epoch": 1791830187,
+   "end_epoch": 1791832479,
+   "start": "2026-10-12 11:36:27 PDT",
+   "exit_code": 0,
+   "runtime_s": 2292.2,
+   "lock_wait_s": 1189,
+   "lock_acquisitions": 3,
+   "runtime_excl_lock_wait_s": 1103.2,
+   "log": "logs/part2/32_make_recipes/t2-stretch_113627.log",
+   "git_commit": "721e361",
+   "git_branch": "part2-green",
+   "scripts_modified_vs_commit": false,
+   "log_tail": [
+    "    \"note\": \"reported separately; does not change the Part 1 'pass' (thresholds/DRC/GDS/determinism)\"",
+    "  },",
+    "  \"matches_published\": true,",
+    "  \"pass\": true",
+    "}",
+    "t2 (stretch): results/t2_summary.json pass=True (flow/check exit status: 0)"
+   ],
+   "note": "systolic_os on nangate45, a further clean run compared against the earlier ones"
   }
  ],
  "attempts": [
@@ -178,19 +207,56 @@
     "t2 (ref): results/t2_summary.json pass=True (flow/check exit status: 0)"
    ],
    "note": "one fresh clean ORFS run per reference design (run 4 for gcd on both platforms, after the two Part 1 runs and pnr's P1.4 rerun), compared against all earlier runs by scripts/t2_repro.sh"
+  },
+  {
+   "recipe": "t2-stretch",
+   "name": "t2-stretch",
+   "command": "make t2-stretch",
+   "executed": [
+    "scripts/make_t2.sh stretch"
+   ],
+   "start_epoch": 1791830187,
+   "end_epoch": 1791832479,
+   "start": "2026-10-12 11:36:27 PDT",
+   "exit_code": 0,
+   "runtime_s": 2292.2,
+   "lock_wait_s": 1189,
+   "lock_acquisitions": 3,
+   "runtime_excl_lock_wait_s": 1103.2,
+   "log": "logs/part2/32_make_recipes/t2-stretch_113627.log",
+   "git_commit": "721e361",
+   "git_branch": "part2-green",
+   "scripts_modified_vs_commit": false,
+   "log_tail": [
+    "    \"note\": \"reported separately; does not change the Part 1 'pass' (thresholds/DRC/GDS/determinism)\"",
+    "  },",
+    "  \"matches_published\": true,",
+    "  \"pass\": true",
+    "}",
+    "t2 (stretch): results/t2_summary.json pass=True (flow/check exit status: 0)"
+   ],
+   "note": "systolic_os on nangate45, a further clean run compared against the earlier ones"
   }
  ],
- "generated": "2026-10-12 11:36:27 PDT",
+ "generated": "2026-10-12 12:17:29 PDT",
  "how": "each entry: `python3 scripts/make_record.py <recipe>` = a real `make <recipe>`; runtime_s is wall time incl. queueing for the heavy-job lock (lock_wait_s)",
  "pass": false,
  "missing_recipes": [
   "t1",
-  "t2-stretch",
   "t3",
   "repro",
   "demo"
  ],
  "failed_recipes": [],
- "readme_note": "### Make recipes: what was actually run\n\nEach recipe below was executed for real as `make <recipe>` from the repo root (recorded by `scripts/make_record.py`, raw data in `results/make_recipes.json`). Wall time includes waiting in the one-job-at-a-time queue of this machine; the time without that wait is shown separately.\n\n| Recipe | Exit code | Wall time | of which queue wait | Run time | Started | Log |\n|---|---|---|---|---|---|---|\n| `make runtime` | 0 | 9 min 47 s | 9 min 41 s | 6 s | 09:17:53 | `logs/part2/32_make_recipes/runtime_091753.log` |\n| `make images` | 0 | 53 min 59 s | 52 min 58 s | 1 min 01 s | 09:27:41 | `logs/part2/32_make_recipes/images_092741.log` |\n| `make t1` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n| `make t2` | 0 | 69 min 08 s | 60 min 01 s | 9 min 07 s | 10:27:19 | `logs/part2/32_make_recipes/t2_102719.log` |\n| `make t2-stretch` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n| `make t3` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n| `make repro` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n| `make demo` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n\n**Not run as a recipe yet:** `make t1`, `make t2-stretch`, `make t3`, `make repro`, `make demo`.\n\nNotes: `make t2`: one fresh clean ORFS run per reference design (run 4 for gcd on both platforms, after the two Part 1 runs and pnr's P1.4 rerun), compared against all earlier runs by scripts/t2_repro.sh.\n\n**`make all` fail-soft test:** not run yet.\n",
- "note_generated": "2026-10-12 11:36:52 PDT"
+ "readme_note": "### Make recipes: what was actually run\n\nEach recipe below was executed for real as `make <recipe>` from the repo root (recorded by `scripts/make_record.py`, raw data in `results/make_recipes.json`). Wall time includes waiting in the one-job-at-a-time queue of this machine; the time without that wait is shown separately.\n\n| Recipe | Exit code | Wall time | of which queue wait | Run time | Started | Log |\n|---|---|---|---|---|---|---|\n| `make runtime` | 0 | 9 min 47 s | 9 min 41 s | 6 s | 09:17:53 | `logs/part2/32_make_recipes/runtime_091753.log` |\n| `make images` | 0 | 53 min 59 s | 52 min 58 s | 1 min 01 s | 09:27:41 | `logs/part2/32_make_recipes/images_092741.log` |\n| `make t1` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n| `make t2` | 0 | 69 min 08 s | 60 min 01 s | 9 min 07 s | 10:27:19 | `logs/part2/32_make_recipes/t2_102719.log` |\n| `make t2-stretch` | 0 | 38 min 12 s | 19 min 49 s | 18 min 23 s | 11:36:27 | `logs/part2/32_make_recipes/t2-stretch_113627.log` |\n| `make t3` | still running | \u2013 | \u2013 | \u2013 | 12:17:29 | `logs/part2/32_make_recipes/t3_121729.log` |\n| `make repro` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n| `make demo` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n\n**Not run as a recipe yet:** `make t1`, `make t3`, `make repro`, `make demo`.\n\nNotes: `make t2`: one fresh clean ORFS run per reference design (run 4 for gcd on both platforms, after the two Part 1 runs and pnr's P1.4 rerun), compared against all earlier runs by scripts/t2_repro.sh; `make t2-stretch`: systolic_os on nangate45, a further clean run compared against the earlier ones.\n\n**`make all` fail-soft test:** not run yet.\n",
+ "note_generated": "2026-10-12 12:19:35 PDT",
+ "running": {
+  "t3": {
+   "command": "make t3",
+   "start_epoch": 1791832649,
+   "start": "2026-10-12 12:17:29 PDT",
+   "log": "logs/part2/32_make_recipes/t3_121729.log",
+   "pid": 22458
+  }
+ }
 }

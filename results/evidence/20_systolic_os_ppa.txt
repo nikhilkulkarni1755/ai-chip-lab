@@ -12,23 +12,23 @@
     "drc_errors": 0,
     "wirelength": 144716
   },
-  "wall_s": 528,
+  "wall_s": 1622,
   "checks": {
     "thresholds_pass": null,
     "drc_errors_zero": true,
     "gds_exists": true
   },
   "stage_runtime_s": {
-    "cts": 9.94,
-    "detailedplace": 8.0,
-    "finish": 24.34,
-    "finish_merge": 3.22,
-    "floorplan": 2.88,
-    "globalplace": 23.84,
-    "globalplace_io": 0.75,
-    "globalplace_skip_io": 4.2,
-    "globalroute": 78.94,
-    "placeopt": 6.99,
-    "synth": 26.56
+    "cts": 26.67,
+    "detailedplace": 18.92,
+    "finish": 59.04,
+    "finish_merge": 8.77,
+    "floorplan": 6.03,
+    "globalplace": 54.18,
+    "globalplace_io": 1.72,
+    "globalplace_skip_io": 12.13,
+    "globalroute": 170.2,
+    "placeopt": 19.31,
+    "synth": 49.86
   }
 }

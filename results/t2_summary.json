@@ -1,5 +1,5 @@
 {
-  "generated_epoch": 1791830185,
+  "generated_epoch": 1791832478,
   "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
   "tool_versions": [
     "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)",
@@ -337,23 +337,23 @@
         "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
-        "cts": 9.94,
-        "detailedplace": 8.0,
-        "finish": 24.34,
-        "finish_merge": 3.22,
-        "floorplan": 2.88,
-        "globalplace": 23.84,
-        "globalplace_io": 0.75,
-        "globalplace_skip_io": 4.2,
-        "globalroute": 78.94,
-        "placeopt": 6.99,
-        "synth": 26.56
+        "cts": 26.67,
+        "detailedplace": 18.92,
+        "finish": 59.04,
+        "finish_merge": 8.77,
+        "floorplan": 6.03,
+        "globalplace": 54.18,
+        "globalplace_io": 1.72,
+        "globalplace_skip_io": 12.13,
+        "globalroute": 170.2,
+        "placeopt": 19.31,
+        "synth": 49.86
       },
-      "wall_s": 528,
+      "wall_s": 1622,
       "gds": {
         "path": "orfs/work/results/nangate45/systolic_os/base/6_final.gds",
         "bytes": 9286662,
-        "sha256": "1603ca531aabaab1c0203148eb269b385fff2fe1601bc8356a758d14f350bdb6",
+        "sha256": "cbf45e8bea18a42b248c61c671e63a682dbbac1da196832aef69138ad0c9482e",
         "sha256_timestamps_zeroed": "1d676f34b49e776753de3d8b905700f1ef26de9f63f6f0f8830b30603b14a68c"
       },
       "checks": {
