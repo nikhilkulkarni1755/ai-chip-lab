@@ -171,6 +171,7 @@ RESUME=0; [ "${T1R_RESUME:-0}" = 1 ] && [ -s "$WORK/steps.tsv" ] && RESUME=1
 if { [ "$PHASE" = prep ] || [ "$PHASE" = all ]; } && [ "$RESUME" = 0 ]; then   # new run: clean slate
   find "$WORK" -mindepth 1 -maxdepth 1 ! -name cells ! -name .gitignore ! -name kepler_check.txt -exec rm -rf {} +
   rm -f "$OUT"/t1_routed_gls_*.csv "$OUT"/t1_routed_summary.json "$CELLS_V" "$LOGS"/step_*.log
+  mkdir -p "$LOGS"   # outside the official results dir the logs live in <work>/logs, which was just removed
   : > "$WORK/steps.tsv"; date +%s > "$WORK/t_start"
   if [ "$OFFICIAL" = 1 ]; then
     rm -f "$STAGE.done" "$STAGE.failed"; : > "$STAGE.running"
