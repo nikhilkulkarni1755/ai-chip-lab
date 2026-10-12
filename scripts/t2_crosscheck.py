@@ -53,18 +53,4 @@ for k, d in out["designs"].items():
     for m, r in d["two_sided"].items(): print("  ", m, "ours", r["ours"], "ref~", r["implied_reference"], "+-", r["margin"], "->", "IN" if r["within_band"] else "OUT", r["direction"])
     for m, r in d["one_sided_hold"].items(): print("  ", m, "ours", r["ours"], "ref~", r["implied_reference"], "not worse:", r["not_worse"])
 
-# ---- common Part 2 stage schema (results/p2_21_orfs_crosscheck.json) ----
-crit = []
-for k, d in out["designs"].items():
-    meas = "; ".join(f"{m}: ours {r['ours']} vs implied ref {r['implied_reference']} +-{r['margin']} -> {'in' if r['within_band'] else 'OUT (' + r['direction'] + ')'}"
-                     for m, r in d["two_sided"].items())
-    crit.append({"name": f"matches_published[{k}] (reference IMPLIED from rules-base.json, not a measured published file)",
-                 "threshold": "all 6 two-sided metrics within implied reference +- ORFS's own margin; hold ws/tns not worse (docs/t2_crosscheck_tolerance.md)",
-                 "written_before_run": "a2c2d54", "measured": meas, "pass": d["matches_published"]})
-p2 = {"stage": "21_orfs_crosscheck", "pass": out["matches_published"],
-      "oracle": "ORFS's own shipped rules-base.json (limits generated from ORFS's reference runs by genRuleFile.py); the reference values are implied by un-padding the limits, because ORFS publishes no measured metadata for gcd at the pinned commit",
-      "criteria": crit, "superseded": [],
-      "commands": ["python3 scripts/t2_crosscheck.py", "scripts/t2_check.sh nangate45 gcd base"],
-      "seeds": "none", "evidence": ["results/evidence/21_orfs_crosscheck.txt", "results/t2_crosscheck.json", "docs/t2_timing_explained.md"],
-      "finding": "nangate45/gcd outside the band on setup WNS, setup TNS and wirelength (all better than implied reference); matches through CTS, departs from global route onward; see docs/t2_timing_explained.md"}
-json.dump(p2, open(os.path.join(LAB, "results", "p2_21_orfs_crosscheck.json"), "w"), indent=2)
+# (the stage JSON results/p2_21_orfs_crosscheck.json is written by t2_dashboard_crosscheck.py, which supersedes this implied-reference check)
