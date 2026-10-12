@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.join(LAB, "model"))
 
 SRAM_KB = {"small": 16, "default": 64, "large": 1024}
 TOPOS = {  # name -> (path under arch/bundled/topologies, gemm?)
+    "gemm_test": ("GEMM_mnk/test_mnk_input.csv", True),   # one small 256x128x256 GEMM: separate workload for small arrays
     "alexnet_part": ("conv_nets/alexnet_part.csv", False),
     "alexnet": ("conv_nets/alexnet.csv", False),
     "vit_s": ("GEMM_mnk/vit_s.csv", True),
@@ -65,26 +66,23 @@ def grid():
 
     sq = [(n, n) for n in SQUARES]
     sq5 = [(n, n) for n in (8, 16, 32, 64, 128)]
+    sq4 = [(n, n) for n in (16, 32, 64, 128)]
     rect = [(16, 64), (64, 16), (32, 128), (128, 32)]
-    add(1, ["alexnet_part"], sq5, ["default"])           # complete coarse grid: 1 topo x 3 df x 5 sizes
-    add(2, ["alexnet_part"], sq5, ["small", "large"])
-    add(3, ["vit_s"], sq5, ["default"])
-    add(4, ["ncf"], sq5, ["default"])
-    add(5, ["alexnet_part", "vit_s"], rect, ["default"])
-    add(6, ["vit_s", "ncf"], sq5, ["small", "large"])
-    add(7, ["ncf"], rect, ["default"])
-    add(8, ["alexnet"], [(16, 16), (32, 32), (64, 64), (128, 128)], ["default"])
-    add(9, ["alexnet_part", "vit_s", "ncf"], [(24, 24), (48, 48), (96, 96)], ["default"])
-    add(10, ["resnet18"], [(64, 64), (128, 128)], ["default"])
-    add(11, ["alexnet"], rect, ["default"])
-    # within a phase: cheapest first so a complete coarse grid finishes early
-    out, i = [], 0
-    while i < len(pts):
-        j = i
-        while j < len(pts) and pts[j][0] == pts[i][0]:
-            j += 1
-        out += sorted(pts[i:j], key=lambda p: est_cost(p[1], p[2], p[3], p[4]))
-        i = j
+    big = ["alexnet_part", "vit_s", "ncf"]
+    # phase tags only label the intent; actual order = cheapest estimated cost first (stable), so points that
+    # finish in tens/hundreds of seconds are done before anything slow.  8x8/16x16 on the big workloads are the
+    # most expensive (many folds); small arrays are covered by the separate small workload "gemm_test".
+    add(1, big, sq4, ["default"])
+    add(2, ["gemm_test"], sq5, ["default", "small", "large"])
+    add(3, big, rect, ["default"])
+    add(4, big, sq4, ["small", "large"])
+    add(5, ["gemm_test"], rect, ["default"])
+    add(6, ["alexnet_part", "vit_s"], [(8, 8)], ["default"])
+    add(7, ["alexnet"], sq4, ["default"])
+    add(8, big, [(24, 24), (48, 48), (96, 96)], ["default"])
+    add(9, ["resnet18"], [(64, 64), (128, 128)], ["default"])
+    add(10, ["alexnet"], rect, ["default"])
+    out = sorted(pts, key=lambda p: (est_cost(p[1], p[2], p[3], p[4]) // 60, p[0]))
     return out
 
 
@@ -162,6 +160,14 @@ def main():
     env = dict(os.environ, PYTHONHASHSEED="0", OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1",
                MKL_NUM_THREADS="1", NUMBA_NUM_THREADS="1")
     n_done = [0]
+    failed_sizes = {}
+    for line in (open(a.out) if os.path.exists(a.out) else []):
+        try:
+            d = json.loads(line)
+        except Exception:
+            continue
+        if d.get("status") in ("timeout", "error"):
+            failed_sizes[(d["topo"], d["rows"], d["cols"])] = d.get("status") + f" after {d.get('wall_s')}s"
 
     def work(p):
         ph, t, df, R, C, s = p
@@ -170,6 +176,15 @@ def main():
             return
         key = key_of(t, df, R, C, s)
         rem = deadline - time.time()
+        if (t, R, C) in failed_sizes:
+            rec = dict(key=key, phase=ph, topo=t, dataflow=df, rows=R, cols=C, sram=s, sram_kb=SRAM_KB[s],
+                       scalesim="3.0.0", status="skipped_after_timeout",
+                       reason=f"{t} at {R}x{C} already hit the per-point time limit ({failed_sizes[(t, R, C)]}); "
+                              "remaining dataflow/SRAM points of this size skipped")
+            with lock:
+                with open(a.out, "a") as f:
+                    f.write(json.dumps(rec, sort_keys=True) + "\n")
+            return
         tmo = min(a.timeout, rem)
         rec = dict(key=key, phase=ph, topo=t, dataflow=df, rows=R, cols=C, sram=s, sram_kb=SRAM_KB[s],
                    scalesim="3.0.0")
@@ -183,6 +198,7 @@ def main():
                 rec["status"] = "ok"
             else:
                 rec["status"] = "error"
+                rec["returncode"] = r.returncode  # -9 / 137 = killed (memory)
                 rec["error"] = (r.stderr or r.stdout)[-300:].replace(os.path.expanduser("~"), "~")
         except subprocess.TimeoutExpired:
             if time.time() > deadline - 35:   # killed by the global stop, not a real point timeout
@@ -190,6 +206,8 @@ def main():
             rec["status"] = "timeout"
             rec["timeout_s"] = int(tmo)
         rec["wall_s"] = round(time.time() - t0, 1)
+        if rec["status"] in ("timeout", "error"):
+            failed_sizes[(t, R, C)] = f"{rec['status']} after {rec['wall_s']}s"
         with lock:
             with open(a.out, "a") as f:
                 f.write(json.dumps(rec, sort_keys=True) + "\n")
