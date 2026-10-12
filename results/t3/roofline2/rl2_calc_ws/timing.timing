@@ -1,0 +1,107 @@
+{
+ "Conv1": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 44.3
+ },
+ "Conv2_1a": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 36.5
+ },
+ "Conv2_1b": {
+  "how": "parallel",
+  "peak_rss_mb": 579,
+  "wall_s": 37.7
+ },
+ "Conv2_2a": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 31.2
+ },
+ "Conv2_2b": {
+  "how": "parallel",
+  "peak_rss_mb": 579,
+  "wall_s": 30.1
+ },
+ "Conv3_1a": {
+  "how": "parallel",
+  "peak_rss_mb": 579,
+  "wall_s": 10.2
+ },
+ "Conv3_1b": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 24.8
+ },
+ "Conv3_2a": {
+  "how": "parallel",
+  "peak_rss_mb": 579,
+  "wall_s": 20.3
+ },
+ "Conv3_2b": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 18.0
+ },
+ "Conv3_s": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 2.5
+ },
+ "Conv4_1a": {
+  "how": "parallel",
+  "peak_rss_mb": 579,
+  "wall_s": 19.3
+ },
+ "Conv4_1b": {
+  "how": "parallel",
+  "peak_rss_mb": 579,
+  "wall_s": 30.7
+ },
+ "Conv4_2a": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 31.2
+ },
+ "Conv4_2b": {
+  "how": "parallel",
+  "peak_rss_mb": 579,
+  "wall_s": 31.4
+ },
+ "Conv4_s": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 1.5
+ },
+ "Conv5_1a": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 37.2
+ },
+ "Conv5_1b": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 77.3
+ },
+ "Conv5_2a": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 78.6
+ },
+ "Conv5_2b": {
+  "how": "parallel",
+  "peak_rss_mb": 579,
+  "wall_s": 61.5
+ },
+ "Conv5_s": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 3.0
+ },
+ "FC": {
+  "how": "parallel",
+  "peak_rss_mb": 512,
+  "wall_s": 10.3
+ }
+}

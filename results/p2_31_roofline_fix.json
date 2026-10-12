@@ -1,0 +1,109 @@
+{
+ "stage": "31_roofline_fix",
+ "pass": false,
+ "verdict": "FAIL",
+ "complete": false,
+ "state": "A_incomplete(ws_mid=not_run,ws_high=in_progress,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run)",
+ "oracle": "SCALE-Sim's own reports (COMPUTE_REPORT stall cycles, BANDWIDTH_REPORT required DRAM bandwidth) against arithmetic intensity computed from the layer shapes alone (2MNK / compulsory bytes); the two sides share no code.",
+ "criteria": [
+  {
+   "name": "B_calc_required_bw_inverse_to_AI_is",
+   "threshold": "Spearman rho(AI, required DRAM bandwidth) <= -0.6, 21 ResNet-18 layers, 128x128",
+   "written_before_run": "6d2fc2f",
+   "measured": "rho = -0.509",
+   "pass": false
+  },
+  {
+   "name": "B_calc_required_bw_inverse_to_AI_os",
+   "threshold": "Spearman rho(AI, required DRAM bandwidth) <= -0.6, 21 ResNet-18 layers, 128x128",
+   "written_before_run": "6d2fc2f",
+   "measured": "rho = -0.556",
+   "pass": false
+  },
+  {
+   "name": "B_calc_required_bw_inverse_to_AI_ws",
+   "threshold": "Spearman rho(AI, required DRAM bandwidth) <= -0.6, 21 ResNet-18 layers, 128x128",
+   "written_before_run": "6d2fc2f",
+   "measured": "rho = +0.366",
+   "pass": false
+  },
+  {
+   "name": "A_user_bw_stall_frac_vs_AI_is_B256",
+   "threshold": "rho(AI, stall fraction) <= -0.6 and < +0.3, >= 5 layers with stalls",
+   "written_before_run": "69183b1",
+   "measured": "not evaluated (cost): not_run",
+   "pass": null
+  },
+  {
+   "name": "A_user_bw_stall_frac_vs_AI_is_B64",
+   "threshold": "rho(AI, stall fraction) <= -0.6 and < +0.3, >= 5 layers with stalls",
+   "written_before_run": "69183b1",
+   "measured": "not evaluated (cost): not_run",
+   "pass": null
+  },
+  {
+   "name": "A_user_bw_stall_frac_vs_AI_os_B256",
+   "threshold": "rho(AI, stall fraction) <= -0.6 and < +0.3, >= 5 layers with stalls",
+   "written_before_run": "69183b1",
+   "measured": "not evaluated (cost): not_run",
+   "pass": null
+  },
+  {
+   "name": "A_user_bw_stall_frac_vs_AI_os_B64",
+   "threshold": "rho(AI, stall fraction) <= -0.6 and < +0.3, >= 5 layers with stalls",
+   "written_before_run": "69183b1",
+   "measured": "not evaluated (cost): not_run",
+   "pass": null
+  },
+  {
+   "name": "A_user_bw_stall_frac_vs_AI_ws_B256",
+   "threshold": "rho(AI, stall fraction) <= -0.6 and < +0.3, >= 5 layers with stalls",
+   "written_before_run": "69183b1",
+   "measured": "not evaluated (cost): in_progress",
+   "pass": null
+  },
+  {
+   "name": "A_user_bw_stall_frac_vs_AI_ws_B64",
+   "threshold": "rho(AI, stall fraction) <= -0.6 and < +0.3, >= 5 layers with stalls",
+   "written_before_run": "69183b1",
+   "measured": "not evaluated (cost): not_run",
+   "pass": null
+  },
+  {
+   "name": "analytic_model_matches_scalesim",
+   "threshold": "held-out residuals stable; constants match derivation",
+   "written_before_run": "Part 1",
+   "measured": "pass",
+   "pass": true
+  },
+  {
+   "name": "reruns_byte_identical_in_stage",
+   "threshold": "bundled + fit + CALC reruns identical",
+   "written_before_run": "Part 1",
+   "measured": "in_stage_ok_pending_repro; pending repro: 2",
+   "pass": true
+  }
+ ],
+ "superseded": [
+  {
+   "name": "Part 1 synthetic roofline (16 GEMMs, 16x16, 5 % stall threshold)",
+   "threshold": "agreement >= 80 %, rho <= -0.5",
+   "measured": "{\"roofline_agreement_is\": false, \"roofline_agreement_os\": false, \"roofline_agreement_ws\": false, \"roofline_both_classes_is\": true, \"roofline_both_classes_os\": true, \"roofline_both_classes_ws\": true, \"roofline_rank_corr_is\": false, \"roofline_rank_corr_os\": true, \"roofline_rank_corr_ws\": false}",
+   "reason": "Measured the wrong thing: (1) the TASK 3 bundled run had Stall Cycles = 0 (results/evidence/31_original_stalls.txt), so there was nothing to correlate against; (2) the substitute study used 16 hand-picked synthetic GEMMs on a 16x16 array and a binary agreement gate on a 5 % stall threshold, a metric that depends on the arbitrary threshold and class balance, and was not a real layer set. Replaced by rank correlations (threshold-free) on the real ResNet-18 layers. See COORDINATION.md Decisions P2-A1, P2-7.",
+   "pass": false
+  }
+ ],
+ "commands": [
+  "make t3",
+  "python3 scripts/t3_p2_json.py"
+ ],
+ "seeds": "none (SCALE-Sim is deterministic; PYTHONHASHSEED=0)",
+ "evidence": [
+  "results/t3_summary.json",
+  "results/evidence/31_original_stalls.txt",
+  "results/evidence/31_neutrality_and_intensity_tests.txt",
+  "results/evidence/31_a_probe.txt",
+  "demo/assets/t3_roofline.png",
+  "docs/t3_roofline_explained.md"
+ ]
+}

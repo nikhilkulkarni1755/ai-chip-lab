@@ -1,0 +1,147 @@
+{
+ "array": "128x128",
+ "byte_identity_note": "user-bandwidth runs: not rerun unless lock time remains (cost ~N min per run); never claimed byte-identical without a rerun",
+ "cell_status": {
+  "rl2_calc_is": "evaluated",
+  "rl2_calc_os": "evaluated",
+  "rl2_calc_ws": "evaluated",
+  "rl2_user_is_high": "not_run",
+  "rl2_user_is_mid": "not_run",
+  "rl2_user_os_high": "not_run",
+  "rl2_user_os_mid": "not_run",
+  "rl2_user_ws_high": "in_progress",
+  "rl2_user_ws_mid": "not_run"
+ },
+ "checks": {
+  "calc_required_bw_inverse_to_ai_is": false,
+  "calc_required_bw_inverse_to_ai_os": false,
+  "calc_required_bw_inverse_to_ai_ws": false,
+  "stall_cycles_monotone_in_B_is": false,
+  "stall_cycles_monotone_in_B_os": false,
+  "stall_cycles_monotone_in_B_ws": false,
+  "user_bw_stalls_vs_ai_is": false,
+  "user_bw_stalls_vs_ai_os": false,
+  "user_bw_stalls_vs_ai_ws": false
+ },
+ "complete": false,
+ "criteria": {
+  "A_user_bandwidth_stalls": {
+   "B_justification": "Fixed from the layer arithmetic-intensity distribution alone (min 2.0, median ~250, max ~597 FLOP/B) before any run: peak = 2*128*128 = 32768 FLOP/cycle, ridge = peak/B = 2048 (low: every layer below the ridge), 512 (mid: nearly all below), 128 (high: roughly half above). AMENDED: the registered 'low' level (B=16, ridge 2048) is dropped on cost alone; mid and high keep their registered ridge positions (512, 128 FLOP/B).",
+   "B_words_per_cycle": {
+    "high": 256,
+    "mid": 64
+   },
+   "keys": "InterfaceBandwidth=USER; Bandwidth = IfmapSRAMBankBandwidth = FilterSRAMBankBandwidth = B; IfmapSRAMBankNum = FilterSRAMBankNum = 1 (single_layer_sim.py takes the ifmap/filter DRAM-side bandwidth from the *SRAMBankBandwidth keys and the ofmap bandwidth from Bandwidth; read_buffer.py asserts bank_bandwidth*num_bank == total)",
+   "knob_sanity": "per dataflow, total stall cycles over the 21 layers are non-increasing from mid (B=64) to high (B=256)",
+   "per_dataflow_pass": "Spearman rho(AI, stall_frac) <= -0.6 at BOTH levels (mid and high) AND rho < +0.3 at both. A (dataflow, B) cell with fewer than 5 layers having stall_frac > 0 is uninformative and counts as NOT satisfying rho <= -0.6. (Stricter than the registered '>= 2 of 3 levels'.)",
+   "signal": "stall_frac = Stall Cycles / Total Cycles per layer (COMPUTE_REPORT.csv)"
+  },
+  "B_calc_bandwidth_mode": {
+   "keys": "bundled scale.cfg unchanged: InterfaceBandwidth=CALC (SCALE-Sim computes the DRAM bandwidth each layer needs; no limit enforced)",
+   "per_dataflow_pass": "Spearman rho(AI, required_bw) <= -0.6",
+   "signal": "required_bw = Avg IFMAP DRAM BW + Avg FILTER DRAM BW + Avg OFMAP DRAM BW (BANDWIDTH_REPORT.csv, words/cycle)"
+  },
+  "amendment": "P2-A2 (Decision P2-7, option 1), COST ONLY, committed before any criterion-A run was queued; no criterion-A result existed when it was written. Evidence: model/t3_roofline2_amendment_A2_rule.md, logs/part2/31_roofline_fix/cost_probe.log.",
+  "intensity": "AI = 2*M*N*K / (unique ifmap tensor + filter + ofmap bytes), compulsory traffic, 1 byte/word (SCALE-Sim hard-codes word_size=1)",
+  "layer_set": "ALL 21 layers of the bundled topology arch/bundled/topologies/conv_nets/Resnet18.csv (real layers, no hand-picked synthetic set); conv->GEMM mapping as in SCALE-Sim topology_utils (ofmap = ceil((H-Fh+s)/s)).",
+  "machine": {
+   "array": "128x128 (cost-driven: 32x32 needs ~15 min per run, 12 runs x 2 reruns does not fit the queue; 128x128 ~6 min)",
+   "base_config": "bundled arch/bundled/configs/scale.cfg (SRAM 64 kB per buffer, ReadRequestBuffer 32) with only ArrayHeight/Width, Dataflow and the interface-bandwidth keys overridden",
+   "dataflows": [
+    "ws",
+    "os",
+    "is"
+   ],
+   "word_bytes": 1
+  },
+  "overall_pass": "A passes for all 3 dataflows at both levels AND knob_sanity holds for all 3 AND B passes for all 3 dataflows AND reruns are byte-identical where a rerun exists (in-stage: bundled + fit; make repro: + CALC runs; user-bandwidth runs reported 'not rerun (cost)' unless lock time remains). PASS only if every pre-registered criterion has been evaluated and passes; unevaluated cells are reported as in_progress / not_run and keep the stage open. Thresholds are final. Failure = FAIL with diagnosis.",
+  "registered_before_any_new_run": true,
+  "stage": "31_roofline_fix",
+  "superseded_design": {
+   "B_levels_dropped": {
+    "low": 16
+   },
+   "design": {
+    "B_justification": "Fixed from the layer arithmetic-intensity distribution alone (min 2.0, median ~250, max ~597 FLOP/B) before any run: peak = 2*128*128 = 32768 FLOP/cycle, ridge = peak/B = 2048 (low: every layer below the ridge), 512 (mid: nearly all below), 128 (high: roughly half above).",
+    "B_words_per_cycle": {
+     "high": 256,
+     "low": 16,
+     "mid": 64
+    },
+    "keys": "InterfaceBandwidth=USER; Bandwidth = IfmapSRAMBankBandwidth = FilterSRAMBankBandwidth = B; IfmapSRAMBankNum = FilterSRAMBankNum = 1 (single_layer_sim.py takes the ifmap/filter DRAM-side bandwidth from the *SRAMBankBandwidth keys and the ofmap bandwidth from Bandwidth; read_buffer.py asserts bank_bandwidth*num_bank == total)",
+    "knob_sanity": "per dataflow, total stall cycles over the 21 layers are non-increasing as B goes low -> mid -> high",
+    "per_dataflow_pass": "Spearman rho(AI, stall_frac) <= -0.6 at >= 2 of the 3 bandwidth levels AND rho < +0.3 at all 3 levels. A (dataflow, B) cell with fewer than 5 layers having stall_frac > 0 is uninformative and counts as NOT satisfying rho <= -0.6.",
+    "signal": "stall_frac = Stall Cycles / Total Cycles per layer (COMPUTE_REPORT.csv)"
+   },
+   "reason": "not executable: > 27 min per (dataflow, B) run of 21 layers at 128x128 (stopped by main after 26 min 44 s, no output), >= 4.5 h of lock per pass; large layers > 170 s each at 1.7 GB RSS on both candidate arrays"
+  },
+  "superseded_part1_criteria": "Part 1 gates (classification agreement >= 80 % and rho(AI_eff, stall_frac) <= -0.5 on 16 hand-picked synthetic GEMMs, 16x16 array, B=4) are kept in the summary under 'superseded' with their original numbers.",
+  "supplementary_not_gating": [
+   "stall_frac vs effective intensity (DRAM words actually moved)",
+   "rho at each B and dataflow",
+   "ratio simulated ifmap DRAM reads / ifmap tensor size"
+  ]
+ },
+ "layers": 21,
+ "passed": false,
+ "per_dataflow": {
+  "is": {
+   "calc_mean_ifmap_reads_over_tensor": 1.8638209376012307,
+   "calc_rho_ai_vs_required_bw": -0.5085638998682477,
+   "calc_rho_effective_ai": -0.6600790513833992,
+   "calc_status": "evaluated",
+   "user": {
+    "high": {
+     "B": 256,
+     "satisfies": false,
+     "status": "not_run"
+    },
+    "mid": {
+     "B": 64,
+     "satisfies": false,
+     "status": "not_run"
+    }
+   },
+   "user_all_levels_evaluated": false
+  },
+  "os": {
+   "calc_mean_ifmap_reads_over_tensor": 2.897757196256479,
+   "calc_rho_ai_vs_required_bw": -0.5559947299077734,
+   "calc_rho_effective_ai": -0.7997364953886693,
+   "calc_status": "evaluated",
+   "user": {
+    "high": {
+     "B": 256,
+     "satisfies": false,
+     "status": "not_run"
+    },
+    "mid": {
+     "B": 64,
+     "satisfies": false,
+     "status": "not_run"
+    }
+   },
+   "user_all_levels_evaluated": false
+  },
+  "ws": {
+   "calc_mean_ifmap_reads_over_tensor": 4.846658492265955,
+   "calc_rho_ai_vs_required_bw": 0.3662714097496706,
+   "calc_rho_effective_ai": 0.463768115942029,
+   "calc_status": "evaluated",
+   "user": {
+    "high": {
+     "B": 256,
+     "satisfies": false,
+     "status": "in_progress"
+    },
+    "mid": {
+     "B": 64,
+     "satisfies": false,
+     "status": "not_run"
+    }
+   },
+   "user_all_levels_evaluated": false
+  }
+ },
+ "topology": "Resnet18.csv (bundled)"
+}
