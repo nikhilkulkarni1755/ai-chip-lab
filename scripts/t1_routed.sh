@@ -22,8 +22,9 @@
 #    ships no Verilog simulation library, so the Verilog cell models used for the
 #    gate-level simulation are generated from that Liberty file with Yosys.
 #
-# Environment: T1R_STEPS = subset of "gls eqy" (default both; "gls" alone is the
-# quick demo check).
+# Environment: T1R_STEPS = subset of "gls eqy" (default both), or "gls_icarus" = only
+# the Icarus gate-level simulation (the quick demo check; with NCASES=50 about half a
+# minute).
 #
 # Lock use: every step is its own short container job under its own
 # scripts/with_lock.sh acquisition (cell models, Icarus GLS, Verilator GLS, GLS negative
@@ -91,6 +92,8 @@ if [ -z "${T1R_INSIDE:-}" ]; then
   phase prep || true
   if [[ " $STEPS " == *" gls "* ]]; then
     for st in gls_icarus gls_verilator gls_neg; do phase "$st" || true; done
+  elif [[ " $STEPS " == *" gls_icarus "* ]]; then
+    phase gls_icarus || true
   fi
   if [[ " $STEPS " == *" eqy "* ]]; then
     # EQY holds: the first one sets the proof up (and starts solving); after that every
@@ -216,8 +219,10 @@ gls_neg() {
   echo "make exit code: $rc (non-zero expected: the testbench must report mismatches)"
   [ $rc -ne 0 ] && [ $rc -ne 124 ]
 }
+if { want gls || want gls_icarus; } && in_phase gls_icarus; then
+  step gls_icarus 540 gls icarus "$NETLIST_ABS" icarus "$NCASES"
+fi
 if want gls; then
-  in_phase gls_icarus && step gls_icarus 540 gls icarus "$NETLIST_ABS" icarus "$NCASES"
   in_phase gls_verilator && { rm -rf "$WORK/sim_verilator"; step gls_verilator 540 gls_verilator; }
   in_phase gls_neg && step gls_neg 540 gls_neg
 fi

@@ -108,7 +108,7 @@ def regression_table(log):
     lines = log.splitlines()
     idx = [i for i, ln in enumerate(lines) if "** TEST " in ln]
     if not idx:
-        return "\n".join(lines[-25:])
+        return "(no cocotb result table: the step did not complete)"
     return "\n".join(re.sub(r"^\s*[\d.]+ns\s+INFO\s+\S+\s+", "", ln).strip()
                      for ln in lines[idx[-1] - 1:] if "**" in ln)
 
@@ -213,10 +213,12 @@ def summary(a):
         evidence["11_orfs_lec_kepler.txt"] = kep
 
     # ---------------------------------------------------------------- GLS
-    if "gls" in steps_run:
+    sims = SIMS if "gls" in steps_run else (["icarus"] if "gls_icarus" in steps_run else [])
+    gls_icarus_only = None
+    if sims:
         shas, ev = {}, [f"# post-route gate-level simulation, {SCOPE_NOTE}",
                         f"# netlist {a.netlist} sha256 {inputs['routed_netlist_sha256']}"]
-        for sim in SIMS:
+        for sim in sims:
             p = os.path.join(out, f"t1_routed_gls_{sim}.csv")
             ok = False
             if os.path.exists(p):
@@ -242,32 +244,42 @@ def summary(a):
             ev += [f"$ make -C tb SIM={sim} T1_GATE_NETLIST=<routed 6_final.v> T1_GATE_CELLS=<cells from Liberty>"
                    f"   (T1_NCASES={a.ncases}, seed 1234)",
                    regression_table(read(os.path.join(logs, f"step_gls_{sim}.log")))]
-        checks["gls_csv_identical_across_simulators"] = len(shas) == 2 and len(set(shas.values())) == 1
-        checks["gls_csv_equals_official_rtl_prefix"] = all(
-            values.get(f"gls_{s}", {}).get("equals_official_rtl_csv_prefix") for s in SIMS)
-        neg = os.path.join(work, "gls_neg.csv")
-        nst = csv_stats(neg) if os.path.exists(neg) else None
-        values["gls_negative_control"] = {
-            "bug": "D inputs of a_q[0] and a_q[1] of PE(0,0) swapped in a copy of the routed netlist",
-            "mismatching_elements": nst["mismatching_elements"] if nst else None,
-            "cases": nst["cases_total"] if nst else None,
-        }
-        checks["gls_negative_control_detected"] = (step_rc.get("gls_neg") == 0 and nst is not None
-                                                   and nst["mismatching_elements"] > 0)
         ev += ["# sha256 of the gate-level CSVs vs the first rows of the official RTL CSVs"]
-        for sim in SIMS:
+        for sim in sims:
             v = values.get(f"gls_{sim}", {})
             ev.append(f"{sim}: gate-level {v.get('csv_sha256')}  official-RTL-prefix "
                       f"{v.get('official_rtl_csv_prefix_sha256')}  equal={v.get('equals_official_rtl_csv_prefix')}"
                       f"  cases={v.get('cases_total')} mismatching_elements={v.get('mismatching_elements')}")
-        ev.append(f"negative control (netlist with swapped register inputs, Icarus): "
-                  f"{values['gls_negative_control']['mismatching_elements']} mismatching elements in "
-                  f"{values['gls_negative_control']['cases']} cases (must be > 0)")
+        if "gls" in steps_run:
+            checks["gls_csv_identical_across_simulators"] = len(shas) == 2 and len(set(shas.values())) == 1
+            checks["gls_csv_equals_official_rtl_prefix"] = all(
+                values.get(f"gls_{s}", {}).get("equals_official_rtl_csv_prefix") for s in SIMS)
+            neg = os.path.join(work, "gls_neg.csv")
+            nst = csv_stats(neg) if os.path.exists(neg) else None
+            values["gls_negative_control"] = {
+                "bug": "D inputs of a_q[0] and a_q[1] of PE(0,0) swapped in a copy of the routed netlist",
+                "mismatching_elements": nst["mismatching_elements"] if nst else None,
+                "cases": nst["cases_total"] if nst else None,
+            }
+            checks["gls_negative_control_detected"] = (step_rc.get("gls_neg") == 0 and nst is not None
+                                                       and nst["mismatching_elements"] > 0)
+            ev.append(f"negative control (netlist with swapped register inputs, Icarus): "
+                      f"{values['gls_negative_control']['mismatching_elements']} mismatching elements in "
+                      f"{values['gls_negative_control']['cases']} cases (must be > 0)")
+            gls_required = [f"gls_{s}_zero_mismatches" for s in SIMS] + [
+                "gls_csv_identical_across_simulators", "gls_csv_equals_official_rtl_prefix",
+                "gls_negative_control_detected", "all_netlist_cells_have_models"]
+            gls_pass = all(checks[c] for c in gls_required)
+            values["gls_routed_pass_by_simulator"] = {
+                s: bool(checks[f"gls_{s}_zero_mismatches"]
+                        and values.get(f"gls_{s}", {}).get("equals_official_rtl_csv_prefix")) for s in SIMS}
+        else:
+            gls_pass = None
+            gls_icarus_only = bool(checks["gls_icarus_zero_mismatches"]
+                                   and values["gls_icarus"].get("equals_official_rtl_csv_prefix")
+                                   and checks["all_netlist_cells_have_models"])
+            checks["gls_icarus_only_pass"] = gls_icarus_only
         evidence["11_gls_routed.txt"] = "\n".join(ev) + "\n"
-        gls_required = [f"gls_{s}_zero_mismatches" for s in SIMS] + [
-            "gls_csv_identical_across_simulators", "gls_csv_equals_official_rtl_prefix",
-            "gls_negative_control_detected", "all_netlist_cells_have_models"]
-        gls_pass = all(checks[c] for c in gls_required)
     else:
         gls_pass = None
 
@@ -364,7 +376,7 @@ def summary(a):
         eqy_pass = None
 
     complete = all(s in steps_run for s in ALL_STEPS)
-    ran = [p for p in (gls_pass, eqy_pass) if p is not None]
+    ran = [p for p in (gls_pass, eqy_pass, gls_icarus_only) if p is not None]
     result = {
         "stage": "11_eqy_routed",
         "note": SCOPE_NOTE,
