@@ -170,8 +170,8 @@ def exec_point(key_args, tmo, name):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=os.path.join(LAB, "results/sweeps/arch.jsonl"))
-    ap.add_argument("--timeout", type=int, default=1200, help="per-point run timeout (s), measured after the lock is held")
-    ap.add_argument("--retry-timeout-factor", type=int, default=2, help="timeout multiplier for the retry pass")
+    ap.add_argument("--timeout", type=int, default=600, help="per-point run timeout (s), measured after the lock is held")
+    ap.add_argument("--retry-timeout-factor", type=float, default=1.5, help="timeout multiplier for the retry pass")
     ap.add_argument("--budget", default=os.path.join(LAB, "budget_part2.json"))
     ap.add_argument("--max-points", type=int, default=0)
     ap.add_argument("--one", help="internal (runs inside the container): topo,df,R,C,sram")
@@ -184,7 +184,11 @@ def main():
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
     cur = latest(a.out)
     planned = grid()
-    todo = [p for p in planned if key_of(*p[1:]) not in cur]
+    def value(p):   # lower = earlier: complete vit_s/ncf squares at default SRAM first (Part 2 priority), then the rest by cost
+        _, t, df, R, C, sram = p
+        core = t in ("vit_s", "ncf") and sram == "default" and R == C and R in (16, 32, 64, 128)
+        return (0 if core else 1, est_cost(t, df, R, C))
+    todo = sorted([p for p in planned if key_of(*p[1:]) not in cur], key=value)
     if a.max_points:
         todo = todo[:a.max_points]
     print(f"[arch_sweep] {len(cur)} keys recorded, {len(todo)} never attempted, "
@@ -226,6 +230,27 @@ def main():
                                 "exit code %s, OOMKilled=%s; see error tail" % (rc, oom))
         return rec
 
+    retry_done = [False]
+    def retry_pass():
+        # ---- retry pass: failed / skipped points, doubled timeout, failing points first ----
+        bad = [p for p in planned if cur.get(key_of(*p[1:]), {}).get("status") in ("error", "timeout", "skipped_after_timeout")]
+        bad.sort(key=lambda p: (cur[key_of(*p[1:])]["status"] == "skipped_after_timeout", est_cost(p[1], p[2], p[3], p[4])))
+        resolved_sizes, dead_sizes = set(), set()
+        for p in bad:
+            if time.time() > deadline - 180:
+                print("[arch_sweep] deadline reached in retry pass", flush=True)
+                break
+            size = (p[1], p[3], p[4])
+            key = key_of(*p[1:])
+            if cur[key]["status"] == "skipped_after_timeout" and size in dead_sizes:
+                continue
+            rec = attempt(p, a.timeout * a.retry_timeout_factor, cur[key].get("attempt", 1) + 1)
+            if rec is None:
+                break
+            record(rec)
+            (dead_sizes if rec["status"] != "ok" else resolved_sizes).add(size)
+    # the two points that failed in Part 1 are retried FIRST (they test the OOM hypothesis)
+    retry_pass()
     failed = {}
     for p in todo:
         key = key_of(*p[1:])
@@ -244,23 +269,7 @@ def main():
         record(rec)
         if rec["status"] != "ok":
             failed[size] = f"{rec['status']} on {rec['key']}"
-    # ---- retry pass: failed / skipped points, doubled timeout, failing points first ----
-    bad = [p for p in planned if cur.get(key_of(*p[1:]), {}).get("status") in ("error", "timeout", "skipped_after_timeout")]
-    bad.sort(key=lambda p: (cur[key_of(*p[1:])]["status"] == "skipped_after_timeout", est_cost(p[1], p[2], p[3], p[4])))
-    resolved_sizes, dead_sizes = set(), set()
-    for p in bad:
-        if time.time() > deadline - 180:
-            print("[arch_sweep] deadline reached in retry pass", flush=True)
-            break
-        size = (p[1], p[3], p[4])
-        key = key_of(*p[1:])
-        if cur[key]["status"] == "skipped_after_timeout" and size in dead_sizes:
-            continue
-        rec = attempt(p, a.timeout * a.retry_timeout_factor, cur[key].get("attempt", 1) + 1)
-        if rec is None:
-            break
-        record(rec)
-        (dead_sizes if rec["status"] != "ok" else resolved_sizes).add(size)
+    retry_pass()                      # points that failed during this run: second chance with a longer timeout
     print(f"[arch_sweep] finished: {n[0]} new records", flush=True)
 
 
