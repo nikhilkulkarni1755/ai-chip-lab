@@ -28,3 +28,84 @@ runtime:   # owner: infra, stage 01_runtime, recorded 2026-10-12 02:55:32 PDT
   verify:
     hello_world_digest: "hello-world@sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8"
     log: logs/01_runtime/start.log
+images:   # owner: infra, stage 02_images, recorded 2026-10-12 03:22:28 PDT
+  orfs:
+    ref: "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6"
+    tag: "26Q3-600-g3a964e13f"   # newest-but-5-commits tag that still ships rules-base.json + checkMetadata.py (see COORDINATION.md Decision 6)
+    repo_digests: "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6"
+    image_id: "sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6"
+    size_bytes: 1576609655
+    flow_dir: /OpenROAD-flow-scripts/flow
+  lab_sim:
+    ref: "lab-sim:20261012"   # local build; also lab-sim:latest
+    image_id: "sha256:58972d7927bc2a11fff3b6f9289b2d93cfa735b345d1f71c9ee726137a8112a9"
+    size_bytes: 1080790468
+    dockerfile_sha256: 43cb5be5702132554a2037a0f6eb994f21b2f9fe3d2f25c7dc0ff3bf1f3b5d5c
+    requirements_lock_sha256: 10e029ea814ca5d6cfc9bea7e694684048f06f5da6f529e019efd067153a1db3
+    base: "ubuntu:22.04@sha256:5ec03bb3441e8b0bf3b4f9cd4629a1ae763010dc3035bb8da3ae6cf026486401"
+    oss_cad_suite: {date: "2026-09-28", url: "https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-09-28/oss-cad-suite-linux-x64-20260928.tgz", sha256: 6d04cf3e36c45d4eacbe2fa07f3860b9a86f503c2b725bdee4d02e54defbf80d}
+    verible: {version: "v0.0-4296-g0f262651", url: "https://github.com/chipsalliance/verible/releases/download/v0.0-4296-g0f262651/verible-v0.0-4296-g0f262651-linux-static-x86_64.tar.gz", sha256: 8569defb891d2316067613ea00442af28a7a09d405d95b54c0c91f9942d26635}
+    uv: {version: "0.13.0", url: "https://github.com/astral-sh/uv/releases/download/0.13.0/uv-x86_64-unknown-linux-gnu.tar.gz", sha256: 1468ebd5a5541121837c5a2817b9972ba6090fa6caa3d142620850a47fb75154}
+    python: "3.12.15"   # uv-managed CPython (python-build-standalone)
+    checksums_verified_by: "Dockerfile ADD --checksum (BuildKit fails the build on mismatch); values are the GitHub release-API asset digests"
+    apt: "ca-certificates=20260601~22.04.1 curl=7.81.0-1ubuntu1.29 g++=4:11.2.0-1ubuntu1 git=1:2.34.1-1ubuntu1.17 make=4.3-4.1build1 perl=5.34.0-3ubuntu1.9 time=1.9-0.1build2 "
+  timeloop: "SKIPPED — optional (TASK.md §3); see COORDINATION.md Decisions for the reason"
+  smoke: |   # docker/smoke.sh output, verbatim (home path scrubbed)
+    == lab-sim: lab-sim:20261012 (sha256:58972d7927bc2a11fff3b6f9289b2d93cfa735b345d1f71c9ee726137a8112a9)
+    OK    yosys                  Yosys 0.69+154 (git sha1 30d62572e-dirty, Release, Clang /usr/bin/clang++ 21.1.8)
+    OK    abc                    UC Berkeley, ABC 1.01 (compiled Sep 26 2026 05:26:38)
+    OK    verilator              Verilator 5.053 devel rev v5.052-233-gf5f9ddef9 (mod)
+    OK    iverilog               Icarus Verilog version 14.0 (devel) (s20260301-500-g2e81fcccb-dirty)
+    OK    vvp                    Icarus Verilog runtime version 14.0 (devel) (s20260301-500-g2e81fcccb-dirty)
+    OK    sby                    SBY v0.69
+    OK    eqy                    EQY v0.69-1-g7a92d84
+    OK    yosys-smtbmc           present (no --version flag; ships with Yosys 0.69+154)
+    OK    boolector              3.2.4
+    OK    bitwuzla               0.9.1
+    OK    yices                  Yices 2.7.0
+    OK    yices-smt2             Yices 2.7.0
+    OK    z3                     Z3 version 4.15.5 - 64 bit
+    OK    ghdl                   GHDL 7.0.0-dev (6.0.0.r515.g6ea214092.dirty) [Dunoon edition]
+    OK    nextpnr-ice40          "nextpnr-ice40" -- Next Generation Place and Route (Version nextpnr-0.11.1-34-gc4fbb55a)
+    OK    nextpnr-ecp5           "nextpnr-ecp5" -- Next Generation Place and Route (Version nextpnr-0.11.1-34-gc4fbb55a)
+    OK    gtkwave                present (GUI, no headless --version); OSS CAD Suite build 20260928
+    OK    oss-cad-suite          20260928
+    OK    which-vvp              /opt/lab-bin/vvp
+    OK    verible-lint           Version	v0.0-4296-g0f262651
+    OK    verible-format         Version	v0.0-4296-g0f262651
+    OK    make                   GNU Make 4.3
+    OK    g++                    g++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0
+    OK    git                    git version 2.34.1
+    OK    uv                     uv 0.13.0 (x86_64-unknown-linux-gnu)
+    OK    python3                Python 3.12.15
+    OK    cocotb-config          2.1.0
+    OK    py:cocotb              2.1.0
+    OK    py:cocotb-coverage     2.0
+    OK    py:pytest              9.1.1
+    OK    py:numpy               2.5.3
+    OK    py:ml_dtypes           0.6.0
+    OK    py:pandas              3.0.6
+    OK    py:matplotlib          3.11.2
+    OK    py:scalesim            3.0.0
+    OK    py:vcdvcd              2.6.0
+    OK    py:pyyaml              6.0.3
+    OK    py:numba               0.67.0
+    OK    cocotb+icarus   PROBE sim=icarus acc=60936 numpy=60936 sign_coverage=100%
+    OK    cocotb+verilator   PROBE sim=verilator acc=60936 numpy=60936 sign_coverage=100%
+    OK    verilator --lint-only -Wall (0 warnings)
+    OK    verible-verilog-lint
+    OK    yosys synth+abc+opt    884 cells
+    == orfs: openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6
+    OK    orfs:openroad          present; openroad -version prints: unknown (this build embeds no version string; identity = image digest)
+    OK    orfs:yosys             Yosys 0.68+post (git sha1 UNKNOWN, Release, GNU /usr/local/bin/wrapped-cc/g++ 11.4.0)
+    OK    orfs:opensta           OpenSTA 3.1.0 (embedded in openroad)
+    OK    orfs:klayout           KLayout 0.30.12
+    OK    orfs:make              GNU Make 4.3
+    OK    orfs:python3           Python 3.10.12
+    OK    orfs:flow              /OpenROAD-flow-scripts/flow/Makefile
+    OK    orfs:gcd-ng45          /OpenROAD-flow-scripts/flow/designs/nangate45/gcd/config.mk
+    OK    orfs:gcd-rules         /OpenROAD-flow-scripts/flow/designs/nangate45/gcd/rules-base.json
+    OK    orfs:gcd-sky130        /OpenROAD-flow-scripts/flow/designs/sky130hd/gcd/config.mk
+    OK    orfs:checker           /OpenROAD-flow-scripts/flow/util/checkMetadata.py
+    OK    orfs:qor-checker       /OpenROAD-flow-scripts/flow/util/checkQorMetrics.py
+    == smoke: 55 OK, 0 MISSING -> PASS
