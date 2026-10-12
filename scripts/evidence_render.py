@@ -9,13 +9,14 @@ Writes <out>/demo/assets/evidence/<name>.png and prints one line per file. Exit 
 """
 import argparse
 import glob
+import hashlib
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from evidence_privacy import scan_text  # noqa: E402
 
-from PIL import Image, ImageDraw, ImageFont  # noqa: E402
+from PIL import Image, ImageDraw, ImageFont, PngImagePlugin  # noqa: E402
 
 FONTS = [("/System/Library/Fonts/Menlo.ttc", 0), ("/System/Library/Fonts/Monaco.ttf", 0),
          ("/System/Library/Fonts/Supplemental/Courier New.ttf", 0)]
@@ -76,7 +77,9 @@ def render(txt_path, out_path):
         d.text((pad, y), l, font=font, fill=DIM if l.startswith("[...") else colour(l))
         y += lh
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    im.save(out_path, optimize=True)
+    meta = PngImagePlugin.PngInfo()
+    meta.add_text("src_sha256", hashlib.sha256(open(txt_path, "rb").read()).hexdigest())  # lets demo_check prove the PNG is current
+    im.save(out_path, optimize=True, pnginfo=meta)
     return "ok %dx%d" % (w, h)
 
 

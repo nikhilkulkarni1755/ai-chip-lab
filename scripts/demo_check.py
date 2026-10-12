@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """demo_check.py - verify generated demo: every relative img src / href resolves; markdown image links resolve; privacy scan.
 Usage: demo_check.py [--lab DIR] [--out DIR]   (exit 1 on any problem)"""
-import argparse, os, re, sys
+import argparse, glob, hashlib, os, re, sys
 from html.parser import HTMLParser
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from evidence_privacy import scan_text
@@ -37,4 +37,20 @@ for f, base in (("README.md", ""), ("demo/README.md", "demo")):
         if not ok(r, base): print("BROKEN md ref in %s: %s" % (f, r)); bad += 1
     for ln, k in scan_text(t): print("PRIVACY %s:%d %s" % (f, ln, k)); bad += 1
 for ln, k in scan_text(html): print("PRIVACY index.html:%d %s" % (ln, k)); bad += 1
+# evidence PNGs must be rendered from the current text (content hash stored in the PNG, robust on a fresh clone)
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+for t in sorted(glob.glob(os.path.join(a.lab, "results/evidence/*.txt"))):
+    name = os.path.splitext(os.path.basename(t))[0]
+    png = os.path.join(out, "demo/assets/evidence", name + ".png")
+    if not os.path.exists(png):
+        print("MISSING evidence PNG:", name); bad += 1; continue
+    if Image is None:
+        continue
+    want = hashlib.sha256(open(t, "rb").read()).hexdigest()
+    have = Image.open(png).text.get("src_sha256")
+    if have != want:
+        print("STALE evidence PNG (rendered from different text):", name); bad += 1
 print("checked %d refs, %d problem(s)" % (n, bad)); sys.exit(1 if bad else 0)
