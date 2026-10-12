@@ -33,7 +33,8 @@ T0=$(date +%s)
 CONT="orfs_${PLAT}_${DES}_${VAR}"
 docker rm -f "$CONT" >/dev/null 2>&1
 # watchdog: kill container after timeout
-( sleep "$TMO"; docker kill "$CONT" >/dev/null 2>&1 ) & WD=$!
+# watchdog: timeout counts from container start (not from lock wait)
+( until docker inspect "$CONT" >/dev/null 2>&1; do sleep 5; done; sleep "$TMO"; docker kill "$CONT" >/dev/null 2>&1 ) & WD=$!
 "$LAB/scripts/with_lock.sh" pnr docker run --rm --name "$CONT" --platform linux/amd64 \
   -v "$LAB:/lab" -w "$FLOW" \
   -e NUM_CORES="${NUM_CORES:-3}" -e PYTHONHASHSEED=0 \
