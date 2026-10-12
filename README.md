@@ -190,6 +190,6 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 ## Notes
 
 - Versions, image digests, URLs and SHA256s: `versions.lock`, `coord/images.env`.
-- The Colima VM is left RUNNING at the end of the run because demo/run_demo.sh needs it. Stop it with: source ~/ai-chip-lab/env.sh && colima stop
+- VM end-state is stated at final packaging; start/stop commands are in `demo/README.md`.
 - No personal paths, hostnames or credentials are stored in this repository; a pre-commit hook and `scripts/evidence_privacy.py` enforce that.
 

@@ -21,7 +21,7 @@ Machine: Intel(R) Core(TM) i7-7660U CPU @ 2.50GHz, 2 physical / 4 logical cores,
 START / STOP THE VM
   source ~/ai-chip-lab/env.sh && colima start      # starts the Linux VM that runs the containers
   source ~/ai-chip-lab/env.sh && colima stop       # stops it (frees RAM and CPU)
-  The Colima VM is left RUNNING at the end of the run because demo/run_demo.sh needs it. Stop it with: source ~/ai-chip-lab/env.sh && colima stop
+  Final VM state is not recorded yet (it is written at final packaging); check with `colima status`.
 
 RE-RUN THE SHORT DEMO
   source ~/ai-chip-lab/env.sh && bash demo/run_demo.sh
