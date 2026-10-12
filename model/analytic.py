@@ -83,3 +83,32 @@ def fit_naive_k(df, rows):
 def compute_only_cycles(df, M, N, K, R, C):
     """Stall-free prediction for a real layer (used by the roofline)."""
     return predict(df, M, N, K, R, C)
+
+
+def conv_to_gemm(h, w, fh, fw, ch, nf, stride):
+    """SCALE-Sim's own conv->GEMM mapping (topology_utils.py: ofmap = ceil((H-Fh+s)/s)).
+    Returns (M, N, K) = (ofmap pixels, filters, window size)."""
+    oh = -(-(h - fh + stride) // stride)
+    ow = -(-(w - fw + stride) // stride)
+    return oh * ow, nf, fh * fw * ch
+
+
+def load_topology(path, gemm=False):
+    """-> list of dict(name, M, N, K, ifmap_bytes, filter_bytes, ofmap_bytes) (word = 1 byte)."""
+    out = []
+    with open(path) as f:
+        next(f)
+        for line in f:
+            p = [x.strip() for x in line.strip().split(",") if x.strip() != ""]
+            if not p:
+                continue
+            if gemm:
+                M, N, K = (int(x) for x in p[1:4])
+                out.append(dict(name=p[0], M=M, N=N, K=K, ifmap_bytes=M * K,
+                                filter_bytes=K * N, ofmap_bytes=M * N))
+            else:
+                h, w, fh, fw, ch, nf, s = (int(x) for x in p[1:8])
+                M, N, K = conv_to_gemm(h, w, fh, fw, ch, nf, s)
+                out.append(dict(name=p[0], M=M, N=N, K=K, ifmap_bytes=h * w * ch,
+                                filter_bytes=fh * fw * ch * nf, ofmap_bytes=M * N))
+    return out
