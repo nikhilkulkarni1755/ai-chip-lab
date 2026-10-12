@@ -13,6 +13,7 @@ if lyp:
 lv.max_hier()                    # show all hierarchy levels
 lv.set_config("background-color", "#ffffff")
 lv.set_config("grid-visible", "false")
+lv.set_config("text-visible", "false")      # hide pin/net labels, they clutter a block this small
 lv.zoom_fit()
 lv.resize(w, h)
 lv.save_image(out, w, h)
