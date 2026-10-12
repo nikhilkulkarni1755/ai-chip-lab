@@ -159,8 +159,8 @@ def main():
         pt = next(next_points(a.platform, a.design, periods, utils, done, a.min_step), None)
         if pt is None:
             log("no more points (grid + refinement exhausted)"); break
-        walls = [r["wall_s"] for r in done.values() if r.get("status") == "ok"]
-        est = max(walls) if walls else 600
+        walls = [r["wall_s"] for k, r in done.items() if r.get("status") == "ok" and k[1] == a.design]
+        est = max(walls) if walls else (2400 if a.design == "systolic_os" else 600)
         if os.path.exists(STOP):
             log("stop file present, exiting"); break
         if now() + est * 1.2 > deadline:
