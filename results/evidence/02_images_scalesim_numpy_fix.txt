@@ -1,0 +1,27 @@
+$ lab-sim:20261012 (numpy 2.5.3) — SCALE-Sim 3.0.0, bundled google.cfg + alexnet_part.csv
+numpy 2.5.3 numba 0.67.0
+    self.ifmap_buf.service_reads(incoming_requests_arr_np=ifmap_demand_line,
+  File "/opt/venv/lib/python3.12/site-packages/scalesim/memory/read_buffer.py", line 293, in service_reads
+    dram_stall_cycles = self.prefetch_active_buffer(start_cycle=start_cycle)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/venv/lib/python3.12/site-packages/scalesim/memory/read_buffer.py", line 423, in prefetch_active_buffer
+    self.last_prefetch_cycle = int(max(response_cycles_arr))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: only 0-dimensional arrays can be converted to Python scalars
+scalesim_exit=1
+
+$ lab-sim:20261012b (numpy 2.3.5) — same run
+numpy 2.3.5 numba 0.62.1
+Average IFMAP SRAM BW: 104.828 words/cycle
+Average Filter SRAM BW: 39.921 words/cycle
+Average OFMAP SRAM BW: 28.310 words/cycle
+Average IFMAP DRAM BW: 10.000 words/cycle
+Average Filter DRAM BW: 10.000 words/cycle
+Average OFMAP DRAM BW: 10.000 words/cycle
+Saving traces: Done!
+************ SCALE SIM Run Complete ****************
+scalesim_exit=0
+COMPUTE_REPORT.csv:
+LayerID, Total Cycles (incl. prefetch), Total Cycles, Stall Cycles, Overall Util %, Mapping Efficiency %, Compute Util %,
+0, 151028, 10475, 0, 15.355687835620525, 36.92626953125, 15.354222038767182,
+a758d5acdd011310d3d1b892d18d6cd55bbca94087f5519c369e76bdb4c9d22e

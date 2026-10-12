@@ -1,4 +1,4 @@
-== lab-sim: lab-sim:20261012 (sha256:58972d7927bc2a11fff3b6f9289b2d93cfa735b345d1f71c9ee726137a8112a9)
+== lab-sim: lab-sim:20261012b (sha256:c17110ff83f92b2b8da336ef44264f999d23a5fdedd4fc6f2c37588998fdcc3b)
 OK    yosys                  Yosys 0.69+154 (git sha1 30d62572e-dirty, Release, Clang /usr/bin/clang++ 21.1.8)
 OK    abc                    UC Berkeley, ABC 1.01 (compiled Sep 26 2026 05:26:38)
 OK    verilator              Verilator 5.053 devel rev v5.052-233-gf5f9ddef9 (mod)
@@ -29,19 +29,20 @@ OK    cocotb-config          2.1.0
 OK    py:cocotb              2.1.0
 OK    py:cocotb-coverage     2.0
 OK    py:pytest              9.1.1
-OK    py:numpy               2.5.3
+OK    py:numpy               2.3.5
 OK    py:ml_dtypes           0.6.0
 OK    py:pandas              3.0.6
 OK    py:matplotlib          3.11.2
 OK    py:scalesim            3.0.0
 OK    py:vcdvcd              2.6.0
 OK    py:pyyaml              6.0.3
-OK    py:numba               0.67.0
+OK    py:numba               0.62.1
 OK    cocotb+icarus   PROBE sim=icarus acc=60936 numpy=60936 sign_coverage=100%
 OK    cocotb+verilator   PROBE sim=verilator acc=60936 numpy=60936 sign_coverage=100%
 OK    verilator --lint-only -Wall (0 warnings)
 OK    verible-verilog-lint
 OK    yosys synth+abc+opt    884 cells
+OK    scalesim run          google.cfg + alexnet_part: 1 layers, COMPUTE_REPORT.csv sha256 a758d5acdd011310…
 == orfs: openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6
 OK    orfs:openroad          present; openroad -version prints: unknown (this build embeds no version string; identity = image digest)
 OK    orfs:yosys             Yosys 0.68+post (git sha1 UNKNOWN, Release, GNU /usr/local/bin/wrapped-cc/g++ 11.4.0)
@@ -55,4 +56,4 @@ OK    orfs:gcd-rules         /OpenROAD-flow-scripts/flow/designs/nangate45/gcd/r
 OK    orfs:gcd-sky130        /OpenROAD-flow-scripts/flow/designs/sky130hd/gcd/config.mk
 OK    orfs:checker           /OpenROAD-flow-scripts/flow/util/checkMetadata.py
 OK    orfs:qor-checker       /OpenROAD-flow-scripts/flow/util/checkQorMetrics.py
-== smoke: 55 OK, 0 MISSING -> PASS
+== smoke: 56 OK, 0 MISSING -> PASS

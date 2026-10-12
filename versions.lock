@@ -28,7 +28,7 @@ runtime:   # owner: infra, stage 01_runtime, recorded 2026-10-12 02:55:32 PDT
   verify:
     hello_world_digest: "hello-world@sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8"
     log: logs/01_runtime/start.log
-images:   # owner: infra, stage 02_images, recorded 2026-10-12 03:22:28 PDT
+images:   # owner: infra, stage 02_images, recorded 2026-10-12 03:38:07 PDT
   orfs:
     ref: "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6"
     tag: "26Q3-600-g3a964e13f"   # newest-but-5-commits tag that still ships rules-base.json + checkMetadata.py (see COORDINATION.md Decision 6)
@@ -37,11 +37,11 @@ images:   # owner: infra, stage 02_images, recorded 2026-10-12 03:22:28 PDT
     size_bytes: 1576609655
     flow_dir: /OpenROAD-flow-scripts/flow
   lab_sim:
-    ref: "lab-sim:20261012"   # local build; also lab-sim:latest
-    image_id: "sha256:58972d7927bc2a11fff3b6f9289b2d93cfa735b345d1f71c9ee726137a8112a9"
-    size_bytes: 1080790468
+    ref: "lab-sim:20261012b"   # local build; also lab-sim:latest
+    image_id: "sha256:c17110ff83f92b2b8da336ef44264f999d23a5fdedd4fc6f2c37588998fdcc3b"
+    size_bytes: 1076914839
     dockerfile_sha256: 43cb5be5702132554a2037a0f6eb994f21b2f9fe3d2f25c7dc0ff3bf1f3b5d5c
-    requirements_lock_sha256: 10e029ea814ca5d6cfc9bea7e694684048f06f5da6f529e019efd067153a1db3
+    requirements_lock_sha256: e270e02af758cc04f2397e404f53f7891223c1c41c7e559cc8c61370d8eec57d
     base: "ubuntu:22.04@sha256:5ec03bb3441e8b0bf3b4f9cd4629a1ae763010dc3035bb8da3ae6cf026486401"
     oss_cad_suite: {date: "2026-09-28", url: "https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-09-28/oss-cad-suite-linux-x64-20260928.tgz", sha256: 6d04cf3e36c45d4eacbe2fa07f3860b9a86f503c2b725bdee4d02e54defbf80d}
     verible: {version: "v0.0-4296-g0f262651", url: "https://github.com/chipsalliance/verible/releases/download/v0.0-4296-g0f262651/verible-v0.0-4296-g0f262651-linux-static-x86_64.tar.gz", sha256: 8569defb891d2316067613ea00442af28a7a09d405d95b54c0c91f9942d26635}
@@ -51,7 +51,7 @@ images:   # owner: infra, stage 02_images, recorded 2026-10-12 03:22:28 PDT
     apt: "ca-certificates=20260601~22.04.1 curl=7.81.0-1ubuntu1.29 g++=4:11.2.0-1ubuntu1 git=1:2.34.1-1ubuntu1.17 make=4.3-4.1build1 perl=5.34.0-3ubuntu1.9 time=1.9-0.1build2 "
   timeloop: "SKIPPED — optional (TASK.md §3); see COORDINATION.md Decisions for the reason"
   smoke: |   # docker/smoke.sh output, verbatim (home path scrubbed)
-    == lab-sim: lab-sim:20261012 (sha256:58972d7927bc2a11fff3b6f9289b2d93cfa735b345d1f71c9ee726137a8112a9)
+    == lab-sim: lab-sim:20261012b (sha256:c17110ff83f92b2b8da336ef44264f999d23a5fdedd4fc6f2c37588998fdcc3b)
     OK    yosys                  Yosys 0.69+154 (git sha1 30d62572e-dirty, Release, Clang /usr/bin/clang++ 21.1.8)
     OK    abc                    UC Berkeley, ABC 1.01 (compiled Sep 26 2026 05:26:38)
     OK    verilator              Verilator 5.053 devel rev v5.052-233-gf5f9ddef9 (mod)
@@ -82,19 +82,20 @@ images:   # owner: infra, stage 02_images, recorded 2026-10-12 03:22:28 PDT
     OK    py:cocotb              2.1.0
     OK    py:cocotb-coverage     2.0
     OK    py:pytest              9.1.1
-    OK    py:numpy               2.5.3
+    OK    py:numpy               2.3.5
     OK    py:ml_dtypes           0.6.0
     OK    py:pandas              3.0.6
     OK    py:matplotlib          3.11.2
     OK    py:scalesim            3.0.0
     OK    py:vcdvcd              2.6.0
     OK    py:pyyaml              6.0.3
-    OK    py:numba               0.67.0
+    OK    py:numba               0.62.1
     OK    cocotb+icarus   PROBE sim=icarus acc=60936 numpy=60936 sign_coverage=100%
     OK    cocotb+verilator   PROBE sim=verilator acc=60936 numpy=60936 sign_coverage=100%
     OK    verilator --lint-only -Wall (0 warnings)
     OK    verible-verilog-lint
     OK    yosys synth+abc+opt    884 cells
+    OK    scalesim run          google.cfg + alexnet_part: 1 layers, COMPUTE_REPORT.csv sha256 a758d5acdd011310…
     == orfs: openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6
     OK    orfs:openroad          present; openroad -version prints: unknown (this build embeds no version string; identity = image digest)
     OK    orfs:yosys             Yosys 0.68+post (git sha1 UNKNOWN, Release, GNU /usr/local/bin/wrapped-cc/g++ 11.4.0)
@@ -108,4 +109,4 @@ images:   # owner: infra, stage 02_images, recorded 2026-10-12 03:22:28 PDT
     OK    orfs:gcd-sky130        /OpenROAD-flow-scripts/flow/designs/sky130hd/gcd/config.mk
     OK    orfs:checker           /OpenROAD-flow-scripts/flow/util/checkMetadata.py
     OK    orfs:qor-checker       /OpenROAD-flow-scripts/flow/util/checkQorMetrics.py
-    == smoke: 55 OK, 0 MISSING -> PASS
+    == smoke: 56 OK, 0 MISSING -> PASS
