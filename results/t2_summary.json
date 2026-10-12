@@ -1,5 +1,5 @@
 {
-  "generated_epoch": 1791803727,
+  "generated_epoch": 1791807216,
   "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
   "tool_versions": [
     "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)",
@@ -274,37 +274,37 @@
     "nangate45/systolic_os": {
       "status": "run",
       "ppa": {
-        "area_um2": 22961.1,
-        "utilization_frac": 0.307407,
-        "wns_setup_ns": 2.02852,
+        "area_um2": 22712.4,
+        "utilization_frac": 0.307353,
+        "wns_setup_ns": 2.02729,
         "tns_setup_ns": 0,
-        "wns_hold_ns": 0.0760753,
-        "power_total_w": 0.0289062,
-        "power_leakage_w": 0.000424788,
-        "cell_count": 29420,
-        "stdcell_count": 11388,
+        "wns_hold_ns": 0.0723738,
+        "power_total_w": 0.0285107,
+        "power_leakage_w": 0.000418963,
+        "cell_count": 29097,
+        "stdcell_count": 11152,
         "drc_errors": 0,
-        "wirelength": 146026
+        "wirelength": 144716
       },
       "stage_runtime_s": {
-        "cts": 18.97,
-        "detailedplace": 18.02,
-        "finish": 60.05,
-        "finish_merge": 14.68,
-        "floorplan": 6.25,
-        "globalplace": 45.0,
-        "globalplace_io": 1.46,
-        "globalplace_skip_io": 9.09,
-        "globalroute": 133.59,
-        "placeopt": 12.88,
-        "synth": 51.95
+        "cts": 24.58,
+        "detailedplace": 19.98,
+        "finish": 51.61,
+        "finish_merge": 12.4,
+        "floorplan": 7.93,
+        "globalplace": 84.24,
+        "globalplace_io": 2.74,
+        "globalplace_skip_io": 14.86,
+        "globalroute": 362.31,
+        "placeopt": 25.35,
+        "synth": 68.34
       },
-      "wall_s": 1175,
+      "wall_s": 1704,
       "gds": {
         "path": "orfs/work/results/nangate45/systolic_os/base/6_final.gds",
-        "bytes": 9502292,
-        "sha256": "cb9cacb248ef95e413a0d13cbdc58fa8d20c99f5b3f54397e92b58b64b4d5e4f",
-        "sha256_timestamps_zeroed": "11e3da0108a32ea939e999ae6bb20f9912350de97964ba1f0575937a55868b82"
+        "bytes": 9286662,
+        "sha256": "4b645f462584331d5d288dbf722b4fbfae76a77c659c61fa1174dab3e6572960",
+        "sha256_timestamps_zeroed": "1d676f34b49e776753de3d8b905700f1ef26de9f63f6f0f8830b30603b14a68c"
       },
       "checks": {
         "thresholds_pass": null,
@@ -313,8 +313,26 @@
       },
       "threshold_check": null,
       "rtl": {
-        "last_rtl_commit": "a2cf73c",
-        "note": "EARLIER RTL (per-PE valid registers), superseded by 7173c7f; recorded from git history, not hashed at run time"
+        "sha256_mac_plus_systolic": "85f945db2d569064eb5e6262f9986ef1cced65591641aa9cd3ac51d0fc5bd3f9",
+        "last_rtl_commit": "7173c7f"
+      },
+      "previous_rtl_result": {
+        "rtl_last_commit": "a2cf73c",
+        "note": "earlier RTL (per-PE valid registers), superseded by 7173c7f; kept for comparison",
+        "ppa": {
+          "area_um2": 22961.1,
+          "utilization_frac": 0.307407,
+          "wns_setup_ns": 2.02852,
+          "tns_setup_ns": 0,
+          "wns_hold_ns": 0.0760753,
+          "power_total_w": 0.0289062,
+          "power_leakage_w": 0.000424788,
+          "cell_count": 29420,
+          "stdcell_count": 11388,
+          "drc_errors": 0,
+          "wirelength": 146026
+        },
+        "wall_s": 1175
       },
       "pass": true
     }

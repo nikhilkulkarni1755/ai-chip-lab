@@ -1,34 +1,34 @@
 {
   "ppa": {
-    "area_um2": 22961.1,
-    "utilization_frac": 0.307407,
-    "wns_setup_ns": 2.02852,
+    "area_um2": 22712.4,
+    "utilization_frac": 0.307353,
+    "wns_setup_ns": 2.02729,
     "tns_setup_ns": 0,
-    "wns_hold_ns": 0.0760753,
-    "power_total_w": 0.0289062,
-    "power_leakage_w": 0.000424788,
-    "cell_count": 29420,
-    "stdcell_count": 11388,
+    "wns_hold_ns": 0.0723738,
+    "power_total_w": 0.0285107,
+    "power_leakage_w": 0.000418963,
+    "cell_count": 29097,
+    "stdcell_count": 11152,
     "drc_errors": 0,
-    "wirelength": 146026
+    "wirelength": 144716
   },
-  "wall_s": 1175,
+  "wall_s": 1704,
   "checks": {
     "thresholds_pass": null,
     "drc_errors_zero": true,
     "gds_exists": true
   },
   "stage_runtime_s": {
-    "cts": 18.97,
-    "detailedplace": 18.02,
-    "finish": 60.05,
-    "finish_merge": 14.68,
-    "floorplan": 6.25,
-    "globalplace": 45.0,
-    "globalplace_io": 1.46,
-    "globalplace_skip_io": 9.09,
-    "globalroute": 133.59,
-    "placeopt": 12.88,
-    "synth": 51.95
+    "cts": 24.58,
+    "detailedplace": 19.98,
+    "finish": 51.61,
+    "finish_merge": 12.4,
+    "floorplan": 7.93,
+    "globalplace": 84.24,
+    "globalplace_io": 2.74,
+    "globalplace_skip_io": 14.86,
+    "globalroute": 362.31,
+    "placeopt": 25.35,
+    "synth": 68.34
   }
 }
