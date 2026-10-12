@@ -162,7 +162,7 @@ def summary(a):
         st = json.load(open(os.path.join(work, "netlist_stat.json")))
         top = st["modules"].get("\\systolic_os") or st["modules"].get("systolic_os")
         by_type = {k.lstrip("\\"): v for k, v in top["num_cells_by_type"].items()}
-        values["netlist_cell_instances"] = top["num_cells"]
+        values["netlist_cell_instances"] = top["num_cells"] or sum(by_type.values())
         values["netlist_cells_by_type"] = dict(sorted(by_type.items()))
         values["netlist_flops"] = sum(v for k, v in by_type.items() if k.startswith(("DFF", "SDFF")))
         values["netlist_buffers"] = sum(v for k, v in by_type.items() if k.startswith(("BUF", "CLKBUF")))
@@ -177,6 +177,29 @@ def summary(a):
     except Exception as e:  # noqa: BLE001
         values["netlist_stat_error"] = repr(e)
     checks["all_netlist_cells_have_models"] = step_rc.get("cells") == 0
+    checks["all_flops_clocked_by_clk"] = step_rc.get("clock_check") == 0
+    values["cell_treatment"] = {
+        "logic gates, full/half adders, resized gates (X1/X2/X4 variants)": "function taken from the Liberty file; part of the proof and of the simulation",
+        "buffers (BUF_*), incl. timing-repair and output buffers": "Liberty function Z = A (identity); kept in the netlist, part of the proof and of the simulation",
+        "clock-tree buffers (CLKBUF_*)": "Liberty function Z = A; simulated as the real clock path in the gate-level simulation; "
+                                         "the equivalence proof assumes one global clock, so the clock tree is covered by the "
+                                         "separate structural check all_flops_clocked_by_clk (every flop's clock pin resolves "
+                                         "to the port clk), not by the SMT proof",
+        "flip-flops (DFF_X1)": "Liberty ff(IQ, IQN) group, next_state D, clocked_on CK; Yosys builds two identical "
+                               "registers per cell (Q and QN), opt_merge folds them into one; 806 registers remain",
+        "tie cells (LOGIC0/LOGIC1)": "none instantiated in this netlist (count in netlist_tie_cells)",
+        "fill / tap / antenna cells": "not present in 6_final.v: ORFS writes the netlist without physical-only cells, which "
+                                      "have no logic pins; nothing was removed by this stage",
+    }
+    values["not_covered"] = [
+        "timing of any kind (setup/hold, clock skew, glitches): all checks are zero-delay",
+        "physical correctness (DRC, LVS, the GDS itself): only the Verilog netlist 6_final.v is checked",
+        "power/ground connectivity (the netlist has no supply pins)",
+        "cells of the library that the netlist does not instantiate (17 library cells have no Liberty function and are "
+        "black boxes; the run fails if the netlist uses one)",
+        "behaviour before the first clear: registers start undefined in both designs (x-propagating proof; "
+        "the simulation starts with clear)",
+    ]
     kep = read(os.path.join(work, "kepler_check.txt"))
     values["orfs_builtin_lec"] = {
         "what": "ORFS LEC_CHECK=1 runs Kepler-Formal on 1_synth_lec.v vs 6_final_lec.v "
@@ -288,6 +311,20 @@ def summary(a):
             "lock_holds": len(holds),
             "seconds": runtimes.get("eqy_routed"), "chunks": len(chunks),
             "finished": fin.isdigit(),
+            "scope_exact": {
+                "gold": "rtl/systolic_os.sv + rtl/mac_int8.sv, flattened (R=4, C=4)",
+                "gate": "flat routed netlist 6_final.v (one module, no mac_int8 hierarchy), sha256 in inputs.routed_netlist_sha256",
+                "cell_models": "nangate45 cell functions from NangateOpenCellLibrary_typical.lib of the pinned ORFS image "
+                               "(path and sha256 in inputs)",
+                "register_correspondence": "806 flops matched by name: operand, skew and valid registers by the RTL name on "
+                                           "their Q net; the 512 accumulator bits by the output port bit they drive "
+                                           "(acc_o[32*(4*i+j)+b]), since the router renamed their Q nets",
+                "cut_points": "operand registers (a_q, b_q), skew registers (a_sr, b_sr), valid delay line, primary inputs",
+                "partitions": "27 = 16 per-PE cones (accumulator register + 8x8 signed multiplier + 32-bit adder + clear/"
+                              "valid gating, i.e. mac_int8 including the multiplier, once per PE) + 11 wrapper partitions "
+                              "(a_sr, b_sr, a_q, b_q register banks, 6 valid taps, busy)",
+                "kind": "zero-delay logical (sequential, x-propagating) equivalence per partition; not a timing check",
+            },
             "scope": "whole flat routed netlist vs flattened RTL. The routed netlist has no hierarchy, so the "
                      "Part 1 split is applied by name: 16 per-PE partitions, each = the 32 acc_o bits of one PE "
                      "with accumulator register + INT8 multiplier + 32-bit adder + clear/valid gating (i.e. "
@@ -319,7 +356,8 @@ def summary(a):
             ev.append(f"negative control [{what}]: partition {part}: "
                       f"{r[0] if r else 'no result'}; EQY {nstatus} (must be FAIL)")
         evidence["11_eqy_routed.txt"] = "\n".join(ev) + "\n"
-        eqy_required = ["eqy_routed_all_partitions_proved", "all_netlist_cells_have_models"] + [
+        eqy_required = ["eqy_routed_all_partitions_proved", "all_netlist_cells_have_models",
+                        "all_flops_clocked_by_clk"] + [
             f"eqy_neg_{t}_detected" for t, _, _ in EQY_NEG]
         eqy_pass = all(checks[c] for c in eqy_required)
     else:

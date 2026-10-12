@@ -284,6 +284,14 @@ fi
 if want eqy && in_phase finish; then
   RESUME=0 step eqy_routed_verdict 300 equiv_verdict || true
 fi
+# Clock tree: the equivalence proof models every flop as clocked by one global clock, so
+# it does not look at the clock nets.  Checked separately and structurally: after the
+# Liberty functions are applied (clock buffers are identity functions), the clock pin of
+# every one of the 806 flops must be the net `clk` itself.
+clock_check() {
+  tmo "$TMO" yosys -q -l "$WORK/clock_check.log" -p "read_liberty -ignore_miss_func $LIB; read_verilog $NETLIST; hierarchy -check -top systolic_os; flatten; proc; opt_merge; opt_clean; select -assert-count 806 t:\$_DFF_P_; select -assert-count 806 w:clk %co1:+\$_DFF_P_[C] t:\$_DFF_P_ %i; select -assert-none t:\$_DFF_P_ w:clk %co1:+\$_DFF_P_[C] %d"
+}
+in_phase finish && { RESUME=0 step clock_check 300 clock_check || true; }
 if want eqy; then
   in_phase eqy_neg_rtl_mac && step eqy_neg_rtl_mac 540 equiv_neg rtl_mac systolic_os.acc_o.0 rtl mac_int8.sv \
     "s/acc <= acc + 32'(prod);/acc <= acc + 32'(prod) + 32'sd1;/"
