@@ -40,7 +40,9 @@ nr = [k for k in planned if k not in by_key]
 out = dict(
     sweep="A (SCALE-Sim 3.0.0 architecture sweep)", rows_total=len(rows), status_counts=dict(st),
     planned_points=len(planned), not_run_points=len(nr), coverage_per_topology=cov,
-    not_run_sample=nr[:12], best_dataflow_default_sram=best, errored_points=err,
+    not_run_sample=nr[:12], cut_points=sorted(nr),
+    accounting=dict(planned=len(planned), done_ok=st.get("ok", 0), errored_or_skipped_with_diagnosis=len(err), cut_not_reached=len(nr),
+                    cut_reason="sweep driver stops at the Phase 1 gate (budget_part2.json deadline_sweeps_stop_epoch); points run cheapest-estimated-first at low lock priority behind stage jobs, so the most expensive points were not reached"), best_dataflow_default_sram=best, errored_points=err,
     notes=["SCALE-Sim ran in CALC interface-bandwidth mode (bundled scale.cfg): stall_cycles = 0 is structural there "
            "(stalls are not modelled in that mode) and dram_bw_* is SCALE-Sim's estimated DRAM demand, not a measured stall effect.",
            "SRAM levels are per buffer: small 16 kB, default 64 kB, large 1024 kB.",
