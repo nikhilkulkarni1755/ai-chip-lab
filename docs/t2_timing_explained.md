@@ -34,7 +34,7 @@ Two comparisons were made. The second one is the real one.
 `metadata-base-ok.json` files were deleted in Feb 2025; no power value). I un-padded the rule limits with ORFS's generator formulas
 (`docs/t2_crosscheck_tolerance.md`, commit a2c2d54, fixed before comparing). sky130hd/gcd matched; nangate45/gcd did not (setup WNS -0.162 vs implied -0.1805,
 TNS -7.09 vs -7.94, wirelength 4429 vs ~6277; all better than the reference). This criterion compared against an *inferred* number and is kept in
-`results/p2_21_orfs_crosscheck.json` as `superseded` (Decision P2-5).
+`results/p2_21_orfs_crosscheck.json` as `superseded` (Decision P2-5 in COORDINATION.md).
 
 **2. Against ORFS's measured CI build of the exact pinned commit (`matches_published_dashboard`).** The public QoR dashboard
 (https://dashboard.precisioninno.com, `GET /api/commits/25781/metrics`, retrieved 2026-10-12, raw files in `results/t2/published/`) holds the CI build of commit

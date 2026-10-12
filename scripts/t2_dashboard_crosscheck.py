@@ -56,13 +56,14 @@ for k, d in out["designs"].items():
                  "written_before_run": "9b81746", "measured": meas + f" | exact within 1 %: {d['exact_1pct_informational']}", "pass": d["matches_published_dashboard"]})
 sup = []
 for k, d in old["designs"].items():
+    outs = [m for m, r in d["two_sided"].items() if not r["within_band"]]
     sup.append({"name": f"matches_published[{k}] (implied reference from rules-base.json)", "threshold": "docs/t2_crosscheck_tolerance.md (a2c2d54)",
-                "measured": f"{d['matches_published']} (nangate45: setup WNS/TNS and wirelength outside the implied band, all better)", "pass": d["matches_published"],
-                "reason": "compared against a number inferred by un-padding rules-base.json, not a publication; rules-base.json for this design is 4 weeks older than the pinned commit, and the real published measurement of the pinned commit equals our run - see COORDINATION.md Decision P2-5"})
+                "measured": f"{d['matches_published']}: " + ("all band metrics inside the implied band" if not outs else "outside the implied band (all on the better side): " + ", ".join(outs)), "pass": d["matches_published"],
+                "reason": "compared against a number inferred by un-padding rules-base.json, not a publication; rules-base.json for this design is 4 weeks older than the pinned commit, and the measured CI build of the pinned commit equals our run - see COORDINATION.md Decision P2-5"})
 p2 = {"stage": "21_orfs_crosscheck", "pass": out["matches_published_dashboard"],
       "oracle": "ORFS's public QoR dashboard measurement of exactly the pinned commit 3a964e13f (CI build, retrieved via its public API); independent of our run",
       "criteria": crit, "superseded": sup,
       "commands": ["python3 scripts/t2_dashboard_crosscheck.py", "python3 scripts/t2_crosscheck.py"], "seeds": "none",
       "evidence": ["results/evidence/21_orfs_crosscheck.txt", "results/t2_dashboard_crosscheck.json", "results/t2_crosscheck.json", "docs/t2_timing_explained.md"],
-      "finding": "our runs equal the dashboard's measurement of the pinned commit on all 430/439 non-profiling numeric metrics (the 9 that differ are fastroute wall-clock profiling); the implied-reference miss for nangate45 comes from a stale rules-base.json"}
+      "finding": "our runs equal the dashboard's measurement of the pinned commit on every non-profiling numeric metric (nangate45: 430 compared, sky130hd: 439 compared; in each design only 9 FastRoute wall-clock profiling fields differ); the implied-reference miss for nangate45 comes from a stale rules-base.json"}
 json.dump(p2, open(os.path.join(LAB, "results", "p2_21_orfs_crosscheck.json"), "w"), indent=2)
