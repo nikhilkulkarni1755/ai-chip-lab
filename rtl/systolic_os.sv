@@ -31,34 +31,36 @@ module systolic_os #(
   output      logic [R*C*32-1:0] acc_o      // acc_o[32*(i*C+j) +: 32] = OUT[i][j]
 );
 
-  // Operands as they arrive at PE(i,j): A (with its valid) from the west,
-  // B from the north.  Column 0 / row 0 are fed by the skew registers.
+  // Operands as they arrive at PE(i,j): A from the west, B from the north.
+  // Column 0 / row 0 are fed by the skew registers.
   logic [R-1:0][C-1:0][7:0] a_w;
   logic [R-1:0][C-1:0][7:0] b_n;
-  logic [R-1:0][C-1:0]      v_w;
-  logic [R-1:0]             skew_busy;
+
+  // --------------------------------------------------------------- valid
+  // Step k reaches every PE on the anti-diagonal i+j = d exactly d clocks
+  // after it was presented, so one shared delay line serves all PEs:
+  // v_d[d] = in_valid delayed by d clocks.
+  localparam int D = R + C - 1;  // number of anti-diagonals
+  logic [D-1:0] v_d;
+  assign v_d[0] = in_valid;
+  if (D > 1) begin : g_valid
+    logic [D-2:0] v_sr;
+    always_ff @(posedge clk) v_sr <= clear ? '0 : v_d[D-2:0];
+    assign v_d[D-1:1] = v_sr;
+  end
+  assign busy = |v_d;
 
   // ---------------------------------------------------------------- skew
-  // Row i of A (and its valid) is delayed by i clocks.
+  // Row i of A is delayed by i clocks.
   for (genvar i = 0; i < R; i++) begin : g_a_skew
     if (i == 0) begin : g_wire
-      assign a_w[i][0]    = a_i[8*i+:8];
-      assign v_w[i][0]    = in_valid;
-      assign skew_busy[i] = 1'b0;
+      assign a_w[i][0] = a_i[8*i+:8];
     end else begin : g_dly
       logic [8*i-1:0] a_sr;
-      logic [  i-1:0] v_sr;
       logic [8*i+7:0] a_tap;
-      logic [    i:0] v_tap;
       assign a_tap = {a_sr, a_i[8*i+:8]};
-      assign v_tap = {v_sr, in_valid};
-      always_ff @(posedge clk) begin
-        a_sr <= a_tap[8*i-1:0];
-        v_sr <= clear ? '0 : v_tap[i-1:0];
-      end
-      assign a_w[i][0]    = a_tap[8*i+:8];
-      assign v_w[i][0]    = v_tap[i];
-      assign skew_busy[i] = |v_sr;
+      always_ff @(posedge clk) a_sr <= a_tap[8*i-1:0];
+      assign a_w[i][0] = a_tap[8*i+:8];
     end
   end
 
@@ -76,15 +78,15 @@ module systolic_os #(
   end
 
   // ------------------------------------------------------------- PE grid
-  // PE(i,j) = MAC + registers that hand A (and valid) to the east
-  // neighbour and B to the south neighbour.
+  // PE(i,j) = MAC + registers that hand A to the east neighbour and B to
+  // the south neighbour.
   for (genvar i = 0; i < R; i++) begin : g_row
     for (genvar j = 0; j < C; j++) begin : g_col
 
       mac_int8 u_mac (
         .clk  (clk),
         .clear(clear),
-        .valid(v_w[i][j]),
+        .valid(v_d[i+j]),
         .a    (a_w[i][j]),
         .b    (b_n[i][j]),
         .acc  (acc_o[32*(i*C+j)+:32])
@@ -92,13 +94,8 @@ module systolic_os #(
 
       if (j + 1 < C) begin : g_east
         logic [7:0] a_q;
-        logic       v_q;
-        always_ff @(posedge clk) begin
-          a_q <= a_w[i][j];
-          v_q <= v_w[i][j] & ~clear;
-        end
+        always_ff @(posedge clk) a_q <= a_w[i][j];
         assign a_w[i][j+1] = a_q;
-        assign v_w[i][j+1] = v_q;
       end
 
       if (i + 1 < R) begin : g_south
@@ -109,8 +106,6 @@ module systolic_os #(
 
     end
   end
-
-  assign busy = (|v_w) | (|skew_busy);
 
 endmodule
 
