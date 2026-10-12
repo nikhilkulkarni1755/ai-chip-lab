@@ -65,13 +65,46 @@ def main():
                  % ("PASS" if ft["pass"] else "FAIL", ft["command"], ft["make_all_exit_code"], ", ".join(ft["not_run_forced_failure"]) or "-",
                     ", ".join(ft["executed_for_real"]) or "none", ", ".join(ft["skipped_with_reason"]) or "none",
                     "; ".join("%s (%s)" % kv for kv in ft.get("excluded_from_this_test", {}).items()) or "none"))
+        # how the executed test differs from the test as first specified (generated from the recorded test, not typed per run)
+        n_skip = len(ft["skipped_with_reason"]); excl = ft.get("excluded_from_this_test", {})
+        would_run = [s for s, why in ft["skipped_with_reason"].items() if "would say: RUN" in why]
+        L += ["", "**How this test differs from the test as first specified, and why.** The specification (TASK2 P1.2 item 3) was: run `make all`, "
+              "temporarily force one stage marker to fail, confirm that all stages still run, the demo is built and the exit status is non-zero "
+              "listing the failed stage, then restore. What was executed differs in these points:", ""]
+        L.append("1. *The failure is injected by a hook, not by a failing recipe.* `MAKE_ALL_FAIL=%s` makes `scripts/make_all.py` skip that stage's recipe, "
+                 "switch its marker from `.done` to `.failed` and count the stage as failed. This matches the specification (\"forcing a stage marker to fail\"); "
+                 "it does not show a recipe that fails by itself." % ft["forced_stage"])
+        L.append("2. *Most later stages were skipped, not executed.* The run used the marker-only resume (`RESUME=markers`): the %d stages that had already "
+                 "succeeded today (%s) were skipped without checking whether their inputs had changed%s. Reason: a full pass costs about 3 hours of the single "
+                 "heavy-job queue (Decision P2-1). Consequence: the test shows the control flow continuing past the failure and reaching the end; it does "
+                 "**not** show a heavy stage being executed after a failure. Executed for real after the forced failure: %s."
+                 % (n_skip, ", ".join(ft["skipped_with_reason"]), (" (the input-aware rule of `RESUME=1` would have rerun: %s)" % ", ".join(would_run)) if would_run else "",
+                    ", ".join(ft["executed_for_real"]) or "nothing"))
+        if excl:
+            L.append("3. *Excluded from the test:* %s. A stage with a `.failed` marker is rerun by the resume rule; this one was left out to keep the lock free." %
+                     "; ".join("`%s` — %s" % (k, v.split(": ", 1)[-1]) for k, v in excl.items()))
+        L.append("%d. *Sweeps were started but not waited for* (`SWEEPS_DETACH=1`), and Task 3's criterion-A jobs were disabled (`T3_USER_DEADLINE=1`)." % (4 if excl else 3))
+        L.append("%d. *One assertion was changed while the test was written:* from \"only the forced stage failed\" to \"the forced stage is first in the failed list\", "
+                 "so that a stage failing for its own reasons would be listed instead of failing the test. In this run no other stage failed (%s), so the original, "
+                 "stricter assertion would also have held." % (5 if excl else 4, ft.get("other_stages_that_failed_for_their_own_reasons") or "none"))
+        L.append("")
+        L.append("It is therefore a weaker check than a full `make all` with one stage really failing: it verifies the fail-soft bookkeeping and exit status on the "
+                 "real Makefile and markers, with %d of %d stages actually executed. Execution of real recipes after a real failure is covered separately by "
+                 "(a) the unit test `scripts/tests/make_all_test.sh` on a scratch repository (cases A and J: every later recipe runs after one or two failing "
+                 "recipes; 23 checks) and (b) the recorded `make all` run below, when present, in which a stage fails with its own exit code."
+                 % (len(ft["executed_for_real"]), len(ft["stages"])))
     else:
         L.append("**`make all` fail-soft test:** not run yet.")
     al = d.get("make_all_run")
+    lastp = os.path.join(ROOT, "results", "make_all_last.json")
+    if os.path.exists(lastp):
+        la = json.load(open(lastp))
+        if "forced failure" not in la.get("mode", "") and "dry" not in la.get("mode", ""):
+            al = la; d["make_all_run"] = la
     if al:
         L.append("")
         L.append("**`make all` (%s):** exit %d; failed stages: %s; per stage: %s." % (al.get("mode"), al["exit_code"], ", ".join(al["failed_stages"]) or "none",
-                 "; ".join("%s %s%s" % (s["stage"], s["action"], (" — " + s["reason"]) if s["action"] == "skipped" else "") for s in al["stages"])))
+                 "; ".join("%s %s%s%s" % (s["stage"], s["action"], (" exit %s" % s["exit_code"]) if s.get("exit_code") not in (None, 0) else "", (" — " + s["reason"]) if s["action"] == "skipped" else "") for s in al["stages"])))
     d["pass"] = (not missing) and (not failed) and bool(ft and ft["pass"])
     d["missing_recipes"] = missing; d["failed_recipes"] = failed
     text = "\n".join(L) + "\n"
@@ -83,7 +116,8 @@ def main():
         except FileExistsError: time.sleep(0.2)
     try:
         cur = json.load(open(P))
-        for k in ("pass", "missing_recipes", "failed_recipes", "readme_note", "note_generated"): cur[k] = d[k]
+        for k in ("pass", "missing_recipes", "failed_recipes", "readme_note", "note_generated", "make_all_run"):
+            if k in d: cur[k] = d[k]
         json.dump(cur, open(P + ".tmp", "w"), indent=1); os.replace(P + ".tmp", P)
     finally:
         try: os.rmdir(mx)
