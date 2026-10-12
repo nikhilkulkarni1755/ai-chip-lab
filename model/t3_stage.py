@@ -92,7 +92,7 @@ def deterministic_files(root):
     for dp, dn, fs in os.walk(root):
         dn[:] = [x for x in dn if not x.startswith(".rerun")]     # kept pass-2 copy lives in <final>/.rerun
         for f in fs:
-            if f.endswith((".csv", ".json", ".cfg")) and "summary" not in f and f != "roofline2.json":
+            if f.endswith((".csv", ".json", ".cfg")) and "summary" not in f and f not in ("roofline2.json", "attempts.json"):   # attempts.json: scheduling bookkeeping, not a result
                 out.append(os.path.relpath(os.path.join(dp, f), root))
     return sorted(out)
 
@@ -108,7 +108,7 @@ def do_summary(out, rerun, prev_summary=None):
     if not os.path.isdir(rerun) and prev_summary and os.path.exists(prev_summary):
         prev_id = json.load(open(prev_summary)).get("identity", {})      # resumed from a finished run: pass 2 not repeated
     if prev_id and prev_id.get("compared_in_stage"):
-        b = list(prev_id["compared_in_stage"])
+        b = [x for x in prev_id["compared_in_stage"] if not x.endswith("attempts.json")]
     else:
         b = deterministic_files(rerun)
     # Per decision P2-6 the second in-stage pass covers only the cheap jobs; every other file is compared by
