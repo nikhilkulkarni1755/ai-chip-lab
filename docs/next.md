@@ -7,7 +7,7 @@ Measured reference points from this lab (see `results/t2_summary.json`, `results
 | Job | Measured |
 |---|---|
 | ORFS nangate45 `gcd`, one full flow | about 5 min (302 s wall) |
-| ORFS sky130hd `gcd`, one full flow | minutes, same order as nangate45 gcd (see `t2_summary.json` `wall_s`) |
+| ORFS sky130hd `gcd`, one full flow | about 11 min (646 s) |
 | ORFS nangate45 `systolic_os` 4x4, one full flow | about 28 min (1704 s) |
 | Task 1, 10,000 cases on two simulators | about 25 minutes including formal and equivalence |
 | Formal BMC depth 20 on the MAC | 318 s |
