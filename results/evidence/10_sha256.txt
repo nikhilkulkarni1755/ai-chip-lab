@@ -1,0 +1,6 @@
+$ sha256sum results/t1_verilator.csv results/t1_icarus.csv
+bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518  results/t1_verilator.csv
+bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518  results/t1_icarus.csv
+identical: True
+verilator: 10029 cases listed, 0 mismatching elements vs NumPy
+icarus: 10029 cases listed, 0 mismatching elements vs NumPy

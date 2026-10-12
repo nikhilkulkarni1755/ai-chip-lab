@@ -1,0 +1,67 @@
+{
+  "bins": 94,
+  "bins_hit": 94,
+  "percent": 100.0,
+  "points": {
+    "t1.operand.a_corner": {
+      "bins": 7,
+      "bins_hit": 7,
+      "missed": [],
+      "percent": 100.0
+    },
+    "t1.operand.a_sign": {
+      "bins": 3,
+      "bins_hit": 3,
+      "missed": [],
+      "percent": 100.0
+    },
+    "t1.operand.b_corner": {
+      "bins": 7,
+      "bins_hit": 7,
+      "missed": [],
+      "percent": 100.0
+    },
+    "t1.operand.b_sign": {
+      "bins": 3,
+      "bins_hit": 3,
+      "missed": [],
+      "percent": 100.0
+    },
+    "t1.operand.corner_cross": {
+      "bins": 49,
+      "bins_hit": 49,
+      "missed": [],
+      "percent": 100.0
+    },
+    "t1.operand.sign_cross": {
+      "bins": 9,
+      "bins_hit": 9,
+      "missed": [],
+      "percent": 100.0
+    },
+    "t1.result.acc_sign": {
+      "bins": 3,
+      "bins_hit": 3,
+      "missed": [],
+      "percent": 100.0
+    },
+    "t1.shape.cols": {
+      "bins": 4,
+      "bins_hit": 4,
+      "missed": [],
+      "percent": 100.0
+    },
+    "t1.shape.k": {
+      "bins": 5,
+      "bins_hit": 5,
+      "missed": [],
+      "percent": 100.0
+    },
+    "t1.shape.rows": {
+      "bins": 4,
+      "bins_hit": 4,
+      "missed": [],
+      "percent": 100.0
+    }
+  }
+}

@@ -1,0 +1,20 @@
+$ verilator --lint-only -Wall --top-module systolic_os rtl/mac_int8.sv rtl/systolic_os.sv
+- V e r i l a t i o n   R e p o r t: Verilator 5.053 devel rev v5.052-233-gf5f9ddef9 (mod)
+- Verilator: Built from 0.049 MB sources in 4 modules, into 0.060 MB in 3 C++ files needing 0.000 MB
+- Verilator: Walltime 0.057 s (elab=0.007, cvt=0.033, bld=0.000); cpu 0.054 s on 1 threads; allocated 19.848 MB
+[exit code 0]
+
+$ verilator --lint-only -Wall --top-module systolic_os -GR=1 -GC=1 rtl/mac_int8.sv rtl/systolic_os.sv
+- V e r i l a t i o n   R e p o r t: Verilator 5.053 devel rev v5.052-233-gf5f9ddef9 (mod)
+- Verilator: Built from 0.049 MB sources in 4 modules, into 0.021 MB in 3 C++ files needing 0.000 MB
+- Verilator: Walltime 0.024 s (elab=0.004, cvt=0.006, bld=0.000); cpu 0.015 s on 1 threads; allocated 19.637 MB
+[exit code 0]
+
+$ verilator --lint-only -Wall --top-module systolic_os -GR=3 -GC=5 rtl/mac_int8.sv rtl/systolic_os.sv
+- V e r i l a t i o n   R e p o r t: Verilator 5.053 devel rev v5.052-233-gf5f9ddef9 (mod)
+- Verilator: Built from 0.049 MB sources in 4 modules, into 0.058 MB in 3 C++ files needing 0.000 MB
+- Verilator: Walltime 0.034 s (elab=0.006, cvt=0.016, bld=0.000); cpu 0.032 s on 1 threads; allocated 20.027 MB
+[exit code 0]
+
+$ verible-verilog-lint --rules_config rtl/.rules.verible_lint rtl/mac_int8.sv rtl/systolic_os.sv
+[exit code 0]
