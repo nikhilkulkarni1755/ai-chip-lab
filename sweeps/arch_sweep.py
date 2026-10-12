@@ -100,7 +100,7 @@ def run_one(topo, df, R, C, sram):
     with tempfile.TemporaryDirectory() as td:
         cfg = sim.make_config(os.path.join(td, "c.cfg"), os.path.join(sim.SCALESIM_SRC, "configs/scale.cfg"),
                               R, C, df, kb, kb, kb)
-        res, _ = sim.run(cfg, tpath, os.path.join(td, "out"), gemm=g)
+        res, _ = sim.run_per_layer(cfg, tpath, td, gemm=g)   # per-layer invocations: bounded memory
     L = an.load_topology(tpath, g)
     macs = sum(l["M"] * l["N"] * l["K"] for l in L)
     cyc = sum(x["total_cycles"] for x in res)

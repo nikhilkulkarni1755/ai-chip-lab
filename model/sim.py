@@ -112,3 +112,28 @@ def run_gemm_points(points, rows, cols, dataflow, base_cfg, ifmap_kb=None, filte
         write_gemm_topology(topo, [(f"g{i}", m, n, k) for i, (m, n, k) in enumerate(points)])
         res, _ = run(cfg, topo, os.path.join(td, "out"), gemm=True)
     return res
+
+
+def run_per_layer(cfg, topo, td, gemm=False):
+    """One SCALE-Sim invocation per topology row; returns (per-layer dicts, merged report texts).
+    SCALE-Sim keeps every layer's demand/trace matrices alive until the whole run ends
+    (simulator.single_layer_sim_object_list), so many-layer / many-fold runs can exhaust memory; layers are
+    independent in SCALE-Sim, and model/test_perlayer.py checks per-layer == whole-topology results."""
+    import shutil
+    names = ["COMPUTE_REPORT.csv", "BANDWIDTH_REPORT.csv", "DETAILED_ACCESS_REPORT.csv"]
+    lines = open(topo).read().splitlines()
+    header, rows = lines[0], [l for l in lines[1:] if l.strip()]
+    res, merged = [], {n: None for n in names}
+    for i, row in enumerate(rows):
+        t1 = os.path.join(td, f"layer{i}.csv")
+        open(t1, "w").write(header + "\n" + row + "\n")
+        out_i = os.path.join(td, f"out{i}")
+        r, rd = run(cfg, t1, out_i, gemm=gemm)
+        r[0]["LayerID"] = i
+        res.append(r[0])
+        for n in names:
+            ls = open(os.path.join(rd, n)).read().splitlines()
+            body = ls[1].split(",", 1)[1]
+            merged[n] = (ls[0] + "\n" if merged[n] is None else merged[n]) + f"{i},{body}\n"
+        shutil.rmtree(out_i)
+    return res, merged

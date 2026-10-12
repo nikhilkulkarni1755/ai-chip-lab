@@ -81,24 +81,7 @@ def run_job(job, out):
 
 
 def run_per_layer(cfg, td, topo=None, gemm=False):
-    """Run each topology row as its own SCALE-Sim invocation; returns (results list, merged report texts)."""
-    topo = topo or TOPO
-    lines = open(topo).read().splitlines()
-    header, rows = lines[0], [l for l in lines[1:] if l.strip()]
-    res, merged = [], {r: None for r in sim_reports()}
-    for i, row in enumerate(rows):
-        t1 = os.path.join(td, f"layer{i}.csv")
-        open(t1, "w").write(header + "\n" + row + "\n")
-        out_i = os.path.join(td, f"out{i}")
-        r, rd = sim.run(cfg, t1, out_i, gemm=gemm)
-        r[0]["LayerID"] = i
-        res.append(r[0])
-        for name in merged:
-            ls = open(os.path.join(rd, name)).read().splitlines()
-            body = ls[1].split(",", 1)[1]            # drop this run's LayerID, renumber to i
-            merged[name] = (ls[0] + "\n" if merged[name] is None else merged[name]) + f"{i},{body}\n"
-        shutil.rmtree(out_i)
-    return res, merged
+    return sim.run_per_layer(cfg, topo or TOPO, td, gemm=gemm)
 
 
 def sim_reports():
