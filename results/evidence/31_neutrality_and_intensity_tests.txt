@@ -1,0 +1,8 @@
+$ python3 model/test_perlayer.py   # one SCALE-Sim invocation per layer == one combined invocation (CALC and USER mode)
+CALC per-layer == whole-topology for 3 layers; stall cycles [0, 0, 0]
+USER per-layer == whole-topology for 3 layers; stall cycles [0, 0, 0]
+test_perlayer: OK
+$ python3 model/test_parallel.py   # budgeted, resumed, layer-parallel run_job == serial per-layer run
+test_parallel: OK  parallel/resumed == serial for 3 layers; stalls [0, 0, 0]
+$ python3 model/test_intensity.py
+test_intensity: OK  Conv3_s AI = 43.5293 FLOP/B, FC AI = 1.9941 FLOP/B
