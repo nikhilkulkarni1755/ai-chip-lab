@@ -21,7 +21,7 @@ DIFFERING FILES (7), all explained:
     - cell_status rl2_user_ws_high / status: first run "blocked", rerun "not_run": the P2-8 probe (14:08:40-14:16:46) ran into results/t3 while
       the rerun was in progress; state, not a result, and not a SCALE-Sim number.
     - calc_mean_ifmap_reads_over_tensor ws 1.8638209376012307 vs 1.863820937601231 and os 4.846658492265955 vs ...954: a 1-ulp difference
-      in a computed number. Cause found: results/t3/roofline2.json was REWRITTEN BY ME at 13:55 and 14:19 by running the summary step natively
+      in a computed number. Cause found: results/t3/roofline2.json was REWRITTEN BY ME twice after 14:06 (about 14:12 and 14:19) by running the summary step natively
       in .venv-arch (Python 3.11.17); the rerun's was written inside the lab-sim container (Python 3.12.15), whose built-in sum() of floats
       uses compensated summation (changed in 3.12). The 21 per-layer inputs to that sum are byte-identical (rl2_calc_*.json are identical).
       It is a platform-of-the-summary-step difference introduced by my native regeneration, not nondeterminism of SCALE-Sim.
@@ -35,7 +35,7 @@ PROVENANCE (t3): "inputs unchanged start->end" is false. inputs_t3_start.json he
  70d5865 (13:25, verdict field in the summary, plot title), 8cd5d98 (14:12, during the rerun).
  scripts/t3_probe.sh and scripts/t3_p2_json.py are NOT repro inputs (inputs: arch, docker/requirements.lock, model, scripts/t3_run.sh);
  t3_run.sh itself changed in 00089ec only. "first run newer than last input commit" passed only because results/t3_summary.json was
- regenerated at 14:20 (mtime 1791840002); the first-run computations themselves date from 12:42-13:55 by the older scheduler, so strictly this
+ regenerated at 14:20 (mtime 1791840002); the first-run computations themselves date from 12:42-12:55 by the older scheduler, so strictly this
  line should not be read as satisfied either.
 
 PROPOSED (decision is main's, nothing excluded by me): attempts.json and timing.timing are bookkeeping/measurements, not results; propose
