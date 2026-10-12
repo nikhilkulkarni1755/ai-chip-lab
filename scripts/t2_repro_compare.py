@@ -13,8 +13,14 @@ plat, des = sys.argv[1], sys.argv[2]; var = sys.argv[3] if len(sys.argv) > 3 els
 P = X.paths(plat, des, var); new = X.rd(P["meta"])
 newrun = X.rd(P["run"]) if os.path.exists(P["run"]) else {}
 ngds = X.gds_norm_sha256(P["gds"]) if os.path.exists(P["gds"]) else None
+import shutil
+rid = "p2_%d" % newrun.get("start_epoch", 0)          # id of this fresh run (idempotent: same run -> same id)
+RUNS = os.path.join(LAB, "results", "repro", "runs"); os.makedirs(RUNS, exist_ok=True)
+mine = os.path.join(RUNS, f"{plat}_{des}_{rid}")
 comps = []
-for d in sorted(glob.glob(os.path.join(LAB, "results", "part1_snapshot", f"{plat}_{des}_*"))):
+earlier = sorted(glob.glob(os.path.join(LAB, "results", "part1_snapshot", f"{plat}_{des}_*"))) + \
+          sorted(d for d in glob.glob(os.path.join(RUNS, f"{plat}_{des}_p2_*")) if d != mine)
+for d in earlier:
     old = X.rd(os.path.join(d, "metadata.json")); h = X.rd(os.path.join(d, "hashes.json"))
     oldrun = X.rd(os.path.join(d, "t2_run.json")) if os.path.exists(os.path.join(d, "t2_run.json")) else {}
     diffs = {k: [old.get(k), new.get(k)] for k in sorted(set(old) | set(new)) if not X.NONDET.search(k) and old.get(k) != new.get(k)}
@@ -22,7 +28,11 @@ for d in sorted(glob.glob(os.path.join(LAB, "results", "part1_snapshot", f"{plat
     comps.append({"vs": os.path.basename(d), "identical": (not diffs) and gi, "differing_fields": diffs,
                   "localized_stages": sorted({k.split("__")[0] for k in diffs}), "gds_identical_ignoring_timestamps": gi,
                   "num_cores": [oldrun.get("num_cores"), newrun.get("num_cores")]})
-out = {"platform": plat, "design": des, "new_run_variant": var, "runs": len(comps) + 1,
+if not os.path.exists(mine):   # keep this run's metadata + hashes so later runs (run 4, ...) can compare against it
+    os.makedirs(mine); shutil.copy(P["meta"], os.path.join(mine, "metadata.json"))
+    if os.path.exists(P["run"]): shutil.copy(P["run"], os.path.join(mine, "t2_run.json"))
+    json.dump({"gds_sha256_timestamps_zeroed": ngds, "run_id": rid}, open(os.path.join(mine, "hashes.json"), "w"))
+out = {"platform": plat, "design": des, "new_run_variant": var, "new_run_id": rid, "runs": len(comps) + 1,
        "identical": bool(comps) and all(c["identical"] for c in comps),
        "verdict": "IDENTICAL" if comps and all(c["identical"] for c in comps) else "DIFFERENT",
        "new_gds_sha256_timestamps_zeroed": ngds, "comparisons": comps,
