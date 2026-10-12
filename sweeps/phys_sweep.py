@@ -92,7 +92,7 @@ def run_point(plat, des, period, util, timeout):
     try:
         e = t2_extract.extract(plat, des, var)
         rec.update(e["metrics"])
-        rec["stage_runtime_s"] = e["stage_runtime_s"]
+        rec["stage_runtime_s"] = e["stage_runtime_s"]; rec["flow_elapsed_s"] = e["total_elapsed_s_flow"]
         rec["status"] = "ok" if rc == 0 else "flow_error"
         rec["gds_exists"] = "gds" in e
         # crude closure flag from the flow's own number
@@ -132,21 +132,56 @@ def next_points(plat, des, periods, utils, done, min_step):
                 yield mid, u
 
 
+CUT_30 = "not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)"
+
+
 def part2_plan(done):
-    """Part 2 refinement plan (P1.6), in order: systolic_os 30 % 1.25..1.55 step .05; gcd 0.400..0.430 step .005 at
-    u40,u60; systolic_os u40,u50 at the 4 periods around the u30 frontier (known once step 1 is done)."""
+    """Part 2 plan (P1.6), final order (main, 12:38): (1) gcd 0.400..0.430 step .005 at u40,u60 (2-3 min each);
+    (2) systolic_os u40,u50 at 1.25, 1.20, 1.30 ns (the three periods nearest the 30 % frontier);
+    (3) only if lock time remains: systolic_os u30 confirmation points 1.30..1.55 (frontier already bracketed - low value)."""
     n45 = "nangate45"
-    for p in [1.25, 1.30, 1.35, 1.40, 1.45, 1.50, 1.55]:
-        yield n45, "systolic_os", p, 30
     for u in (40, 60):
         for i in range(0, 7):
             yield n45, "gcd", round(0.400 + 0.005 * i, 4), u
-    ok = sorted(k[2] for k, r in done.items() if k[1] == "systolic_os" and k[3] == 30 and r.get("status") == "ok" and r.get("closed"))
-    if ok:
-        f = min(ok)
+    for p in (1.25, 1.20, 1.30):
         for u in (40, 50):
-            for p in (f - 0.05, f, f + 0.05, f + 0.10):
-                yield n45, "systolic_os", round(p, 4), u
+            yield n45, "systolic_os", p, u
+    for p in (1.30, 1.35, 1.40, 1.45, 1.50, 1.55):
+        yield n45, "systolic_os", p, 30
+
+
+def stage_job_recent(window=120):
+    """True if a high-priority (stage) job is queued now or took/released the lock within `window` s (cheap heuristic)."""
+    wd = os.path.join(LAB, "coord", "heavy.waiting.d")
+    try:
+        for f in os.listdir(wd):
+            pid = f.split(".")[0]
+            try:
+                os.kill(int(pid), 0); return True
+            except Exception:
+                pass
+        lg = os.path.join(LAB, "logs", "part2", "lock.log")
+        for l in reversed(open(lg).read().splitlines()[-60:]):
+            m = re.match(r"(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d) (LOCK|FREE) \S+ (high|rc)", l)
+            if m and (m.group(2) == "LOCK" and " high " in l or m.group(2) == "FREE"):
+                if "pnr" in l.split()[3:4]: continue
+                if now() - time.mktime(time.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")) < window: return True
+                break
+    except Exception:
+        pass
+    return False
+
+
+def write_plan_status(a):
+    """Every planned point accounted for: done / timeout / failed / not_reached (results/sweeps/phys_plan_status.json)."""
+    done = load_done(); rows = []
+    for pl, de, p, u in part2_plan(done):
+        r = done.get(key(pl, de, p, u))
+        rows.append({"design": de, "clock_period_ns": p, "core_utilization": u,
+                     "state": "done" if r and r.get("status") == "ok" else (r["status"] if r else ("not_run_cut" if (de == "systolic_os" and u == 30) else "not_reached")),
+                     "reason": (CUT_30 if (not r and de == "systolic_os" and u == 30) else None),
+                     "wns_setup_ns": r.get("wns_setup_ns") if r else None})
+    json.dump({"updated_epoch": int(now()), "points": rows}, open(os.path.join(LAB, "results", "sweeps", "phys_plan_status.json"), "w"), indent=1)
 
 
 def main():
@@ -183,7 +218,7 @@ def main():
             pt = next(next_points(a.platform, a.design, periods, utils, done, a.min_step), None)
         if pt is None:
             log("no more points (grid + refinement exhausted)"); break
-        walls = [r["wall_s"] for k, r in done.items() if r.get("status") == "ok" and k[1] == a.design]
+        walls = [r.get("flow_elapsed_s") or min(r["wall_s"], 1500) for k, r in done.items() if r.get("status") == "ok" and k[1] == a.design]
         est = max(walls) if walls else (2400 if a.design == "systolic_os" else 600)
         if os.path.exists(STOP):
             log("stop file present, exiting"); break
@@ -193,9 +228,15 @@ def main():
         log(f"point {a.platform}/{a.design} period={p} util={u} (est {est}s)")
         if a.dry_run:
             print("would run", pt); npts += 1; done[key(a.platform, a.design, p, u)] = {"status": "dry"}; break
-        r = run_point(a.platform, a.design, p, u, max(a.timeout, 3600) if a.design == "systolic_os" else a.timeout)
+        if a.design == "systolic_os":      # do not start a long point right behind stage work
+            while stage_job_recent() and now() + est * 1.2 < deadline:
+                time.sleep(30)
+            if os.path.exists(STOP): log("stop file present, exiting"); break
+        r = run_point(a.platform, a.design, p, u, 900 if a.design == "systolic_os" else a.timeout)
         log(f"  -> {r['status']} wns={r.get('wns_setup_ns')} area={r.get('area_um2')} wall={r['wall_s']}s")
         npts += 1
+        write_plan_status(a)
+    write_plan_status(a)
     log("phys_sweep exit")
 
 
