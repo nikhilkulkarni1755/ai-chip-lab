@@ -1,0 +1,13 @@
+# Top-level Python deps of the lab-sim image (TASK.md §3). Compiled to requirements.lock with:
+#   uv pip compile docker/requirements.in --python-version 3.12 --python-platform x86_64-unknown-linux-gnu \
+#     --exclude-newer 2026-09-28T00:00:00Z --generate-hashes -o docker/requirements.lock
+cocotb==2.1.0
+cocotb-coverage==2.0
+pytest
+numpy
+ml_dtypes
+pandas
+matplotlib
+scalesim==3.0.0
+vcdvcd
+pyyaml
