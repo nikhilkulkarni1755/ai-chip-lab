@@ -10,12 +10,12 @@ STATUS
   PASS     Task 1: formal MAC proof (SBY) - checks: formal_bmc_pass=true, formal_prove_pass=true
   PASS     Task 1: RTL = netlist equivalence (EQY) - checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true
   PASS     Task 2: OpenROAD reference flow vs shipped thresholds - t2_summary.json: pass=true
-  RUNNING  Task 3: SCALE-Sim vs analytical model - summary says pass=true but a re-run is in progress
-  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 10 point(s) in results/sweeps/arch.jsonl
-  RUNNING  Sweep B: physical (ORFS) - sweep in progress; 12 point(s) in results/sweeps/phys.jsonl
-  PENDING  Repeatability rerun (repro) - no marker and no results/repro_report.json yet
+  FAIL     Task 3: SCALE-Sim vs analytical model - marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes).
+  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 53 point(s) in results/sweeps/arch.jsonl
+  RUNNING  Sweep B: physical (ORFS) - sweep in progress; 16 point(s) in results/sweeps/phys.jsonl
+  RUNNING  Repeatability rerun (repro) - stage in progress
 
-Elapsed: 2h 05m since start (2026-10-12 02:48:36 PDT), budget 6h
+Elapsed: 2h 44m since start (2026-10-12 02:48:36 PDT), budget 6h
 Machine: Intel(R) Core(TM) i7-7660U CPU @ 2.50GHz, 2 physical / 4 logical cores, 8 GB RAM, macOS 13.7.8 (x86_64)
 
 START / STOP THE VM

@@ -553,6 +553,98 @@ def t2_table(s2):
     return "".join(h)
 
 
+FORMULA = {"os": ("M, N", "K", "ceil(M/R)*ceil(N/C)", "T + R + C - 2"),
+           "ws": ("K, N", "M", "ceil(K/R)*ceil(N/C)", "T + 2R + C - 2"),
+           "is": ("K, M", "N", "ceil(K/R)*ceil(M/C)", "T + 2R + C - 2")}
+
+
+def t3_block(L, s3):
+    """Task 3 detail from t3_summary.json and the stage marker text; everything shown is read from those files."""
+    h = []
+    st, body, _ = stage_marker(L, "30_arch_model")
+    if st in ("failed", "blocked") and body:
+        h.append("<p><b>Stage marker (%s), written by the arch agent:</b></p><pre>%s</pre>" % (st, e(scrub_text(body)[:3000])))
+    chk = s3.get("checks") or {}
+    if chk:
+        h.append("<p><b>Criteria as recorded</b></p><div class='tw'><table><thead><tr><th>check</th><th>result</th></tr></thead><tbody>")
+        for k, v in sorted(chk.items()):
+            h.append("<tr><td><code>%s</code></td><td class='%s'>%s</td></tr>" % (e(k), "okt" if v else "badt", "pass" if v else "FAIL"))
+        h.append("</tbody></table></div>")
+    fit = s3.get("fit") or {}
+    if fit:
+        h.append("<p><b>Analytic model.</b> Each fold takes <code>T + a*R + b*C + c</code> cycles and the total is "
+                 "<code>folds*(T + aR + bC + c) + d</code>; (a,b,c,d) were read off the SCALE-Sim source and then re-estimated by least "
+                 "squares from simulator runs, as a check. The task's single-constant formula <code>folds*(K + k)</code> is shown for "
+                 "comparison: it is wrong because the streamed dimension T is not always K and fill/drain depends on R and C.</p>")
+        h.append("<div class='tw'><table><thead><tr><th>dataflow</th><th>rows, cols mapped</th><th>streamed T</th><th>folds</th><th>cycles per fold</th>"
+                 "<th>derived (a,b,c,d)</th><th>fitted (a,b,c,d)</th><th>held-out max |residual| (cycles)</th>"
+                 "<th>single-constant formula, worst relative error</th></tr></thead><tbody>")
+        for df in ("ws", "os", "is"):
+            f = fit.get(df)
+            if not f:
+                continue
+            fm = FORMULA[df]
+            h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%.0f %%</td></tr>" % (
+                df, e(fm[0]), e(fm[1]), e(fm[2]), e(fm[3]),
+                e(fmt_val([f["derived"][k] for k in "abcd"])), e(", ".join("%.4f" % f["fitted"][k] for k in "abcd")),
+                e("%.2g" % f["heldout_max_abs_residual"]), 100 * f["naive_heldout_max_rel_residual"]))
+        h.append("</tbody></table></div>")
+    rf = s3.get("roofline") or {}
+    if rf:
+        h.append("<p><b>Roofline versus SCALE-Sim stalls.</b> Gate: agreement of the predicted bandwidth-bound / compute-bound label with the "
+                 "stall-based observed label on at least 80 %% of 16 synthetic layers, both classes present, Spearman &le; -0.5. "
+                 "<b>This gate fails</b>, as measured:</p><div class='tw'><table><thead><tr><th>dataflow</th><th>agreement (effective traffic)</th>"
+                 "<th>agreement (compulsory traffic)</th><th>Spearman (AI, stall fraction)</th><th>layers with stalls</th><th>predicted bound</th><th>observed bound</th></tr></thead><tbody>")
+        for df in ("ws", "os", "is"):
+            r = rf.get(df)
+            if isinstance(r, dict):
+                h.append("<tr><td>%s</td><td>%.0f %%</td><td>%.0f %%</td><td>%.2f</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+                    df, 100 * r["agreement_effective"], 100 * r["agreement_compulsory"], r["spearman_effective"],
+                    r["layers_with_stall_cycles"], r["n_pred_bound"], r["n_obs_bound"]))
+        h.append("</tbody></table></div>")
+        if s3.get("bundled_config_zero_stalls"):
+            h.append("<p><b>Finding:</b> with the bundled TPU-like configuration SCALE-Sim reports <b>zero stall cycles</b> for all three dataflows "
+                     "(%s), so the bundled run alone cannot test the roofline; the roofline study therefore uses a 16x16 array with a lowered DRAM "
+                     "interface bandwidth, a setting disclosed in the rule below.</p>" % e(fmt_val({k: v.get("total_cycles") for k, v in (s3.get("bundled_summary") or {}).items()})))
+        if rf.get("rule"):
+            h.append("<details open><summary>Roofline rule and chronology, verbatim from t3_summary.json (includes the disclosed post-hoc change of the observed signal)</summary><pre>%s</pre></details>" % e(rf["rule"]))
+    return "".join(h)
+
+
+def sweep_audit(L):
+    """Non-ok sweep points and grid coverage, computed from the JSONL files."""
+    out = []
+    for name in ("arch", "phys"):
+        rows = []
+        for ln in L.read("results/sweeps/%s.jsonl" % name).splitlines():
+            try:
+                rows.append(json.loads(ln))
+            except Exception:
+                pass
+        if not rows:
+            continue
+        bad = [r for r in rows if r.get("status") not in ("ok", None)]
+        for r in bad:
+            out.append("sweep %s: point <code>%s</code> status <b>%s</b>%s after %s s; it has no metrics." % (
+                name, e(str(r.get("key") or r.get("variant"))), e(str(r.get("status"))),
+                (" (" + e(str(r.get("error")))[:120] + ")") if r.get("error") else "", e(str(r.get("wall_s", "?")))))
+        if name == "arch":
+            ax = {k: sorted({str(r.get(k)) for r in rows if r.get(k) is not None}) for k in ("topo", "dataflow", "sram")}
+            sz = sorted({"%sx%s" % (r.get("rows"), r.get("cols")) for r in rows})
+            out.append("sweep arch covers %d points: topologies %s, dataflows %s, SRAM levels %s, arrays %s. Anything outside that grid was not run "
+                       "(grid cut for time; a point not listed is absent, not zero)." % (len(rows), ", ".join(ax["topo"]), ", ".join(ax["dataflow"]),
+                                                                                     ", ".join(ax["sram"]), ", ".join(sz)))
+        else:
+            per = [r["clock_period_ns"] for r in rows if "clock_period_ns" in r]
+            ut = sorted({r.get("core_utilization") for r in rows})
+            clo = [r for r in rows if r.get("closed")]
+            out.append("sweep phys covers %d points: designs %s, clock periods %.3g to %.3g ns, core utilization %s %%; %d point(s) close timing (WNS &ge; 0). "
+                       "Fastest closing period in the data: %s." % (len(rows), ", ".join(sorted({"%s/%s" % (r.get("platform"), r.get("design")) for r in rows})),
+                                                                  min(per), max(per), ", ".join(str(u) for u in ut), len(clo),
+                                                                  ("%.3g ns" % min(r["clock_period_ns"] for r in clo)) if clo else "none yet"))
+    return out
+
+
 def build_html(L, rows, vm):
     el_s, _ = elapsed_str(L)
     h = ["<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
@@ -620,7 +712,9 @@ def build_html(L, rows, vm):
                  "<tr><th>inputs and seeds</th><td>%s</td></tr><tr><th>pass criteria</th><td>%s</td></tr>"
                  "<tr><th>result file</th><td>%s</td></tr></tbody></table>" % (
                      oracle, e(cmd), e(inputs), e(crit), link(L, summ)))
-        if isinstance(s, dict):
+        if isinstance(s, dict) and stage == "30_arch_model":
+            h.append("<p><b>Actual result</b> (read from the summary file and stage marker)</p>" + t3_block(L, s))
+        elif isinstance(s, dict):
             h.append("<p><b>Actual result</b> (as written to the summary file)</p>" + kv_table(s))
         else:
             h.append("<p class='sub'>Actual result: %s</p>" % e(detail))
@@ -698,8 +792,15 @@ def build_html(L, rows, vm):
         s = L.jload("results/%s%s.json" % (tname, "_summary" if tname != "repro_report" else ""))
         if isinstance(s, dict):
             for k, v in flatten(s):
-                if v is False:
+                if v is False and not k.endswith(".gds_identical"):
                     items.append("<li>%s: <code>%s</code> is false</li>" % (e(tname), e(k)))
+    items.append("<li>Task 2 determinism: raw GDS files of the two clean runs differ byte-wise only in the GDSII BGNLIB/BGNSTR timestamp records; "
+                 "with timestamps zeroed they are identical and all compared metric fields match (see the determinism evidence images).</li>")
+    for line in sweep_audit(L):
+        items.append("<li>%s</li>" % line)
+    items.append("<li>Notes passed on by the coordinator from the arch and pnr agents (not computed here): the architecture sweep point alexnet_part 8x8 ws was killed by its "
+                 "per-point timeout (about 605 s); small arrays were run on a separately labelled, smaller workload; sweep B starts at clock periods looser than the "
+                 "0.25 ns reference because the reference does not close timing; a systolic_os slice of sweep B is run only if time allows.</li>")
     t1v = ((L.jload("results/t1_summary.json") or {}).get("values") or {})
     if t1v.get("eqy_scope"):
         items.append("<li>Equivalence scope as recorded by Task 1: <code>%s</code>. If this says per-PE or partial, the full 4x4 multiplier "

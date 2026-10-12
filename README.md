@@ -6,7 +6,7 @@ Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, t
 
 ## Status
 
-Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 2h 05m since start (2026-10-12 02:48:36 PDT), budget 6h).
+Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 2h 44m since start (2026-10-12 02:48:36 PDT), budget 6h).
 
 | Check | Status | Detail |
 |---|---|---|
@@ -16,10 +16,10 @@ Generated from the files in this repository by `python3 scripts/demo_build.py` (
 | Task 1: formal MAC proof (SBY) | **PASS** | checks: formal_bmc_pass=true, formal_prove_pass=true |
 | Task 1: RTL = netlist equivalence (EQY) | **PASS** | checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true |
 | Task 2: OpenROAD reference flow vs shipped thresholds | **PASS** | t2_summary.json: pass=true |
-| Task 3: SCALE-Sim vs analytical model | **RUNNING** | summary says pass=true but a re-run is in progress |
-| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 10 point(s) in results/sweeps/arch.jsonl |
-| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 12 point(s) in results/sweeps/phys.jsonl |
-| Repeatability rerun (repro) | **PENDING** | no marker and no results/repro_report.json yet |
+| Task 3: SCALE-Sim vs analytical model | **FAIL** | marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes). |
+| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 53 point(s) in results/sweeps/arch.jsonl |
+| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 16 point(s) in results/sweeps/phys.jsonl |
+| Repeatability rerun (repro) | **RUNNING** | stage in progress |
 
 PASS means the stage's `.done` marker exists and its summary JSON says `"pass": true`. Anything unfinished is shown as PENDING/RUNNING/BLOCKED/UNKNOWN and not assumed.
 
@@ -80,6 +80,18 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 
 ![02_images_smoke](demo/assets/evidence/02_images_smoke.png)
 
+![10_cocotb_icarus](demo/assets/evidence/10_cocotb_icarus.png)
+
+![10_cocotb_verilator](demo/assets/evidence/10_cocotb_verilator.png)
+
+![10_eqy](demo/assets/evidence/10_eqy.png)
+
+![10_lint](demo/assets/evidence/10_lint.png)
+
+![10_sby](demo/assets/evidence/10_sby.png)
+
+![10_sha256](demo/assets/evidence/10_sha256.png)
+
 ![20_determinism_nangate45_gcd](demo/assets/evidence/20_determinism_nangate45_gcd.png)
 
 ![20_determinism_sky130hd_gcd](demo/assets/evidence/20_determinism_sky130hd_gcd.png)
@@ -92,7 +104,21 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 
 ![20_threshold_check_sky130hd_gcd](demo/assets/evidence/20_threshold_check_sky130hd_gcd.png)
 
+![30_analytic_fit](demo/assets/evidence/30_analytic_fit.png)
+
+![30_byte_identity](demo/assets/evidence/30_byte_identity.png)
+
+![30_roofline](demo/assets/evidence/30_roofline.png)
+
+![30_scalesim_run](demo/assets/evidence/30_scalesim_run.png)
+
+![30_sweepA_progress](demo/assets/evidence/30_sweepA_progress.png)
+
 ## Results
+
+![sweepB frontier gcd](demo/assets/sweepB_frontier_gcd.png)
+
+![sweepB wns heatmap gcd](demo/assets/sweepB_wns_heatmap_gcd.png)
 
 ![t1 waveform](demo/assets/t1_waveform.png)
 
@@ -103,6 +129,8 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 ![t2 sky130hd gcd](demo/assets/t2_sky130hd_gcd.png)
 
 ![t3 cycles vs analytic](demo/assets/t3_cycles_vs_analytic.png)
+
+![t3 roofline](demo/assets/t3_roofline.png)
 
 ## Notes
 
