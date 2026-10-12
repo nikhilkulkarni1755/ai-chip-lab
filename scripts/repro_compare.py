@@ -32,10 +32,10 @@ def main():
     a = ap.parse_args()
     P = lambda *x: os.path.join(a.lab, *x)
     checks = []
-    def add(name, first, second, note=""):
+    def add(name, first, second, note="", runs=2):
         if first is None or second is None: v = "not_run"
         else: v = "identical" if first == second else "different"
-        checks.append({"check": name, "verdict": v, "first_run": first, "rerun": second, "note": note})
+        checks.append({"check": name, "runs": runs if v != "not_run" else 0, "verdict": v, "first_run": first, "rerun": second, "note": note})
 
     # Task 1
     for sim in ("icarus", "verilator"):
@@ -54,7 +54,7 @@ def main():
     if files and os.path.isdir(d2):
         h1 = {f: sha(os.path.join(d1, f)) for f in files}
         h2 = {f: (sha(os.path.join(d2, f)) if os.path.exists(os.path.join(d2, f)) else None) for f in files}
-        add("t3 result files byte-identical (%d files)" % len(files), h1, h2)
+        add("t3 result files byte-identical (%d files)" % len(files), h1, h2, "first run = the stage's own two passes (already byte-identical) plus this fresh pass", runs=3)
         extra = [os.path.relpath(os.path.join(b, f), d2) for b, _, fs in os.walk(d2) for f in fs]
         add("t3 same set of files", files, sorted(extra))
     else:
@@ -64,24 +64,38 @@ def main():
         add("t3 summary (checks and fitted values)", strip(s3, "results/t3"), strip(r3, a.run + "/t3"))
     else:
         add("t3 summary", None, None, "missing summary")
-    # Task 2: reuse pnr's own two-run-from-clean verdict
+    # Task 2: Part 2 supplies results/t2_reruns.json (pnr): {"designs": {"<plat>/<design>": {"runs": [{"run_id", "metrics": {...}, "gds_sha256_timestamps_zeroed",
+    # "compared_fields_identical": bool}...], "verdict": "identical|different", "differing_fields": {...}}}}. Falls back to the Part 1
+    # reused two-run verdict in t2_summary.json (clearly labelled as reused).
     s2 = jl(P("results/t2_summary.json"))
-    det = ((s2 or {}).get("designs", {}).get("nangate45/gcd") or {}).get("determinism")
-    if det:
-        checks.append({"check": "t2 nangate45/gcd two clean runs (metrics + GDS with timestamps zeroed)",
-                       "verdict": "identical" if det.get("verdict") == "PASS" else "different",
-                       "first_run": det.get("gds_sha256_timestamps_zeroed", [None])[0],
-                       "rerun": (det.get("gds_sha256_timestamps_zeroed") or [None, None])[-1],
-                       "note": a.t2_note or "reused from pnr's two-run determinism check (no third P&R run)"})
+    rr = jl(P("results/t2_reruns.json"))
+    if rr and isinstance(rr.get("designs"), dict):
+        for dn, d in rr["designs"].items():
+            runs = d.get("runs") or []
+            hashes = [r.get("gds_sha256_timestamps_zeroed") for r in runs]
+            v = d.get("verdict")
+            verdict = "not_run" if len(runs) < 2 else ("identical" if v == "identical" else "different")
+            checks.append({"check": "t2 %s: %d clean runs, metrics + GDS with timestamps zeroed" % (dn, len(runs)), "runs": len(runs), "verdict": verdict,
+                           "first_run": hashes[0] if hashes else None, "rerun": hashes[-1] if hashes else None,
+                           "note": ("differing fields: %s" % json.dumps(d.get("differing_fields"))) if verdict == "different" else (d.get("note") or "all compared fields identical across runs")})
     else:
-        checks.append({"check": "t2 determinism", "verdict": "not_run", "first_run": None, "rerun": None, "note": "no determinism block in t2_summary.json"})
+        for dn, dd in ((s2 or {}).get("designs") or {}).items():
+            det = dd.get("determinism")
+            if det:
+                checks.append({"check": "t2 %s two clean runs (metrics + GDS with timestamps zeroed)" % dn, "runs": 2,
+                               "verdict": "identical" if det.get("verdict") == "PASS" else "different",
+                               "first_run": det.get("gds_sha256_timestamps_zeroed", [None])[0],
+                               "rerun": (det.get("gds_sha256_timestamps_zeroed") or [None, None])[-1],
+                               "note": a.t2_note or "REUSED from the original two-run check in t2_summary.json (no further run)"})
+            elif dd.get("status") == "run":
+                checks.append({"check": "t2 %s" % dn, "runs": 1, "verdict": "not_run", "first_run": None, "rerun": None, "note": "single run; no determinism verdict"})
     # Provenance: same inputs for first run and rerun?  (git object SHAs of the input dirs at rerun start/end;
     # the first run's summary must be newer than the last commit touching those inputs, and no uncommitted edits.)
     prov = {}
     for tag, summ in (("t1", "results/t1_summary.json"), ("t3", "results/t3_summary.json")):
         st, en = jl(P(a.run, "inputs_%s_start.json" % tag)), jl(P(a.run, "inputs_%s_end.json" % tag))
         if not (st and en):
-            checks.append({"check": "provenance %s inputs" % tag, "verdict": "not_run", "first_run": None, "rerun": None, "note": "no input snapshot"})
+            checks.append({"check": "provenance %s inputs" % tag, "runs": 0, "verdict": "not_run", "first_run": None, "rerun": None, "note": "no input snapshot"})
             continue
         same = {k: v["git_object_sha"] for k, v in st["paths"].items()} == {k: v["git_object_sha"] for k, v in en["paths"].items()}
         clean = not any(v["uncommitted_changes"] for v in list(st["paths"].values()) + list(en["paths"].values()))
@@ -91,7 +105,7 @@ def main():
         ok_first = first_m >= last
         prov[tag] = {"start": st, "end": en}
         checks.append({"check": "provenance %s: rerun inputs unchanged during the run, committed, and first run newer than the last input commit" % tag,
-                       "verdict": "identical" if (same and clean and ok_first) else "different",
+                       "runs": 2, "verdict": "identical" if (same and clean and ok_first) else "different",
                        "first_run": {"summary_mtime_epoch": first_m, "last_input_commit_epoch": last},
                        "rerun": {"inputs_unchanged_start_to_end": same, "no_uncommitted_changes": clean, "head": st["head"],
                                  "object_shas": {k: v["git_object_sha"] for k, v in st["paths"].items()}},

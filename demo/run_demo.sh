@@ -5,6 +5,8 @@
 # Steps: (1) Task 1, N cases on Verilator + Icarus, (2) formal MAC proof (SymbiYosys),
 #        (3) one SCALE-Sim run (bundled TPU-like config, 6 GEMM layers) vs the analytic model,
 #        (4) ORFS's own threshold checker on the existing nangate45/gcd metadata.
+# Part 2: every container job takes the lab-wide lock (scripts/with_lock.sh), so it may wait behind other jobs; the wait is
+# reported separately and excluded from the per-step times. LAB_LOCK_HELD=1 (set inside the lock) prevents a nested re-lock.
 # Prints a PASS/FAIL table; exit 0 only if every step passed.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,6 +28,16 @@ for img in "$LAB_SIM_IMAGE" "$ORFS_IMAGE"; do
   docker image inspect "$img" >/dev/null 2>&1 || { echo "image $img is not cached locally; this demo does not download. Run: make images"; exit 3; }
 done
 
+WAIT=0; LAST_START=0
+lk() {  # lk <cmd...>: run under the lock (skipped if already inside it); sets LAST_START (epoch the job really started)
+  local before; before=$(date +%s)
+  if [ "${LAB_LOCK_HELD:-0}" = 1 ]; then LAST_START=$before; "$@"; return; fi
+  bash scripts/with_lock.sh demo bash -c 'date +%s > "$1"; shift; LAB_LOCK_HELD=1 exec "$@"' _ "$SCR/.start" "$@"
+  local rc=$?
+  LAST_START=$(cat "$SCR/.start" 2>/dev/null || echo "$before"); WAIT=$(( WAIT + LAST_START - before ))
+  return $rc
+}
+step_secs() { echo $(( $(date +%s) - LAST_START )); }
 record() { NAMES+=("$1"); RES+=("$2"); TIMES+=("$3"); }
 # pyget <json> <python expression over c (checks) and v (values)>  -> prints PASS or NO
 pyget() { python3 -c "
@@ -38,35 +50,31 @@ except Exception:
 " "$1" "$2"; }
 
 # ---- 1+2: Task 1 on both simulators, then the formal proof (partial run of the official script)
-t=$(date +%s)
 echo "== Task 1: $N cases, Verilator + Icarus"
-T1_STEPS="sim" bash scripts/t1_run.sh "$N" "$SCR/t1_sim" > "$SCR/t1_sim.log" 2>&1
+lk env T1_STEPS="sim" bash scripts/t1_run.sh "$N" "$SCR/t1_sim" > "$SCR/t1_sim.log" 2>&1
 r=$(pyget "$SCR/t1_sim/t1_summary.json" "all(c.get(k) is True for k in ['zero_mismatches_verilator','zero_mismatches_icarus','csv_sha256_identical'])")
-record "Task 1: $N cases vs NumPy, Verilator+Icarus, CSVs identical" "$( [ "$r" = PASS ] && echo PASS || echo FAIL )" $(( $(date +%s) - t ))
+record "Task 1: $N cases vs NumPy, Verilator+Icarus, CSVs identical" "$( [ "$r" = PASS ] && echo PASS || echo FAIL )" "$(step_secs)"
 
-t=$(date +%s)
 echo "== Task 1: formal MAC proof (sby tasks: prove + cover; the full bmc-20 runs in 'make t1')"
 mkdir -p "$SCR/formal"
-docker run --rm --pull never --platform linux/amd64 -v "$LAB":/lab -w /lab/formal "$LAB_SIM_IMAGE" \
+lk docker run --rm --pull never --platform linux/amd64 -v "$LAB":/lab -w /lab/formal "$LAB_SIM_IMAGE" \
   sby -f -j 1 --prefix "/lab/$SCR/formal/mac" mac.sby prove cover > "$SCR/t1_formal.log" 2>&1
 if [ $? -eq 0 ] && [ -f "$SCR/formal/mac_prove/PASS" ] && [ -f "$SCR/formal/mac_cover/PASS" ]; then r=PASS; else r=FAIL; fi
-record "Task 1: formal MAC proof, sby tasks prove (induction) + cover" "$r" $(( $(date +%s) - t ))
+record "Task 1: formal MAC proof, sby tasks prove (induction) + cover" "$r" "$(step_secs)"
 
 # ---- 3: one SCALE-Sim invocation (bundled TPU-like config, os dataflow, 6 GEMMs) vs the closed-form model
-t=$(date +%s)
 echo "== Task 3: one SCALE-Sim run vs analytic model"
-docker run --rm --pull never --platform linux/amd64 -e PYTHONHASHSEED=0 -e LAB=/lab -v "$LAB":/lab -w /lab "$LAB_SIM_IMAGE" \
+lk docker run --rm --pull never --platform linux/amd64 -e PYTHONHASHSEED=0 -e LAB=/lab -v "$LAB":/lab -w /lab "$LAB_SIM_IMAGE" \
   python3 demo/demo_scalesim.py "$SCR/t3_demo.json" > "$SCR/t3.log" 2>&1
 r=$(python3 -c "import json,sys;d=json.load(open(sys.argv[1]));print('PASS' if d['rows'] and d['max_abs_residual']==0 else 'NO')" "$SCR/t3_demo.json" 2>/dev/null)
-record "Task 3: SCALE-Sim cycles == analytic model on 6 GEMMs (1 run; full ws/os/is stage is 'make t3')" "$( [ "$r" = PASS ] && echo PASS || echo FAIL )" $(( $(date +%s) - t ))
+record "Task 3: SCALE-Sim cycles == analytic model on 6 GEMMs (1 run; full ws/os/is stage is 'make t3')" "$( [ "$r" = PASS ] && echo PASS || echo FAIL )" "$(step_secs)"
 
 # ---- 4: ORFS's own threshold checker on existing metadata (scripts/t2_check.sh; by default the committed copy
 #         results/t2/metadata_nangate45_gcd.json, so it also works on a fresh clone; T2_USE_COMMITTED=0 uses orfs/work)
-t=$(date +%s)
 echo "== Task 2: ORFS shipped-threshold check on existing nangate45/gcd metadata"
-T2_USE_COMMITTED="${T2_USE_COMMITTED:-1}" bash scripts/t2_check.sh nangate45 gcd > "$SCR/t2_check.log" 2>&1
+lk env T2_USE_COMMITTED="${T2_USE_COMMITTED:-1}" bash scripts/t2_check.sh nangate45 gcd > "$SCR/t2_check.log" 2>&1
 if grep -q "All metadata rules passed" "$SCR/t2_check.log"; then r=PASS; else r=FAIL; fi
-record "Task 2: nangate45/gcd metadata within ORFS shipped thresholds (checkMetadata.py)" "$r" $(( $(date +%s) - t ))
+record "Task 2: nangate45/gcd metadata within ORFS shipped thresholds (checkMetadata.py)" "$r" "$(step_secs)"
 
 # ---- table
 echo
@@ -77,10 +85,10 @@ for i in "${!NAMES[@]}"; do
   [ "${RES[$i]}" = PASS ] || fail=1
 done
 TOT=$(( $(date +%s) - T0 ))
-echo "total: $TOT s   load average: $(uptime | sed 's/.*load averages*: //')   logs: $SCR/*.log"
-python3 - "$SCR/timing.json" "$TOT" "$N" "$(uptime | sed 's/.*load averages*: //')" "$(date '+%F %T')" <<'PY'
+echo "total: $TOT s (of which $WAIT s waiting for the lock; steps above exclude that wait)   load average: $(uptime | sed 's/.*load averages*: //')   logs: $SCR/*.log"
+python3 - "$SCR/timing.json" "$TOT" "$N" "$WAIT" "$(uptime | sed 's/.*load averages*: //')" "$(date '+%F %T')" <<'PY'
 import json,sys
-json.dump({"total_s":int(sys.argv[2]),"cases":int(sys.argv[3]),"load_average":sys.argv[4],"finished":sys.argv[5]},open(sys.argv[1],"w"))
+json.dump({"total_s":int(sys.argv[2]),"cases":int(sys.argv[3]),"lock_wait_s":int(sys.argv[4]),"load_average":sys.argv[5],"finished":sys.argv[6]},open(sys.argv[1],"w"))
 PY
 [ $fail -eq 0 ] && echo "RESULT: PASS" || echo "RESULT: FAIL (see logs in $SCR)"
 exit $fail
