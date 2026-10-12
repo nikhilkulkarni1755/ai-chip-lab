@@ -215,6 +215,54 @@ def _task_state(L, stage, summary_rel):
     return "PENDING", "no marker and no %s yet" % summary_rel, s
 
 
+def sweep_live_arch(L):
+    c = {"ok": 0, "error": 0, "skipped_after_timeout": 0, "rows": 0}
+    last = {}
+    try:
+        for ln in open(L.p("results/sweeps/arch.jsonl"), encoding="utf-8", errors="replace"):
+            ln = ln.strip()
+            if not ln:
+                continue
+            try:
+                r = json.loads(ln)
+            except ValueError:
+                continue
+            last[r.get("key")] = r.get("status")
+    except OSError:
+        pass
+    for v in last.values():
+        if v in c:
+            c[v] += 1
+    c["rows"] = len(last)
+    return c
+
+
+def sweep_accounting(L, name, asum):
+    """-> (accounted: bool, note). Every planned point must be done, errored/timed out, or cut with a stated reason, in a summary written at the stop."""
+    if name == "arch":
+        lc = sweep_live_arch(L)
+        acc = (asum or {}).get("accounting") or {}
+        planned = (asum or {}).get("planned_points")
+        if not acc or not planned:
+            return False, "no accounting in results/sweeps/arch_summary.json yet"
+        n = lc["ok"] + lc["error"] + lc["skipped_after_timeout"]
+        if (asum.get("rows_total") or 0) != n:
+            return False, "arch_summary.json (%s rows) is older than arch.jsonl (%d points): regenerate it at the stop" % (asum.get("rows_total"), n)
+        cut = acc.get("cut_not_reached", 0)
+        ok = (n + cut == planned) and bool(acc.get("cut_reason"))
+        return ok, "%d of %d done, %d errored or timed out, %d cut (reason: %s)" % (lc["ok"], planned, lc["error"] + lc["skipped_after_timeout"], cut, acc.get("cut_reason", "none stated"))
+    d = L.jload("results/sweeps/phys_plan_status.json")
+    pts = (d or {}).get("points") if isinstance(d, dict) else None
+    if not pts:
+        return False, "no results/sweeps/phys_plan_status.json yet"
+    cnt = {}
+    for r in pts:
+        cnt[r.get("state")] = cnt.get(r.get("state"), 0) + 1
+    cut = sum(v for k, v in cnt.items() if k not in ("done", "failed", "timeout"))
+    return True, "Part 2 refinement plan: %d points, %d done, %d failed or timed out, %d cut at the gate (each listed with its state in section 12)" % (
+        len(pts), cnt.get("done", 0), cnt.get("failed", 0) + cnt.get("timeout", 0), cut)
+
+
 def sweep_points(L, name):
     p = L.p("results/sweeps/%s.jsonl" % name)
     n, bad = 0, 0
@@ -320,26 +368,30 @@ def build_rows(L):
 
     asum = L.jload("results/sweeps/arch_summary.json") or {}
     pfr = L.jload("results/sweeps/phys_frontier.json") or {}
-    for name, stage, label in (("arch", "40_sweeps_A", "Sweep A: architecture (SCALE-Sim)"), ("phys", "40_sweeps_B", "Sweep B: physical (ORFS)")):
+    for name, stage, label in (("arch", "41_sweeps_finish_A", "Sweep A: architecture (SCALE-Sim)"), ("phys", "41_sweeps_finish_B", "Sweep B: physical (ORFS)")):
         pts = sweep_points(L, name)
-        st, body, _ = stage_marker(L, stage)
+        st, body = demo_part2.marker(L, stage)
         first = (body.splitlines() or [""])[0][:200]
+        acc, accnote = sweep_accounting(L, name, asum)
+        gate = "Part 2 stage %s" % stage
         if st == "failed":
-            state, why = "FAIL", "marker .failed: " + first
+            state, why = "FAIL", gate + " marker .failed: " + first
         elif st == "blocked":
-            state, why = "BLOCKED", "marker .blocked: " + first
+            state, why = "BLOCKED", gate + " marker .blocked: " + first
         elif st == "running":
-            state, why = "RUNNING", "sweep in progress"
-        elif st == "done" and pts and pts[0] > 0:
-            state, why = "DONE", "sweep stopped (marker .done); this is a completion status, not a pass/fail verdict"
+            state, why = "RUNNING", gate + " in progress"
+        elif st == "done" and acc:
+            state, why = "DONE", "cut at gate (%s): all planned points accounted for (not 'complete'); %s" % (gate, accnote)
+        elif st == "done":
+            state, why = "INCOMPLETE", "%s is done but not every planned point is accounted for: %s" % (gate, accnote)
         elif pts and pts[0] > 0:
-            state, why = "RUNNING", "points on disk, no .done marker yet (partial results shown)"
+            state, why = "RUNNING", "%s has no marker yet (the Part 1 marker 40_sweeps_* is history and is not used); partial results shown. %s" % (gate, accnote)
         else:
             state, why = "PENDING", "no points yet"
         if name == "arch" and asum:
-            sc = asum.get("status_counts") or {}
-            why += "; %s ok of %s planned points (%s error, %s skipped after timeout, %s never reached before the deadline)" % (
-                sc.get("ok"), asum.get("planned_points"), sc.get("error", 0), sc.get("skipped_after_timeout", 0), asum.get("not_run_points"))
+            lc = sweep_live_arch(L)
+            why += "; live from results/sweeps/arch.jsonl: %s ok of %s planned points (%s error, %s skipped after timeout, %s not reached)" % (
+                lc["ok"], asum.get("planned_points"), lc["error"], lc["skipped_after_timeout"], (asum.get("planned_points") or 0) - lc["ok"] - lc["error"] - lc["skipped_after_timeout"])
         elif name == "phys" and pfr:
             lf = phys_frontier_live(L)
             fr = lf.get("gcd") or (pfr.get("frontier") or {}).get("gcd") or {}
@@ -375,7 +427,7 @@ def build_rows(L):
     if isinstance(rrep, dict):
         ex = rrep.get("excluded_file_class")
         if isinstance(ex, dict):
-            dr += "; %s (file class %s, per-layer wall time and memory, not results; the only exclusion)" % (ex.get("label"), ex.get("name"))
+            dr += "; %s (file class %s, per-layer wall time and memory, not results); hidden files excluded: %s" % (ex.get("label"), ex.get("name"), ", ".join(str(f.get("files_excluded")) for f in (ex.get("filters") or [])[1:]) or "not recorded")
         if rrep.get("task1_rerun_kept"):
             dr += "; " + str((rrep["task1_rerun_kept"] or {}).get("note"))
         if rrep.get("pass") is False and os.path.exists(L.p("results/evidence/51_repro_t3_diagnosis.txt")):
@@ -419,7 +471,7 @@ def phys_frontier_live(L):
 
 
 # ----------------------------------------------------------------------------- html helpers
-BADGE = {"INCOMPLETE": "warn", "DONE": "ok", "PASS": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
+BADGE = {"PARTIAL": "warn", "INCOMPLETE": "warn", "DONE": "ok", "PASS": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
 
 
 def badge(state):
@@ -955,6 +1007,12 @@ def t3_block(L, s3):
         for k, v in sorted(chk.items()):
             ne = v is None or (k.startswith(("user_bw_stalls_vs_ai_", "stall_cycles_monotone_in_B_")) and any(
                 stt != "evaluated" for jb, stt in csr.items() if jb.startswith("rl2_user_" + k.rsplit("_", 1)[-1] + "_")))
+            if k == "reruns_byte_identical":
+                rp = (L.jload("results/repro_report.json") or {}).get("pass")
+                if rp is not True:
+                    h.append("<tr><td><code>%s</code></td><td><span class='b warn'>PENDING REPRO</span> the in-stage part says %s, but the byte-identity evidence also includes the repro rerun, whose verdict is %s (see Repeatability)</td></tr>" % (
+                        e(k), "pass" if v else "FAIL", "FAIL" if rp is False else "not available yet"))
+                    continue
             if ne:
                 h.append("<tr><td><code>%s</code></td><td><span class='b warn'>NOT EVALUATED (cost)</span> neither pass nor fail</td></tr>" % e(k))
             else:

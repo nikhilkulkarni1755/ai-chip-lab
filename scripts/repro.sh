@@ -24,7 +24,7 @@ S=results/.stages
 # Part 2: every container job goes through the lab lock; LAB_LOCK_HELD=1 inside it stops nested re-locking.
 LOCKED() { if [ "${LAB_LOCK_HELD:-0}" = 1 ]; then nice -n 10 "$@"; else bash scripts/with_lock.sh demo env LAB_LOCK_HELD=1 nice -n 10 "$@"; fi; }
 say() { echo "$(date +%H:%M:%S) repro: $*" | tee -a logs/run.log; }
-T1_PATHS="rtl tb formal eqy scripts/t1_run.sh scripts/t1_summary.py scripts/t1_waveform.py docker/requirements.lock"
+T1_PATHS="rtl tb formal eqy scripts/t1_run.sh scripts/t1_summary.py scripts/t1_waveform.py docker/requirements.lock coord/images.env"
 T3_PATHS="model arch scripts/t3_run.sh docker/requirements.lock"
 snap() {  # snap <name> <paths...>  -> $RUN/inputs_<name>.json
   local name="$1"; shift
@@ -62,6 +62,8 @@ except Exception as ex:
     print("cannot keep the Task 1 rerun:", ex); sys.exit(1)
 for p in paths:
     now = git("rev-parse", "HEAD:" + p)
+    if p not in st["paths"] or p not in en["paths"]:
+        print("Task 1 input not recorded in the rerun's snapshot, cannot verify it is unchanged:", p); sys.exit(1)
     if not (now and now == st["paths"][p]["git_object_sha"] == en["paths"][p]["git_object_sha"]) or git("status", "--porcelain", "--", p):
         print("Task 1 input changed since the rerun:", p); sys.exit(1)
 json.dump({"kept": True, "from": st["time"], "to": en["time"], "head_at_rerun": st["head"],

@@ -16,7 +16,7 @@ P2_STAGES = [("31_roofline_fix", "P1.1 Task 3 roofline check"), ("32_make_recipe
              ("21_orfs_crosscheck", "P1.5 Task 2 against ORFS's published results"), ("41_sweeps_finish", "P1.6 finish and refine the sweeps"),
              ("60_power_activity", "P2.1 activity-based power"), ("61_pe_bf16", "P2.2 bf16 processing element"), ("62_pdk_compare", "P2.3 systolic_os on sky130hd"),
              ("63_sram_cacti", "P2.4 SRAM modelling (CACTI)"), ("64_roadmap", "P2.5 roadmap")]
-BADGE = {"INCOMPLETE": "warn", "PASS": "ok", "DONE": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
+BADGE = {"PARTIAL": "warn", "INCOMPLETE": "warn", "PASS": "ok", "DONE": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
 
 
 def badge(s):
@@ -148,7 +148,11 @@ def extra_rows(L, Row, t1, t2, t3):
             lead = (str(rt.get("gls_routed_status")).upper()[:1] + str(rt.get("gls_routed_status"))[1:] + "; ") if (key == "gls_routed_pass" and isinstance(rt, dict) and rt.get("gls_routed_status")) else ""
             if lead:
                 more = more.replace("; %s; " % rt.get("gls_routed_status"), "; ", 1)
-            rows.append(Row(label, "PASS" if v else "FAIL", "%s%s = %s in t1_summary.json%s" % (lead, key, str(v).lower(), more), "results/t1_summary.json"))
+            stt = "PASS" if v else "FAIL"
+            if v and key == "gls_routed_pass" and " only" in lead:
+                stt = "PARTIAL"
+                lead = "Icarus PASS; Verilator not run (partial against the task, not counted as a PASS). " + lead
+            rows.append(Row(label, stt, "%s%s = %s in t1_summary.json%s" % (lead, key, str(v).lower(), more), "results/t1_summary.json"))
     v = find_bool(t2, "matches_published")
     mst, _ = marker(L, "21_orfs_crosscheck")
     rows.append(Row("Task 2: matches ORFS's published reference results", ("PASS" if v else "FAIL") if v is not None else {"failed": "FAIL", "blocked": "BLOCKED", "running": "RUNNING"}.get(mst, "PENDING"),
@@ -194,7 +198,7 @@ def render_before_after(L, rows, before):
         if not rs:
             now, det = "PENDING", "no matching row"
         else:
-            order = ["FAIL", "BLOCKED", "INCOMPLETE", "RUNNING", "PENDING", "UNKNOWN", "DONE", "PASS"]
+            order = ["FAIL", "BLOCKED", "INCOMPLETE", "PARTIAL", "RUNNING", "PENDING", "UNKNOWN", "DONE", "PASS"]
             now = sorted((r.state for r in rs), key=lambda x: order.index(x) if x in order else 3)[0]
             det = "; ".join("%s: %s" % (r.label.replace("Task 1: ", "").replace("Task 2: ", ""), r.state) for r in rs) if len(rs) > 1 else rs[0].detail
         has_ev = [f for f in evf if os.path.exists(L.p(f))]
@@ -576,7 +580,7 @@ NOT_GREEN = [
      "`make sweeps` resumes where it stopped; each unreached point is accounted for in the sweep section of the page."),
     ("Sweep B", "A completion status. The systolic_os frontier at 30 % utilization is bracketed by a failing and a closing period (see the row); 40 and 50 % utilization points are listed with their state in section 12.",
      "`make sweeps` (or `python3 sweeps/phys_sweep.py --plan part2`) runs the remaining planned points."),
-    ("Repeatability", "The comparison says FAIL: Task 1 and Task 2 are identical, but three Task 3 checks differ. Diagnosis (results/evidence/51_repro_t3_diagnosis.txt, arch): no SCALE-Sim report differs; the differences are scheduling bookkeeping files, a summary file regenerated on another Python version (1-ulp float differences) plus the probe state, and provenance (Task 3 inputs were committed while the rerun was running). The user-bandwidth Task 3 runs are not rerun (cost) and are reported as such, never as identical. The only excluded file class is the per-layer run-time measurements (timing.timing).",
+    ("Repeatability", "The comparison says FAIL: Task 1 and Task 2 are identical, but three Task 3 checks differ (bookkeeping, provenance, and one 1-ulp float difference from a different Python version). Diagnosis (results/evidence/51_repro_t3_diagnosis.txt, arch): no SCALE-Sim report differs; the differences are scheduling bookkeeping files, a summary file regenerated on another Python version (1-ulp float differences) plus the probe state, and provenance (Task 3 inputs were committed while the rerun was running). The user-bandwidth Task 3 runs are not rerun (cost) and are reported as such, never as identical. The only excluded file class is the per-layer run-time measurements (timing.timing).",
      "Right after the gate a clean Task 3 first pass and rerun on frozen inputs is run (Decision P2-10): `REPRO_PART=t3 scripts/repro.sh` keeps the Task 1 rerun if its inputs are verified unchanged, else the full `scripts/repro.sh` runs. Until the new verdict exists this row stays FAIL."),
     ("Make recipes", "Each recipe is executed for real by the recorder in queue order; the ones still running or not run yet are listed in the note on the page.",
      "`make all` (fail-soft, always builds the demo, exits non-zero naming failed stages)."),
@@ -586,7 +590,7 @@ NOT_GREEN = [
 def not_green_items(L, rows):
     out = []
     for r in rows:
-        if r.state in ("PASS", "DONE") and not r.label.startswith("Sweep") and not (r.label.startswith("Task 1: routed gate-level") and " only" in r.detail):
+        if r.state in ("PASS", "DONE") and not r.label.startswith("Sweep") and True:
             continue
         for pfx, diag, act in NOT_GREEN:
             if r.label.startswith(pfx):
@@ -691,7 +695,7 @@ def part2_md(L, rows, before):
         pfx = {"runtime": ["Container runtime"], "images": ["Lab images"], "task1": ["Task 1:"], "task2": ["Task 2:"], "task3": ["Task 3:"], "sweepA": ["Sweep A"],
                "sweepB": ["Sweep B"], "repro": ["Repeatability"], "recipes": ["Make recipes"]}.get(b["id"], [b["check"]])
         rs = [r for r in rows if any(r.label.startswith(p) for p in pfx)]
-        order = ["FAIL", "BLOCKED", "INCOMPLETE", "RUNNING", "PENDING", "UNKNOWN", "DONE", "PASS"]
+        order = ["FAIL", "BLOCKED", "INCOMPLETE", "PARTIAL", "RUNNING", "PENDING", "UNKNOWN", "DONE", "PASS"]
         now = sorted((r.state for r in rs), key=lambda x: order.index(x) if x in order else 3)[0] if rs else "PENDING"
         out.append("| %s | %s | **%s** |" % (b["check"], b["before"], now))
     out.append("\n%s\n" % runtime_line(L))
