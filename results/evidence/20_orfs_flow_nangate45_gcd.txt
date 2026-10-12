@@ -1,5 +1,3 @@
-        -rd out_file=/lab/orfs/work/results/nangate45/gcd/base/6_1_merged.gds \
-        -rd tech_file=/lab/orfs/work/objects/nangate45/gcd/base/klayout.lyt \
         -rd layer_map= \
         -r /OpenROAD-flow-scripts/flow/util/def2stream.py
 KLayout 0.30.12
@@ -9,35 +7,35 @@ Warning: DEF UNITS does not match reader DBU (DEF UNITS is 2000 and corresponds 
 [INFO] GDS_ALLOW_EMPTY=fakeram.*
 [INFO] All LEF cells have matching GDS/OAS cells
 [INFO] No orphan cells in the final layout
-Elapsed time: 0:04.62[h:]min:sec. CPU time: user 4.00 sys 0.50 (97%). Peak memory: 437796KB.
+Elapsed time: 0:02.86[h:]min:sec. CPU time: user 2.50 sys 0.31 (98%). Peak memory: 436436KB.
 cp /lab/orfs/work/results/nangate45/gcd/base/6_1_merged.gds /lab/orfs/work/results/nangate45/gcd/base/6_final.gds
 /lab/orfs/work/logs/nangate45/gcd/base
 Log                       Ext     Elapsed/s Peak Memory/MB sha1sum result [0:20)
 1_1_yosys_canonicalize    .rtlil          0             45 061b4cd4004130e38a0d
-1_2_yosys                 .v              2             47 9e39a316f1ac13251b7c
+1_2_yosys                 .v              1             47 9e39a316f1ac13251b7c
 1_2_yosys                 .sdc                             d5c51c17b24cf323c1e2
-1_synth                   .odb            0             93 51d0925da5800feaed89
+1_synth                   .odb            0             94 51d0925da5800feaed89
 1_synth                   .sdc                             94157332ad9e1cc8b48d
-2_1_floorplan             .odb           22            127 e5f2cab307ca57b776ed
+2_1_floorplan             .odb           14            127 e5f2cab307ca57b776ed
 2_1_floorplan             .sdc                             94157332ad9e1cc8b48d
 2_2_floorplan_macro       .odb            0             92 e5f2cab307ca57b776ed
 2_3_floorplan_tapcell     .odb            0             92 16d83e4aa4bd0d5de9ad
-2_4_floorplan_pdn         .odb            1             94 aef7abe1023427ab0cf9
-3_1_place_gp_skip_io      .odb            3             94 dd403245eefcb32cb31b
+2_4_floorplan_pdn         .odb            0             94 aef7abe1023427ab0cf9
+3_1_place_gp_skip_io      .odb            2             94 dd403245eefcb32cb31b
 3_2_place_iop             .odb            0             93 35b6b01fe34295f43f0d
-3_3_place_gp              .odb            7            278 4059de872487e506c5d7
+3_3_place_gp              .odb            5            278 4059de872487e506c5d7
 3_4_place_resized         .odb            1            126 4059de872487e506c5d7
-3_5_place_dp              .odb            2            100 f57e17700d80a04c04a4
-4_1_cts                   .odb           32            137 fdd64c665e5910a700d4
-5_1_grt                   .odb          131            278 cf069a756f288ee0f69e
+3_5_place_dp              .odb            1            100 f57e17700d80a04c04a4
+4_1_cts                   .odb           31            138 fdd64c665e5910a700d4
+5_1_grt                   .odb          111            278 cf069a756f288ee0f69e
 5_1_grt                   .sdc                             d53a5cbf6c02baa522ac
-5_2_route                 .odb           48            689 3f76e8e94e929a1b5a8c
-5_3_fillcell              .odb            1             94 0a72831db4656137aa19
-6_1_fill                  .odb            1             93 0a72831db4656137aa19
+5_2_route                 .odb           51            689 3f76e8e94e929a1b5a8c
+5_3_fillcell              .odb            0             94 0a72831db4656137aa19
+6_1_fill                  .odb            0             93 0a72831db4656137aa19
 6_1_fill                  .sdc                             d53a5cbf6c02baa522ac
-6_1_merge                                 4            427                  N/A
-6_report                                  8            160                  N/A
-Total                                   263            689                     
+6_1_merge                                 2            426                  N/A
+6_report                                  5            162                  N/A
+Total                                   224            689                     
 mkdir -p /lab/orfs/work/reports/nangate45/gcd/base
 echo /OpenROAD-flow-scripts/flow/designs/nangate45/gcd > /lab/orfs/work/reports/nangate45/gcd/base/design-dir.txt
 /usr/bin/python3 /OpenROAD-flow-scripts/flow/util/genMetrics.py -d gcd \
@@ -57,4 +55,6 @@ echo /OpenROAD-flow-scripts/flow/designs/nangate45/gcd > /lab/orfs/work/reports/
 [WARN] Overwriting Tag finish__runtime__total
 [WARN] Overwriting Tag finish__cpu__total
 [WARN] Overwriting Tag finish__mem__peak
-2026-10-12 03:19:28 t2_run end nangate45/gcd/base rc=0 wall=302s
+~/ai-chip-lab/scripts/with_lock.sh: line 26: unexpected EOF while looking for matching `"'
+~/ai-chip-lab/scripts/with_lock.sh: line 28: syntax error: unexpected end of file
+2026-10-12 09:13:55 t2_run end nangate45/gcd/base rc=2 wall=257s

@@ -1,5 +1,5 @@
 {
-  "generated_epoch": 1791824889,
+  "generated_epoch": 1791825705,
   "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
   "tool_versions": [
     "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)",
@@ -148,7 +148,7 @@
       },
       "run1_wall_s": 259,
       "pass": true,
-      "matches_published": false
+      "matches_published": true
     },
     "sky130hd/gcd": {
       "status": "run",
@@ -458,18 +458,31 @@
     ]
   },
   "crosscheck_published": {
-    "criterion": "matches_published",
-    "value": false,
-    "file": "results/t2_crosscheck.json",
-    "tolerance_doc": "docs/t2_crosscheck_tolerance.md",
+    "criterion": "matches_published_dashboard",
+    "value": true,
+    "file": "results/t2_dashboard_crosscheck.json",
+    "reference": {
+      "source": "https://dashboard.precisioninno.com/api/commits/25781/metrics",
+      "commit": "3a964e13f11a4e435aac01ffa14db0a7d2853720",
+      "retrieved_utc": "2026-10-12T17:10:21Z",
+      "kind": "measured CI build of the exact pinned commit (QoR dashboard)"
+    },
+    "tolerance_doc": "docs/t2_dashboard_crosscheck_tolerance.md",
     "explained_in": "docs/t2_timing_explained.md",
-    "reference_kind": "IMPLIED: rules-base.json limits un-padded with genRuleFile.py formulas; ORFS publishes no measured metadata for gcd at this commit",
     "per_design": {
-      "nangate45/gcd": false,
+      "nangate45/gcd": true,
       "sky130hd/gcd": true
+    },
+    "superseded": {
+      "criterion": "matches_published (implied from rules-base.json)",
+      "per_design": {
+        "nangate45/gcd": false,
+        "sky130hd/gcd": true
+      },
+      "reason": "compared against an inferred number, not a publication (Decision P2-5)"
     },
     "note": "reported separately; does not change the Part 1 'pass' (thresholds/DRC/GDS/determinism)"
   },
-  "matches_published": false,
+  "matches_published": true,
   "pass": true
 }

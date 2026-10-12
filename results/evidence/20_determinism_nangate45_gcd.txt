@@ -9,5 +9,5 @@
   ],
   "gds_identical_ignoring_timestamps": true
 }
-raw GDS sha256 (differ only in GDSII BGNLIB/BGNSTR timestamp records): ['619476af08c123ffe22f9246fb436366c1b6b253d055ce410eca0683cb98dd2b', 'a012aeff187bf8f2ec9ba562f17755b2d964d5736a687b6529c87d324d2b6bd5']
+raw GDS sha256 (differ only in GDSII BGNLIB/BGNSTR timestamp records): ['619476af08c123ffe22f9246fb436366c1b6b253d055ce410eca0683cb98dd2b', '48253af4692dddc5a66d6320e53746a429a564cfc1741c3a5ff68f0bc1a9b177']
 excluded wall-clock/profiling fields: 61
