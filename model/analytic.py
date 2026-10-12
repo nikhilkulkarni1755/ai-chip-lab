@@ -112,3 +112,12 @@ def load_topology(path, gemm=False):
                 out.append(dict(name=p[0], M=M, N=N, K=K, ifmap_bytes=h * w * ch,
                                 filter_bytes=fh * fw * ch * nf, ofmap_bytes=M * N))
     return out
+
+
+def layer_intensity(layer, word_bytes=1):
+    """Compulsory arithmetic intensity of one layer (FLOP per DRAM byte), as defined for the roofline.
+    FLOPs = 2*M*N*K; bytes = (unique ifmap tensor + filter + ofmap) * word_bytes.
+    word_bytes = 1: SCALE-Sim 3.0.0 single_layer_sim.py hard-codes `word_size = 1  # bytes`."""
+    flops = 2 * layer["M"] * layer["N"] * layer["K"]
+    nbytes = (layer["ifmap_bytes"] + layer["filter_bytes"] + layer["ofmap_bytes"]) * word_bytes
+    return flops / nbytes, flops, nbytes

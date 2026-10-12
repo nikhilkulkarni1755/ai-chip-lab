@@ -1,0 +1,10 @@
+$ scripts/t3_orig_stall_evidence.py   # Part 1 bundled runs: google.cfg 256x256, alexnet.csv
+== ws: InterfaceBandwidth=USER Bandwidth=10 SRAM kB ifmap/filter/ofmap=6144/6144/2048
+   Stall Cycles per layer: [0, 0, 0, 0, 0]
+   Avg IFMAP/FILTER DRAM BW per layer: [(10.0, 10.0), (10.0, 10.0), (10.0, 10.0), (10.0, 10.0), (10.0, 10.0)]
+== os: InterfaceBandwidth=USER Bandwidth=10 SRAM kB ifmap/filter/ofmap=6144/6144/2048
+   Stall Cycles per layer: [0, 0, 0, 0, 0]
+   Avg IFMAP/FILTER DRAM BW per layer: [(10.0, 10.0), (10.0, 10.0), (10.0, 10.0), (10.0, 10.0), (10.0, 10.0)]
+== is: InterfaceBandwidth=USER Bandwidth=10 SRAM kB ifmap/filter/ofmap=6144/6144/2048
+   Stall Cycles per layer: [0, 0, 0, 0, 0]
+   Avg IFMAP/FILTER DRAM BW per layer: [(10.0, 10.0), (10.0, 10.0), (10.0, 10.0), (10.0, 10.0), (10.0, 10.0)]
