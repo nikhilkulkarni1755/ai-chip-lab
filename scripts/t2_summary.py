@@ -33,7 +33,10 @@ def tool_versions():
     r = subprocess.run(f'source {LAB}/env.sh; docker run --rm --platform linux/amd64 {env["ORFS_IMAGE"]} bash -c '
                        f'\'source /OpenROAD-flow-scripts/env.sh >/dev/null 2>&1; openroad -version; yosys -V; klayout -v\'',
                        shell=True, capture_output=True, text=True, executable="/bin/bash")
-    return env["ORFS_IMAGE"], [scrub(l) for l in r.stdout.strip().splitlines()]
+    vers = [scrub(l) for l in r.stdout.strip().splitlines()]
+    tag = re.search(r"tag (\S+),", open(os.path.join(LAB, "coord", "images.env")).read())
+    vers.insert(0, "ORFS image tag " + (tag.group(1) if tag else "?") + " (flow scripts + OpenROAD build of that commit; `openroad -version` prints 'unknown' in this build)")
+    return env["ORFS_IMAGE"], vers
 
 def ppa(e):
     m = e["metrics"]
