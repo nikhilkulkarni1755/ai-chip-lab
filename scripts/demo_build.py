@@ -284,27 +284,34 @@ def build_rows(L):
     s3, d3, _ = task_state(L, "30_arch_model", "results/t3_summary.json")
     rows.append(Row("Task 3: SCALE-Sim vs analytical model", s3, d3, "results/t3_summary.json"))
 
-    group = stage_group(L, "40_sweeps")
-    for name, label in (("arch", "Sweep A: architecture (SCALE-Sim)"), ("phys", "Sweep B: physical (ORFS)")):
+    asum = L.jload("results/sweeps/arch_summary.json") or {}
+    pfr = L.jload("results/sweeps/phys_frontier.json") or {}
+    for name, stage, label in (("arch", "40_sweeps_A", "Sweep A: architecture (SCALE-Sim)"), ("phys", "40_sweeps_B", "Sweep B: physical (ORFS)")):
         pts = sweep_points(L, name)
-        gstates = [g for g in group if g[0].lower().endswith(("_" + name[0], name[0], name)) or name in g[0].lower()
-                   or g[0].lower().endswith(("_a", "a") if name == "arch" else ("_b", "b"))]
-        gs = gstates or group
-        states = [g[1] for g in gs]
-        if "failed" in states:
-            state, why = "FAIL", "marker .failed: " + next((g[2].splitlines() or [""])[0][:160] for g in gs if g[1] == "failed")
-        elif "blocked" in states:
-            state, why = "BLOCKED", "marker .blocked: " + next((g[2].splitlines() or [""])[0][:160] for g in gs if g[1] == "blocked")
-        elif "running" in states:
+        st, body, _ = stage_marker(L, stage)
+        first = (body.splitlines() or [""])[0][:200]
+        if st == "failed":
+            state, why = "FAIL", "marker .failed: " + first
+        elif st == "blocked":
+            state, why = "BLOCKED", "marker .blocked: " + first
+        elif st == "running":
             state, why = "RUNNING", "sweep in progress"
-        elif "done" in states and pts and pts[0] > 0:
-            state, why = "PASS", "sweep stage done"
+        elif st == "done" and pts and pts[0] > 0:
+            state, why = "DONE", "sweep stopped (marker .done); this is a completion status, not a pass/fail verdict"
         elif pts and pts[0] > 0:
-            state, why = "RUNNING", "points on disk, no .done marker yet (partial results are shown)"
+            state, why = "RUNNING", "points on disk, no .done marker yet (partial results shown)"
         else:
             state, why = "PENDING", "no points yet"
-        if pts:
-            why += "; %d point(s) in results/sweeps/%s.jsonl%s" % (pts[0], name, ("; %d unparsable line(s)" % pts[1]) if pts[1] else "")
+        if name == "arch" and asum:
+            sc = asum.get("status_counts") or {}
+            why += "; %s ok of %s planned points (%s error, %s skipped after timeout, %s never reached before the deadline)" % (
+                sc.get("ok"), asum.get("planned_points"), sc.get("error", 0), sc.get("skipped_after_timeout", 0), asum.get("not_run_points"))
+        elif name == "phys" and pfr:
+            fr = (pfr.get("frontier") or {}).get("gcd") or {}
+            why += "; gcd frontier %s ns (fastest closing period over utilizations 30-60 %%), %d failed point(s)" % (
+                fmt_val(min(v["fastest_closing_period_ns"] for v in fr.values())) if fr else "?", len(pfr.get("failed_points") or []))
+        elif pts:
+            why += "; %d point(s)" % pts[0]
         rows.append(Row(label, state, why, "results/sweeps/%s.jsonl" % name if pts else None))
 
     sr, dr, rrep = task_state(L, "50_repro", "results/repro_report.json")
@@ -317,7 +324,7 @@ def build_rows(L):
 
 
 # ----------------------------------------------------------------------------- html helpers
-BADGE = {"PASS": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
+BADGE = {"DONE": "ok", "PASS": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
 
 
 def badge(state):
@@ -618,6 +625,12 @@ def t2_table(s2):
             extra += " [RTL provenance: %s %s]" % (rt.get("last_rtl_commit", "?"), rt.get("note", ""))
         cells = "".join("<td>%s</td>" % e(fmt_val(ppa.get(k, d.get(k)))) if (k in ppa or k in d) else "<td>-</td>" for k, _ in PPA_COLS)
         h.append("<tr><td>%s</td><td>%s%s</td>%s</tr>" % (e(name), e(st), e(extra), cells))
+    for name, d in (s2.get("designs") or {}).items():
+        pr = d.get("previous_rtl_result")
+        if isinstance(pr, dict):
+            pp = pr.get("ppa") or {}
+            h.append("<tr><td>%s (EARLIER RTL %s, SUPERSEDED)</td><td>%s</td>%s</tr>" % (e(name), e(str(pr.get("rtl_last_commit"))), e(str(pr.get("note", ""))),
+                     "".join("<td>%s</td>" % (e(fmt_val(pp[k])) if k in pp else "-") for k, _ in PPA_COLS)))
     h.append("</tbody></table></div>")
     h.append("<p><b>Timing at the reference clock</b> (from the flow's metadata; PASS above means only that the ORFS regression thresholds are met):</p>"
              "<div class='tw'><table><thead><tr><th>design</th><th>reference clock (ns)</th><th>setup WNS (ns)</th><th>setup TNS (ns)</th>"
@@ -695,31 +708,54 @@ def repro_table(L, rr):
 
 
 def frontier_text(L):
-    rows = []
-    for ln in L.read("results/sweeps/phys.jsonl").splitlines():
-        try:
-            rows.append(json.loads(ln))
-        except Exception:
-            pass
-    rows = [r for r in rows if r.get("design") == "gcd" and r.get("status") == "ok" and "clock_period_ns" in r]
-    if not rows:
+    fr = L.jload("results/sweeps/phys_frontier.json")
+    if not isinstance(fr, dict):
         return ""
-    h = ["<h3>Timing-closure frontier per utilization (gcd, from results/sweeps/phys.jsonl)</h3><div class='tw'><table><thead><tr><th>core utilization</th>"
-         "<th>fastest closing period (ns)</th><th>setup WNS there (ns)</th><th>next tighter period tried (ns)</th><th>its WNS (ns)</th></tr></thead><tbody>"]
-    for u in sorted({r.get("core_utilization") for r in rows}):
-        rs = sorted((r for r in rows if r.get("core_utilization") == u), key=lambda r: r["clock_period_ns"])
-        closed = [r for r in rs if r.get("wns_setup_ns") is not None and r["wns_setup_ns"] >= 0]
-        if not closed:
-            h.append("<tr><td>%s %%</td><td>none closes</td><td>-</td><td>-</td><td>-</td></tr>" % u)
-            continue
-        best = closed[0]
-        tight = [r for r in rs if r["clock_period_ns"] < best["clock_period_ns"]]
-        nx = tight[-1] if tight else None
-        margin = " (closes with essentially zero margin)" if best["wns_setup_ns"] < 0.001 else ""
-        h.append("<tr><td>%s %%</td><td>%s</td><td>%s%s</td><td>%s</td><td>%s</td></tr>" % (
-            u, e(fmt_val(best["clock_period_ns"])), e(fmt_val(best["wns_setup_ns"])), margin,
-            e(fmt_val(nx["clock_period_ns"])) if nx else "-", e(fmt_val(nx["wns_setup_ns"])) if nx else "-"))
+    h = ["<h3>Timing-closure frontier per design and utilization (from results/sweeps/phys_frontier.json)</h3><p class='sub'>%s</p>" % e(str(fr.get("note", "")))]
+    h.append("<div class='tw'><table><thead><tr><th>design</th><th>core utilization</th><th>points</th><th>tightest period swept (ns)</th><th>fastest closing period (ns)</th>"
+             "<th>setup WNS there (ns)</th><th>next tighter period (ns)</th><th>its WNS (ns)</th><th>area (um2)</th><th>power (W)</th><th>remark</th></tr></thead><tbody>")
+    for des, by in (fr.get("frontier") or {}).items():
+        for u, v in by.items():
+            rem = []
+            if v.get("marginal"):
+                rem.append("closes with essentially zero margin")
+            if not v.get("bracketed"):
+                rem.append("not bracketed")
+            if des == "systolic_os":
+                rem.append("coarse: no bisection between the closing and failing period; one utilization only")
+            h.append("<tr><td>%s</td><td>%s %%</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+                e(des), e(u), e(fmt_val(v.get("points"))), e(fmt_val(v.get("tightest_swept_period_ns"))), e(fmt_val(v.get("fastest_closing_period_ns"))),
+                e(fmt_val(v.get("wns_at_frontier_ns"))), e(fmt_val(v.get("next_failing_period_ns"))), e(fmt_val(v.get("wns_at_next_failing_ns"))),
+                e(fmt_val(v.get("area_um2"))), e(fmt_val(v.get("power_total_w"))), e("; ".join(rem))))
     h.append("</tbody></table></div>")
+    for fp in fr.get("failed_points") or []:
+        h.append("<p><b>Failed point:</b> %s %s ns u%s: %s. Meaning: %s. Retry: <code>%s</code></p>" % (
+            e(str(fp.get("design"))), e(str(fp.get("clock_period_ns"))), e(str(fp.get("core_utilization"))), e(str(fp.get("flow_error_from_log"))),
+            e(str(fp.get("meaning"))), e(scrub_text(str(fp.get("retry")))).replace("~/", "~/")))
+    return "".join(h)
+
+
+def arch_coverage(L):
+    a = L.jload("results/sweeps/arch_summary.json")
+    if not isinstance(a, dict):
+        return ""
+    h = ["<h3>Sweep A coverage (from results/sweeps/arch_summary.json)</h3><div class='tw'><table><thead><tr><th>workload</th><th>planned</th><th>ok</th><th>error</th>"
+         "<th>skipped after timeout</th><th>never reached</th></tr></thead><tbody>"]
+    for t, c in (a.get("coverage_per_topology") or {}).items():
+        h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (
+            e(t), c.get("planned"), c.get("ok"), c.get("error"), c.get("skipped_after_timeout"), c.get("not_run")))
+    h.append("</tbody></table></div><p>Planned grid %s points; %s ok, %s never reached before the sweep deadline (cut for time: points were ordered cheapest-first, so the "
+             "largest workloads and arrays are the ones missing).</p><ul>" % (a.get("planned_points"), (a.get("status_counts") or {}).get("ok"), a.get("not_run_points")))
+    for n in a.get("notes") or []:
+        h.append("<li>%s</li>" % e(str(n)))
+    h.append("<li>The numbers printed inside narrow heatmap cells can be clipped; read exact values from results/sweeps/arch.jsonl.</li></ul>")
+    bd = a.get("best_dataflow_default_sram") or {}
+    if bd:
+        h.append("<details><summary>Best dataflow per workload and array (default SRAM)</summary><div class='tw'><table><thead><tr><th>workload|array</th><th>best</th>"
+                 "<th>total cycles per dataflow</th><th>all three run</th></tr></thead><tbody>")
+        for k, v in bd.items():
+            h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(k), e(str(v.get("best"))), e(fmt_val(v.get("cycles"))), "yes" if v.get("complete") else "NO (best of those run)"))
+        h.append("</tbody></table></div></details>")
     return "".join(h)
 
 
@@ -815,7 +851,7 @@ def sweep_audit(L):
             key = str(r.get("key") or r.get("variant"))
             fix = ("delete its line from results/sweeps/arch.jsonl and rerun <code>make sweeps</code> (the driver skips completed keys; it starts no point after the "
                    "sweep deadline in budget.json, so extend <code>deadline_sweeps_stop_epoch</code> first)") if name == "arch" else \
-                  "rerun with <code>python3 sweeps/phys_sweep.py --retry</code> (same deadline rule)"
+                  "see the failed-point retry command in the sweep B section (the flow is deterministic, a rerun is expected to fail the same way)"
             out.append("sweep %s: point <code>%s</code> has status <b>%s</b> after %s s with error text %s; the cause was not verified. It has no metrics. To retry: %s." % (
                 name, e(key), e(str(r.get("status"))), e(str(r.get("wall_s", "?"))), ("&quot;%s&quot;" % e(str(r.get("error")))) if r.get("error") else "empty", fix))
     rows = rowsd["arch"]
@@ -950,6 +986,7 @@ def build_html(L, rows, vm):
     rest = [r for r in all_result_images(L) if r not in used]
     if rest:
         h.append("<h3>Other plots</h3><div class='gal'>%s</div>" % "".join(img(L, r, caption_of(r)) for r in rest))
+    h.append(arch_coverage(L))
     h.append(frontier_text(L))
     h.append("<h3>PPA (power, performance, area) table</h3>")
     s2 = L.jload("results/t2_summary.json")
@@ -1096,8 +1133,7 @@ RE-RUN THE SHORT DEMO
 
 FREE DISK AFTERWARDS (all inside ~/ai-chip-lab; nothing outside the lab was changed)
   Safe to delete (re-creatable, results already saved under results/ and demo/):
-    orfs/work/        ORFS working directories (large) - BUT demo/run_demo.sh step 4 reads orfs/work/reports/nangate45/gcd/base/metadata.json from it
-                      (unless results/t2/ holds a committed copy and scripts/t2_check.sh uses it); delete it only after you are done with the demo
+    orfs/work/        ORFS working directories (large); demo/run_demo.sh uses the committed copy results/t2/metadata_*.json, so it is not needed for the demo
     logs/             raw run logs (not committed)
     downloads/        installer archives
     .venv*/           local Python environments

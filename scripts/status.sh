@@ -14,7 +14,7 @@ done={n for n,_ in st.get("done",[])}
 running=[n for n,_ in st.get("running",[]) if n not in done]
 sw=sum(sum(1 for _ in open(f)) for f in glob.glob("results/sweeps/*.jsonl"))
 nxt=open("coord/next_action.txt").read().strip() if os.path.exists("coord/next_action.txt") else "-"
-o=["# STATUS","",f"_updated {time.strftime('%F %T %Z')}_","",
+o=(["**DONE** — see demo/index.html",""] if os.path.exists("results/.stages/60_demo.done") else [])+["# STATUS","",f"_updated {time.strftime('%F %T %Z')}_","",
 f"- **Current stage(s):** {', '.join(running) or '-'}",f"- **Done:** {lst('done')}",
 f"- **Failed:** {lst('failed')}",f"- **BLOCKED:** {lst('blocked')}",
 f"- **Elapsed:** {hm(now-b['start_epoch'])} of {b['total_budget_h']}h",

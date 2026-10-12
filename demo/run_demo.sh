@@ -60,18 +60,13 @@ docker run --rm --pull never --platform linux/amd64 -e PYTHONHASHSEED=0 -e LAB=/
 r=$(python3 -c "import json,sys;d=json.load(open(sys.argv[1]));print('PASS' if d['rows'] and d['max_abs_residual']==0 else 'NO')" "$SCR/t3_demo.json" 2>/dev/null)
 record "Task 3: SCALE-Sim cycles == analytic model on 6 GEMMs (1 run; full ws/os/is stage is 'make t3')" "$( [ "$r" = PASS ] && echo PASS || echo FAIL )" $(( $(date +%s) - t ))
 
-# ---- 4: ORFS threshold check on existing outputs (ORFS's own checkMetadata.py)
+# ---- 4: ORFS's own threshold checker on existing metadata (scripts/t2_check.sh; by default the committed copy
+#         results/t2/metadata_nangate45_gcd.json, so it also works on a fresh clone; T2_USE_COMMITTED=0 uses orfs/work)
 t=$(date +%s)
 echo "== Task 2: ORFS shipped-threshold check on existing nangate45/gcd metadata"
-REP=orfs/work/reports/nangate45/gcd/base
-if [ -f "$REP/metadata.json" ]; then
-  docker run --rm --pull never --platform linux/amd64 -v "$LAB:/lab" -w /OpenROAD-flow-scripts/flow "$ORFS_IMAGE" \
-    python3 util/checkMetadata.py -m "/lab/$REP/metadata.json" -r designs/nangate45/gcd/rules-base.json > "$SCR/t2_check.log" 2>&1
-  grep -q "All metadata rules passed" "$SCR/t2_check.log" && r=PASS || r=FAIL
-else
-  echo "no $REP/metadata.json (official Task 2 outputs not present; ORFS work dir was deleted?)" > "$SCR/t2_check.log"; r=FAIL
-fi
-record "Task 2: nangate45/gcd metadata within ORFS shipped thresholds" "$r" $(( $(date +%s) - t ))
+T2_USE_COMMITTED="${T2_USE_COMMITTED:-1}" bash scripts/t2_check.sh nangate45 gcd > "$SCR/t2_check.log" 2>&1
+if grep -q "All metadata rules passed" "$SCR/t2_check.log"; then r=PASS; else r=FAIL; fi
+record "Task 2: nangate45/gcd metadata within ORFS shipped thresholds (checkMetadata.py)" "$r" $(( $(date +%s) - t ))
 
 # ---- table
 echo
