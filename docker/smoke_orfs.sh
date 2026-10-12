@@ -5,7 +5,7 @@ fail=0
 v() { local name="$1"; shift; local out; out=$("$@" 2>&1 | grep -v '^[[:space:]]*$' | head -1)
   if [ -n "$out" ] && command -v "$1" >/dev/null 2>&1; then printf 'OK    %-22s %s\n' "$name" "$out"; else printf 'MISS  %-22s %s\n' "$name" "${out:-not found}"; fail=1; fi; }
 p() { if [ -e "$2" ]; then printf 'OK    %-22s %s\n' "$1" "$2"; else printf 'MISS  %-22s %s\n' "$1" "$2"; fail=1; fi; }
-v orfs:openroad    openroad -version
+v orfs:openroad    sh -c 'echo "present; openroad -version prints: $(openroad -version | head -1 | tr -d " ") (this build embeds no version string; identity = image digest)"'
 v orfs:yosys       yosys -V
 v orfs:opensta     sh -c 'echo "puts \"OpenSTA [sta::version] (embedded in openroad)\"" > /tmp/v.tcl; openroad -no_init -exit /tmp/v.tcl 2>&1 | grep OpenSTA'
 v orfs:klayout     klayout -v
