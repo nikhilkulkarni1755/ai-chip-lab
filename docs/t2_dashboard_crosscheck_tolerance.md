@@ -3,7 +3,7 @@
 **Reference (real measurement, not implied).** The ORFS QoR dashboard (https://dashboard.precisioninno.com, public read API,
 `GET /api/commits/25781/metrics`) holds the CI build of **exactly commit 3a964e13f11a4e435aac01ffa14db0a7d2853720** (branch master/nightly,
 2026-09-20), the commit our pinned image tag `26Q3-600-g3a964e13f` was built from. The raw per-design entries for nangate45/gcd and sky130hd/gcd
-were fetched and stored first (`results/t2/published/`, retrieval time in `retrieved_utc.txt`) in the commit that precedes the commit evaluating this criterion.
+were fetched first (`results/t2/published/`, retrieval time in `retrieved_utc.txt`; the raw files are committed right after this document, still before any comparison was computed).
 Caveats stated up front: the CI machine, thread count and OpenROAD binary build need not equal ours; and I saw the first ~15 values of each
 metric vector (floorplan-stage numbers, e.g. core/die area) while checking the file structure, before writing this tolerance; none of the metrics below
 at later stages were looked at.
