@@ -219,7 +219,7 @@ def what_changed(L):
         a = ln.split("\t")
         if len(a) == 3:
             rows.append(a)
-    skip = re.compile(r"^(demo/assets/|results/evidence/|results/t[0-9]|results/sweeps/.*\.jsonl|demo/index\.html|README\.md|demo/README\.md)")
+    skip = re.compile(r"^(results/part1_snapshot/|demo/assets/|results/evidence/|results/t[0-9]|results/sweeps/.*\.jsonl|demo/index\.html|README\.md|demo/README\.md)")
     h = ["<p>Files changed between <code>%s</code> and <code>%s</code>: <b>%d</b> (git numstat). Descriptions come from <code>docs/part2_changes.json</code>; "
          "a file without an entry shows no description rather than a guess.</p>" % (e(base), e(head), len(rows))]
     h.append("<div class='tw'><table><thead><tr><th>file</th><th>+</th><th>-</th><th>what (one line, as recorded by the agent)</th></tr></thead><tbody>")

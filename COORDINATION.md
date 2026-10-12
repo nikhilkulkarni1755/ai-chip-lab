@@ -144,7 +144,7 @@ P1.5 (pnr) is mostly reading files in the ORFS image — short jobs, any time.
 | rtl | P1.3 `11_eqy_routed` (EQY + GLS); later P2.2 bf16 PE; VCD generation for P2.1 | starting |
 | pnr | P1.5 `21_orfs_crosscheck`; P1.4 `51_repro_full` runs; P1.6 sweep B; later P2.1 power, P2.3 sky130 systolic_os | P1.5 DONE (matches_published: sky130 yes, nangate45 NO); P1.4 runs + sweep B part2 running |
 | infra | P1.2 `32_make_recipes`, Makefile, lock/queue tooling, images (CACTI image for P2.4), final `colima stop` | starting |
-| demo | demo_build Part 2 sections, README, repro_report folding, run_demo additions, docs index, P2.5 roadmap, final packaging | starting |
+| demo | demo_build Part 2 sections, README, repro_report folding, run_demo additions, docs index, P2.5 roadmap, final packaging | 10:00: lock in run_demo/repro done; Part 2 page sections (before/after, changed, tested, decisions, caveats, next) built from files on disk; repro_compare folds `results/t2_reruns.json`; `docs/next.md` written. Waiting on agents' `results/p2_<stage>.json`, `docs/part2_changes.json`, `results/t2_reruns.json`; final packaging on go |
 | review | independent audit at the Phase 1 gate and before the final commit | later |
 
 ## Interfaces (Part 2) — agreed by demo, 09:40
