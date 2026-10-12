@@ -30,6 +30,8 @@ for des in sorted({r["design"] for r in rows}):
                 area_um2=r.get("area_um2"), power_total_w=r.get("power_total_w"),
                 marginal=r["wns_setup_ns"] < 0.005)
             nb = [x for x in bad if x[0] < p]
+            e["closing_periods_ns"] = [q for q, _ in ok]
+            e["non_monotonic"] = bool(nb) and any(q > min(x[0] for x in nb) for q, _ in ok)   # a closing period is slower than a failing one
             e["bracketed"] = bool(nb)   # False: no failing period swept below the frontier, true limit is lower
             if nb: q, rq = max(nb, key=lambda x: x[0]); e.update(next_failing_period_ns=q, wns_at_next_failing_ns=rq["wns_setup_ns"])
         else:
@@ -37,7 +39,8 @@ for des in sorted({r["design"] for r in rows}):
         f[str(u)] = e
 for r in allrows:
     if r.get("status") != "ok":
-        lg = os.path.join(LAB, "logs/20_pnr_ref", f"{r['platform']}_{r['design']}_{r['variant']}.log")
+        cands = [os.path.join(LAB, d, f"{r['platform']}_{r['design']}_{r['variant']}.log") for d in ("logs/part2/20_pnr_ref", "logs/20_pnr_ref")]
+        lg = next((c for c in cands if os.path.exists(c)), cands[0])
         cause = None
         if os.path.exists(lg):
             errs = [l.strip() for l in open(lg, errors="replace") if re.search(r"\[ERROR|^Error:", l)]

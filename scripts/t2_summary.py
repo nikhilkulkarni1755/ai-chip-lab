@@ -65,6 +65,23 @@ def ppa(e):
     return {k: m.get(k) for k in ("area_um2", "utilization_frac", "wns_setup_ns", "tns_setup_ns", "wns_hold_ns",
             "power_total_w", "power_leakage_w", "cell_count", "stdcell_count", "drc_errors", "wirelength")}
 
+def sweep_block():
+    """summary block for sweep B (also called by sweeps/phys_gate.py to refresh only this block)."""
+    fp = os.path.join(LAB, "results", "sweeps", "phys_frontier.json")
+    if not os.path.exists(fp):
+        return None
+    F = json.load(open(fp))
+    b = {"frontier_file": "results/sweeps/phys_frontier.json", "data": "results/sweeps/phys.jsonl",
+         "frontier": F["frontier"], "failed_points": F["failed_points"]}
+    pp = os.path.join(LAB, "results", "sweeps", "phys_plan_status.json")
+    if os.path.exists(pp):
+        P = json.load(open(pp))
+        b["plan_accounting_file"] = "results/sweeps/phys_plan_status.json"
+        b["plan_counts"] = P.get("counts")
+        b["plan_final"] = P.get("final", False)
+    return b
+
+
 def main():
     skips = dict(a.split("=", 1) for a in sys.argv[1:])
     image, tv = tool_versions()
@@ -121,10 +138,9 @@ def main():
         if des == "systolic_os":
             evid("20_systolic_os_ppa.txt", json.dumps({"ppa": d["ppa"], "wall_s": d["wall_s"], "checks": d["checks"],
                                                         "stage_runtime_s": d["stage_runtime_s"]}, indent=2))
-    fp = os.path.join(LAB, "results", "sweeps", "phys_frontier.json")
-    if os.path.exists(fp):
-        S["sweep_B"] = {"frontier_file": "results/sweeps/phys_frontier.json", "data": "results/sweeps/phys.jsonl",
-                        "frontier": json.load(open(fp))["frontier"], "failed_points": json.load(open(fp))["failed_points"]}
+    sb = sweep_block()
+    if sb:
+        S["sweep_B"] = sb
     cp = os.path.join(LAB, "results", "t2_dashboard_crosscheck.json"); ip = os.path.join(LAB, "results", "t2_crosscheck.json")
     if os.path.exists(cp):
         cc = json.load(open(cp)); old = json.load(open(ip)) if os.path.exists(ip) else None
