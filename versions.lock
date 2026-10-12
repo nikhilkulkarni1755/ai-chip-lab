@@ -28,7 +28,7 @@ runtime:   # owner: infra, stage 01_runtime, recorded 2026-10-12 02:55:32 PDT
   verify:
     hello_world_digest: "hello-world@sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8"
     log: logs/01_runtime/start.log
-images:   # owner: infra, stage 02_images, recorded 2026-10-12 03:38:07 PDT
+images:   # owner: infra, stage 02_images, recorded 2026-10-12 10:08:07 PDT
   orfs:
     ref: "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6"
     tag: "26Q3-600-g3a964e13f"   # newest-but-5-commits tag that still ships rules-base.json + checkMetadata.py (see COORDINATION.md Decision 6)
@@ -110,19 +110,3 @@ images:   # owner: infra, stage 02_images, recorded 2026-10-12 03:38:07 PDT
     OK    orfs:checker           /OpenROAD-flow-scripts/flow/util/checkMetadata.py
     OK    orfs:qor-checker       /OpenROAD-flow-scripts/flow/util/checkQorMetrics.py
     == smoke: 56 OK, 0 MISSING -> PASS
-
-# ---- rtl: native DEVELOPMENT toolchain (authoring/iteration only; official t1 results come from lab-sim) ----
-rtl_native_dev:
-  note: used on the macOS host before the lab-sim image existed; nothing in results/ was produced with it
-  oss_cad_suite:
-    url: https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-10-12/oss-cad-suite-darwin-x64-20261012.tgz
-    sha256: 89522d9cd96ccbb18033cd6173b477a651b8291654fbe6e726cdfff765099b8e   # matches the GitHub release-API asset digest
-    installed_to: $LAB/opt/rtl-native/oss-cad-suite
-    yosys: "Yosys 0.69+276 (git sha1 e83399dcf)"
-    verilator: "Verilator 5.053 devel rev v5.052-380-g4b2252786"
-    iverilog: "Icarus Verilog version 14.0 (devel) (s20260301-564-gbe5984bb9-dirty)"
-    sby: "SBY v0.69"
-    eqy: "EQY v0.69-1-g7a92d84"
-  python_venv:
-    path: $LAB/.venv-rtl   # uv venv, CPython 3.11 (uv-managed, under $LAB/opt/rtl-native/uv-python)
-    packages: cocotb==2.1.0 cocotb-coverage==2.0 numpy==2.4.6 matplotlib==3.11.2 vcdvcd==2.6.0 pytest==9.1.1

@@ -1,0 +1,196 @@
+{
+ "stage": "32_make_recipes",
+ "recipes": [
+  {
+   "recipe": "runtime",
+   "name": "runtime",
+   "command": "make runtime",
+   "executed": [
+    "if [ ! -x bin/colima ] || [ ! -x bin/docker ] || [ ! -x opt/lima/bin/limactl ]; then scripts/infra_runtime_install.sh; fi",
+    "scripts/infra_runtime_start.sh"
+   ],
+   "start_epoch": 1791821873,
+   "end_epoch": 1791822461,
+   "start": "2026-10-12 09:17:53 PDT",
+   "exit_code": 0,
+   "runtime_s": 587.4,
+   "lock_wait_s": 581,
+   "lock_acquisitions": 2,
+   "runtime_excl_lock_wait_s": 6.4,
+   "log": "logs/part2/32_make_recipes/runtime_091753.log",
+   "git_commit": "c0e5b87",
+   "git_branch": "part2-green",
+   "scripts_modified_vs_commit": false,
+   "log_tail": [
+    " https://docs.docker.com/get-started/",
+    "",
+    "ok",
+    "MOUNT_RW_OK ~/ai-chip-lab",
+    "client=29.9.0 server=29.5.2 os=linux/amd64",
+    "ncpu=3 mem=4105318400 kernel=6.8.0-117-generic os=Ubuntu 24.04.4 LTS driver=overlayfs"
+   ]
+  },
+  {
+   "recipe": "images",
+   "name": "images",
+   "command": "make images",
+   "executed": [
+    "if [ ! -x bin/colima ] || [ ! -x bin/docker ] || [ ! -x opt/lima/bin/limactl ]; then scripts/infra_runtime_install.sh; fi",
+    "scripts/infra_runtime_start.sh",
+    "scripts/infra_images.sh"
+   ],
+   "start_epoch": 1791822461,
+   "end_epoch": 1791825700,
+   "start": "2026-10-12 09:27:41 PDT",
+   "exit_code": 0,
+   "runtime_s": 3238.6,
+   "lock_wait_s": 3178,
+   "lock_acquisitions": 5,
+   "runtime_excl_lock_wait_s": 60.6,
+   "log": "logs/part2/32_make_recipes/images_092741.log",
+   "git_commit": "72565a2",
+   "git_branch": "part2-green",
+   "scripts_modified_vs_commit": false,
+   "log_tail": [
+    "OK    orfs:gcd-rules         /OpenROAD-flow-scripts/flow/designs/nangate45/gcd/rules-base.json",
+    "OK    orfs:gcd-sky130        /OpenROAD-flow-scripts/flow/designs/sky130hd/gcd/config.mk",
+    "OK    orfs:checker           /OpenROAD-flow-scripts/flow/util/checkMetadata.py",
+    "OK    orfs:qor-checker       /OpenROAD-flow-scripts/flow/util/checkQorMetrics.py",
+    "== smoke: 56 OK, 0 MISSING -> PASS",
+    "versions.lock images section written; evidence saved"
+   ]
+  },
+  {
+   "recipe": "t2",
+   "name": "t2",
+   "command": "make t2",
+   "executed": [
+    "scripts/make_t2.sh ref"
+   ],
+   "start_epoch": 1791826039,
+   "end_epoch": 1791830187,
+   "start": "2026-10-12 10:27:19 PDT",
+   "exit_code": 0,
+   "runtime_s": 4148.2,
+   "lock_wait_s": 3601,
+   "lock_acquisitions": 7,
+   "runtime_excl_lock_wait_s": 547.2,
+   "log": "logs/part2/32_make_recipes/t2_102719.log",
+   "git_commit": "7fb85e7",
+   "git_branch": "part2-green",
+   "scripts_modified_vs_commit": false,
+   "log_tail": [
+    "    \"note\": \"reported separately; does not change the Part 1 'pass' (thresholds/DRC/GDS/determinism)\"",
+    "  },",
+    "  \"matches_published\": true,",
+    "  \"pass\": true",
+    "}",
+    "t2 (ref): results/t2_summary.json pass=True (flow/check exit status: 0)"
+   ],
+   "note": "one fresh clean ORFS run per reference design (run 4 for gcd on both platforms, after the two Part 1 runs and pnr's P1.4 rerun), compared against all earlier runs by scripts/t2_repro.sh"
+  }
+ ],
+ "attempts": [
+  {
+   "recipe": "runtime",
+   "name": "runtime",
+   "command": "make runtime",
+   "executed": [
+    "if [ ! -x bin/colima ] || [ ! -x bin/docker ] || [ ! -x opt/lima/bin/limactl ]; then scripts/infra_runtime_install.sh; fi",
+    "scripts/infra_runtime_start.sh"
+   ],
+   "start_epoch": 1791821873,
+   "end_epoch": 1791822461,
+   "start": "2026-10-12 09:17:53 PDT",
+   "exit_code": 0,
+   "runtime_s": 587.4,
+   "lock_wait_s": 581,
+   "lock_acquisitions": 2,
+   "runtime_excl_lock_wait_s": 6.4,
+   "log": "logs/part2/32_make_recipes/runtime_091753.log",
+   "git_commit": "c0e5b87",
+   "git_branch": "part2-green",
+   "scripts_modified_vs_commit": false,
+   "log_tail": [
+    " https://docs.docker.com/get-started/",
+    "",
+    "ok",
+    "MOUNT_RW_OK ~/ai-chip-lab",
+    "client=29.9.0 server=29.5.2 os=linux/amd64",
+    "ncpu=3 mem=4105318400 kernel=6.8.0-117-generic os=Ubuntu 24.04.4 LTS driver=overlayfs"
+   ]
+  },
+  {
+   "recipe": "images",
+   "name": "images",
+   "command": "make images",
+   "executed": [
+    "if [ ! -x bin/colima ] || [ ! -x bin/docker ] || [ ! -x opt/lima/bin/limactl ]; then scripts/infra_runtime_install.sh; fi",
+    "scripts/infra_runtime_start.sh",
+    "scripts/infra_images.sh"
+   ],
+   "start_epoch": 1791822461,
+   "end_epoch": 1791825700,
+   "start": "2026-10-12 09:27:41 PDT",
+   "exit_code": 0,
+   "runtime_s": 3238.6,
+   "lock_wait_s": 3178,
+   "lock_acquisitions": 5,
+   "runtime_excl_lock_wait_s": 60.6,
+   "log": "logs/part2/32_make_recipes/images_092741.log",
+   "git_commit": "72565a2",
+   "git_branch": "part2-green",
+   "scripts_modified_vs_commit": false,
+   "log_tail": [
+    "OK    orfs:gcd-rules         /OpenROAD-flow-scripts/flow/designs/nangate45/gcd/rules-base.json",
+    "OK    orfs:gcd-sky130        /OpenROAD-flow-scripts/flow/designs/sky130hd/gcd/config.mk",
+    "OK    orfs:checker           /OpenROAD-flow-scripts/flow/util/checkMetadata.py",
+    "OK    orfs:qor-checker       /OpenROAD-flow-scripts/flow/util/checkQorMetrics.py",
+    "== smoke: 56 OK, 0 MISSING -> PASS",
+    "versions.lock images section written; evidence saved"
+   ]
+  },
+  {
+   "recipe": "t2",
+   "name": "t2",
+   "command": "make t2",
+   "executed": [
+    "scripts/make_t2.sh ref"
+   ],
+   "start_epoch": 1791826039,
+   "end_epoch": 1791830187,
+   "start": "2026-10-12 10:27:19 PDT",
+   "exit_code": 0,
+   "runtime_s": 4148.2,
+   "lock_wait_s": 3601,
+   "lock_acquisitions": 7,
+   "runtime_excl_lock_wait_s": 547.2,
+   "log": "logs/part2/32_make_recipes/t2_102719.log",
+   "git_commit": "7fb85e7",
+   "git_branch": "part2-green",
+   "scripts_modified_vs_commit": false,
+   "log_tail": [
+    "    \"note\": \"reported separately; does not change the Part 1 'pass' (thresholds/DRC/GDS/determinism)\"",
+    "  },",
+    "  \"matches_published\": true,",
+    "  \"pass\": true",
+    "}",
+    "t2 (ref): results/t2_summary.json pass=True (flow/check exit status: 0)"
+   ],
+   "note": "one fresh clean ORFS run per reference design (run 4 for gcd on both platforms, after the two Part 1 runs and pnr's P1.4 rerun), compared against all earlier runs by scripts/t2_repro.sh"
+  }
+ ],
+ "generated": "2026-10-12 11:36:27 PDT",
+ "how": "each entry: `python3 scripts/make_record.py <recipe>` = a real `make <recipe>`; runtime_s is wall time incl. queueing for the heavy-job lock (lock_wait_s)",
+ "pass": false,
+ "missing_recipes": [
+  "t1",
+  "t2-stretch",
+  "t3",
+  "repro",
+  "demo"
+ ],
+ "failed_recipes": [],
+ "readme_note": "### Make recipes: what was actually run\n\nEach recipe below was executed for real as `make <recipe>` from the repo root (recorded by `scripts/make_record.py`, raw data in `results/make_recipes.json`). Wall time includes waiting in the one-job-at-a-time queue of this machine; the time without that wait is shown separately.\n\n| Recipe | Exit code | Wall time | of which queue wait | Run time | Started | Log |\n|---|---|---|---|---|---|---|\n| `make runtime` | 0 | 9 min 47 s | 9 min 41 s | 6 s | 09:17:53 | `logs/part2/32_make_recipes/runtime_091753.log` |\n| `make images` | 0 | 53 min 59 s | 52 min 58 s | 1 min 01 s | 09:27:41 | `logs/part2/32_make_recipes/images_092741.log` |\n| `make t1` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n| `make t2` | 0 | 69 min 08 s | 60 min 01 s | 9 min 07 s | 10:27:19 | `logs/part2/32_make_recipes/t2_102719.log` |\n| `make t2-stretch` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n| `make t3` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n| `make repro` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n| `make demo` | not run yet | \u2013 | \u2013 | \u2013 | \u2013 | \u2013 |\n\n**Not run as a recipe yet:** `make t1`, `make t2-stretch`, `make t3`, `make repro`, `make demo`.\n\nNotes: `make t2`: one fresh clean ORFS run per reference design (run 4 for gcd on both platforms, after the two Part 1 runs and pnr's P1.4 rerun), compared against all earlier runs by scripts/t2_repro.sh.\n\n**`make all` fail-soft test:** not run yet.\n",
+ "note_generated": "2026-10-12 11:36:52 PDT"
+}
