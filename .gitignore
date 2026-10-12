@@ -19,3 +19,6 @@ orfs/work/
 STATUS.md
 results/.stages/*.running
 coord/*.lock.d/
+# pnr: ORFS work tree (large) -- small results are copied to results/ by scripts/t2_extract.py
+orfs/work/
+orfs/sdc_gen/
