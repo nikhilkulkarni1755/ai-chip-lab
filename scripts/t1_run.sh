@@ -6,7 +6,8 @@
 # Runs the whole stage inside the pinned lab-sim container (image ref read from
 # coord/images.env at run time): lint, cocotb regression on Icarus and
 # Verilator, waveform, SymbiYosys proof of the MAC, Yosys synthesis and EQY
-# RTL == netlist (per-PE MAC proof + full-array proof with the MAC black-boxed), then writes <OUTDIR>/t1_summary.json.  Exit code 0 = pass.
+# RTL == netlist (per-PE MAC proof + full-array proof with the MAC black-boxed,
+# each with a negative control that must be rejected), then writes <OUTDIR>/t1_summary.json.  Exit code 0 = pass.
 #
 # * Idempotent and deterministic: every output is rebuilt from scratch, seed
 #   1234, PYTHONHASHSEED=0, the CSVs contain no timestamps or paths.
@@ -164,7 +165,24 @@ want wave && step waveform 600 wave
 
 # ----------------------------------------------------------------- 4. formal
 formal() { (cd formal && tmo "$TMO" sby -f -j 2 --prefix "$WORK_ABS/formal/mac" mac.sby); }
-want formal && step formal 2400 formal
+# Negative control: the same properties must FAIL on a MAC with an injected bug.
+formal_neg() {
+  local d="$WORK_ABS/neg_formal" rc
+  rm -rf "$d"; mkdir -p "$d"
+  sed -e "s/acc <= acc + 32'(prod);/acc <= acc + 32'(prod) + 32'sd1;/" rtl/mac_int8.sv > "$d/mac_int8.sv"
+  if cmp -s rtl/mac_int8.sv "$d/mac_int8.sv"; then echo "mutation did not apply"; return 90; fi
+  echo "injected bug:"; diff rtl/mac_int8.sv "$d/mac_int8.sv"
+  sed -e "s#^\.\./rtl/mac_int8\.sv#$d/mac_int8.sv#" -e "s#^mac_formal\.sv#$LAB_DIR/formal/mac_formal.sv#" \
+    formal/mac.sby > "$d/mac.sby"
+  (cd "$d" && tmo "$TMO" sby -f mac.sby bmc)
+  rc=$?
+  echo "sby exit code: $rc (non-zero expected)"
+  [ $rc -ne 0 ] && [ $rc -ne 124 ]
+}
+if want formal; then
+  step formal 2400 formal
+  step formal_neg 600 formal_neg
+fi
 
 # ---------------------------------------------------------- 5. synth + EQY
 synth() {
@@ -175,10 +193,33 @@ equiv() {  # equiv <mac_int8|systolic_os>
     "eqy/$1.eqy.in" > "$WORK/$1.eqy"
   tmo "$TMO" eqy -f -j 2 -d "$WORK/eqy_$1" "$WORK/$1.eqy"
 }
+# Negative controls: the same EQY flow must REJECT a deliberately broken RTL.
+# One bug is injected into a copy of the RTL and only the partition that
+# contains it is checked (apply <partition>); the expected outcome is
+# "Could not prove equivalence" for that partition (verified by t1_summary.py).
+equiv_neg() {  # equiv_neg <mac_int8|systolic_os> <file to mutate> <sed expr> <partition>
+  local d="$WORK_ABS/neg_$1"
+  rm -rf "$d"; mkdir -p "$d/rtl"
+  cp rtl/mac_int8.sv rtl/systolic_os.sv "$d/rtl/"
+  sed -e "$3" "rtl/$2" > "$d/rtl/$2"
+  if cmp -s "rtl/$2" "$d/rtl/$2"; then echo "mutation did not apply to $2"; return 90; fi
+  echo "injected bug:"; diff "rtl/$2" "$d/rtl/$2"
+  sed -e "s#@RTL@#$d/rtl#g" -e "s#@NETLIST@#$WORK_ABS/systolic_os_netlist.v#g" \
+    "eqy/$1.eqy.in" > "$d/$1.eqy"
+  printf 'apply %s\n\n[strategy skip]\nuse dummy\n' "$4" >> "$d/$1.eqy"
+  tmo "$TMO" eqy -f -j 2 -d "$d/eqy" "$d/$1.eqy"
+  local rc=$?
+  echo "eqy exit code: $rc (non-zero expected)"
+  [ $rc -ne 0 ] && [ $rc -ne 124 ]
+}
 if want eqy; then
   if step synth 900 synth; then
     step eqy_mac 1800 equiv mac_int8
-    step eqy_array 1800 equiv systolic_os
+    step eqy_array 2400 equiv systolic_os
+    step eqy_neg_mac 900 equiv_neg mac_int8 mac_int8.sv \
+      "s/acc <= acc + 32'(prod);/acc <= acc + 32'(prod) + 32'sd1;/" mac_int8.acc
+    step eqy_neg_array 900 equiv_neg systolic_os systolic_os.sv \
+      "s/a_q <= a_w\\[i\\]\\[j\\];/a_q <= a_w[i][j] ^ 8'd1;/" systolic_os.g_row.0.g_col.0.g_east.a_q
   fi
 fi
 

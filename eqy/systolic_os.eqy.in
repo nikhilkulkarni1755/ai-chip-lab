@@ -1,21 +1,28 @@
 # EQY proof 2 of 2 -- full R x C array:  RTL systolic_os == gate netlist,
 # with mac_int8 treated as a black box on both sides (its equivalence is
 # proof 1).  This covers everything outside the MACs: skew registers, operand
-# registers of every PE, the valid delay line, busy, and all the wiring
-# between ports, PEs and acc_o.
+# registers of every PE, the valid delay line, busy, and the nets feeding
+# every MAC input (a_w, b_n, v_d).
+# All other internal wires are hidden on both sides so that partitions are
+# formed only at registers, ports and MAC inputs.
+# Strategy: SymbiYosys/SMT for every partition (see eqy/mac_int8.eqy.in for
+# why `use sat` is not used).
 # Template: scripts/t1_run.sh substitutes @RTL@ and @NETLIST@.
 [gold]
 read_verilog -sv @RTL@/mac_int8.sv @RTL@/systolic_os.sv
 hierarchy -top systolic_os
 blackbox mac_int8
 prep -top systolic_os
+rename -hide t:$dff t:$sdff t:$dffe t:$sdffe t:$sdffce %u %u %u %u %co x:* %u w:a_w %u w:b_n %u w:v_d %u w:* %D
 
 [gate]
 read_verilog -icells @NETLIST@
 hierarchy -top systolic_os
 blackbox mac_int8
 prep -top systolic_os
+rename -hide t:$dff t:$sdff t:$dffe t:$sdffe t:$sdffce %u %u %u %u %co x:* %u w:a_w %u w:b_n %u w:v_d %u w:* %D
 
-[strategy sat]
-use sat
+[strategy smt]
+use sby
 depth 2
+engine smtbmc yices

@@ -239,6 +239,14 @@ def main():
                                                                  "logfile.txt")))))
         values["formal_engine"] = (re.search(r"\[engines\]\s*\n(.+)", read("formal/mac.sby")) or
                                    [None, None])[1]
+        nst = read(os.path.join(work, "neg_formal", "mac_bmc", "status")).split()
+        values["formal_neg_status"] = nst[0] if nst else "MISSING"
+        checks["formal_neg_bug_detected"] = (step_rc.get("formal_neg") == 0
+                                             and values["formal_neg_status"] == "FAIL")
+        nl = read(os.path.join(work, "neg_formal", "mac_bmc", "logfile.txt"))
+        ev += ["# negative control: mac_int8 with an injected bug (acc + prod + 1), bmc must FAIL"]
+        ev += [re.sub(r"\[.*?\]", "[neg mac_bmc]", ln, count=1) for ln in nl.splitlines()
+               if "Assert failed" in ln or "DONE" in ln][:3]
         evidence["10_sby.txt"] = ("$ (cd formal && sby -f -j 2 --prefix <work>/formal/mac mac.sby)\n"
                                   + "\n".join(ev) + "\n")
         del flog
@@ -269,10 +277,30 @@ def main():
                     or "Failed to prove" in ln or "Could not prove" in ln]
             ev += [f"$ eqy -f -j 2 -d <work>/eqy_{name} <work>/{name}.eqy   (from eqy/{name}.eqy.in)",
                    f"# {scope}", f"partitions: {total}, proved: {proved}, failed: {failed}"] + tail[-12:]
+        # negative controls: a deliberately broken RTL must be rejected
+        for key, name, part in (("mac", "mac_int8", "mac_int8.acc"),
+                                ("array", "systolic_os", "systolic_os.g_row.0.g_col.0.g_east.a_q")):
+            nlog = read(os.path.join(work, f"neg_{name}", "eqy", "logfile.txt"))
+            hit = [ln for ln in nlog.splitlines()
+                   if f"Could not prove equivalence of partition '{part}' using strategy 'smt'" in ln]
+            done = re.search(r"DONE \((\w+), rc=(\d+)\)", nlog)
+            values[f"eqy_neg_{key}_status"] = done.group(1) if done else "UNKNOWN"
+            values[f"eqy_neg_{key}_partition"] = part
+            checks[f"eqy_neg_{key}_bug_detected"] = (
+                step_rc.get(f"eqy_neg_{key}") == 0 and bool(hit) and bool(done)
+                and done.group(1) == "FAIL" and "Proved equivalence of partition" not in nlog)
+            bug = [ln for ln in read(os.path.join(logs, f"eqy_neg_{key}.log")).splitlines()
+                   if ln.startswith(("<", ">"))]
+            ev += [f"# negative control ({name}): injected bug, EQY must report it"] + bug[:2] + [
+                re.sub(r"\[.*?\]", f"[neg_{name}]", ln, count=1) for ln in hit[:1]] + [
+                f"neg_{name}: EQY status {values[f'eqy_neg_{key}_status']} (expected FAIL)"]
         values["eqy_scope"] = ("per-PE fallback: (1) mac_int8 RTL == netlist incl. the multiplier, "
                                "(2) full 4x4 array RTL == netlist with mac_int8 black-boxed; "
-                               "together they cover the whole design")
-        checks["eqy_pass"] = checks["eqy_mac_pass"] and checks["eqy_array_pass"]
+                               "together they cover the whole design. SMT (sby) strategy for all "
+                               "partitions; two negative controls must fail")
+        checks["eqy_pass"] = (checks["eqy_mac_pass"] and checks["eqy_array_pass"]
+                              and checks["eqy_neg_mac_bug_detected"]
+                              and checks["eqy_neg_array_bug_detected"])
         values["eqy_status"] = "PASS" if checks["eqy_pass"] else "FAIL"
         try:
             st = json.load(open(os.path.join(work, "synth_stat.json")))
@@ -286,8 +314,8 @@ def main():
     complete = all(s in steps_run for s in ALL_STEPS)
     required = ["zero_mismatches_verilator", "zero_mismatches_icarus", "csv_sha256_identical",
                 "random_case_count_as_requested", "lint_clean", "formal_bmc_pass",
-                "formal_bmc_depth_ge_20", "formal_prove_pass", "eqy_mac_pass", "eqy_array_pass",
-                "eqy_pass", "waveform_rendered"]
+                "formal_bmc_depth_ge_20", "formal_prove_pass", "formal_neg_bug_detected", "eqy_mac_pass", "eqy_array_pass",
+                "eqy_neg_mac_bug_detected", "eqy_neg_array_bug_detected", "eqy_pass", "waveform_rendered"]
     present = [c for c in required if c in checks]
     ok = bool(present) and all(checks[c] for c in present) and all(v == 0 for v in step_rc.values())
     summary = {
