@@ -101,3 +101,10 @@ The 12 user-bandwidth runs (3 dataflows x B = 64, 256) need roughly 4 h of exclu
 exceed 170 s each. Per decision P2-8 only one probe hold (`rl2_user_ws_high`, at most 9 minutes) was run to measure
 the cost, and criterion A is reported per cell as "not evaluated (cost)" together with that measurement, never as
 pass or fail. See the probe result below.
+
+**Probe result (decision P2-8).** One lock hold of `rl2_user_ws_high` (B = 256, ws): its largest layer, `Conv5_1b`
+(M=25, N=512, K=4608), ran alone with the whole 480 s budget and was killed at 481 s without finishing; 0 of 21
+layers completed (`results/evidence/31_a_probe.txt`, `results/t3/roofline2/rl2_user_ws_high/blocked.json`). A single
+layer of one criterion-A cell therefore does not fit in a 10-minute lock hold, SCALE-Sim cannot checkpoint inside a
+layer, and criterion A is **not evaluated (cost)**: ws B=256 `blocked` (probe), the other five cells `not_run`. It is
+neither a pass nor a fail. The stage verdict is FAIL because of criterion B alone.
