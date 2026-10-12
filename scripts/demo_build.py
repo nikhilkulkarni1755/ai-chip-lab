@@ -22,6 +22,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from evidence_privacy import scan_text, scrub_text  # noqa: E402
+import demo_part2  # noqa: E402
 
 HOME_LAB = os.path.expanduser("~/ai-chip-lab")
 e = html.escape
@@ -281,7 +282,8 @@ def build_rows(L):
                 dn, det.get("reference_clock_period_ns"), fmt_val(pp.get("wns_setup_ns")), fmt_val(pp.get("tns_setup_ns")), det.get("setup_violating_endpoints")))
     rows.append(Row("Task 2: OpenROAD gcd flows within ORFS's shipped regression thresholds", s2,
                     d2 + ("; NOT timing-closed: " + "; ".join(nc) if nc else ""), "results/t2_summary.json"))
-    s3, d3, t3s = task_state(L, "30_arch_model", "results/t3_summary.json")
+    t3stage = "31_roofline_fix" if stage_marker(L, "31_roofline_fix")[0] != "none" else "30_arch_model"
+    s3, d3, t3s = task_state(L, t3stage, "results/t3_summary.json")
     t3f = sorted(k for k, v in ((t3s or {}).get("checks") or {}).items() if v is False)
     if t3f:
         d3 += "; criteria that fail: %s (the roofline-vs-stalls agreement; the analytic cycle model and byte-identity checks pass)" % ", ".join(t3f)
@@ -323,12 +325,15 @@ def build_rows(L):
             why += "; %d point(s)" % pts[0]
         rows.append(Row(label, state, why, "results/sweeps/%s.jsonl" % name if pts else None))
 
-    sr, dr, rrep = task_state(L, "50_repro", "results/repro_report.json")
+    rstage = "51_repro_full" if stage_marker(L, "51_repro_full")[0] != "none" else "50_repro"
+    sr, dr, rrep = task_state(L, rstage, "results/repro_report.json")
     if isinstance(rrep, dict):
         dr += ("; %s of %s checks identical. Scope: Tasks 1 and 3 were re-run from clean directories; Task 2 reuses the two original clean runs "
                "(nangate45/gcd and sky130hd/gcd, not a third run); systolic_os has a single run, so it has no determinism verdict" % (
                    (rrep.get("counts") or {}).get("identical"), len(rrep.get("checks") or [])))
     rows.append(Row("Repeatability rerun (repro)", sr, dr, "results/repro_report.json"))
+    if demo_part2.active(L):
+        rows.extend(demo_part2.extra_rows(L, Row, t1, t2s, t3s))
     return rows
 
 
@@ -907,7 +912,8 @@ def build_html(L, rows, vm):
     h.append("<h1>AI chip design lab</h1><p class='sub'>An open-source flow from a multiply-accumulate unit to a laid-out chip, "
              "built and checked unattended on an old Intel MacBook. Generated %s from the files on disk; nothing on this page "
              "is typed in by hand except the explanations.</p>" % e(now))
-    h.append("<nav>%s</nav>" % " ".join('<a href="#%s">%d. %s</a>' % (i, k + 1, t) for k, (i, t) in enumerate(NAV)))
+    nav = list(NAV) + ([("p2sum", "Part 2 summary"), ("p2changes", "What changed"), ("p2tests", "New tests"), ("p2dec", "Decisions"), ("p2cav", "Part 2 caveats"), ("p2next", "Next")] if demo_part2.active(L) else [])
+    h.append("<nav>%s</nav>" % " ".join('<a href="#%s">%d. %s</a>' % (i, k + 1, t) for k, (i, t) in enumerate(nav)))
 
     # 1 summary
     h.append('<h2 id="summary">1. Summary</h2>')
@@ -1092,6 +1098,8 @@ def build_html(L, rows, vm):
     for t, why in NEXT:
         h.append("<li><b>%s</b><br><span class='sub'>%s</span></li>" % (t, why))
     h.append("</ol>")
+    if demo_part2.active(L):
+        h.append(demo_part2.part2_html(L, rows, L.jload("coord/part2_before.json") or {"rows": []}))
     h.append("<hr><p class='sub'>Re-generate this page at any time: <code>python3 scripts/demo_build.py</code>. "
              "5-minute re-run: <code>bash demo/run_demo.sh</code>.</p></main></body></html>")
     return "".join(h)
@@ -1168,6 +1176,8 @@ def build_root_readme(L, rows, vm):
              "plots, and honest caveats.\n")
     h.append("## Status\n\nGenerated from the files in this repository by `python3 scripts/demo_build.py` (%s).\n" % el_s)
     h.append(md_table(rows))
+    if demo_part2.active(L):
+        h.append("\n" + demo_part2.part2_md(L, rows, L.jload("coord/part2_before.json") or {"rows": []}))
     h.append("\nPASS means the stage's `.done` marker exists and its summary JSON says `\"pass\": true`. Anything unfinished is shown as "
              "PENDING/RUNNING/BLOCKED/UNKNOWN and not assumed.\n")
     h.append("## What is in it\n\n| Path | What |\n|---|---|")

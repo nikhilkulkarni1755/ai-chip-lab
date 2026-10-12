@@ -1,0 +1,12 @@
+{"source": "coord/TASK2.md, section 'Status at the start of Part 2' (copied as data; the 'after' column is computed from markers and summaries)",
+ "rows": [
+  {"id": "runtime", "check": "Runtime", "before": "PASS", "note": ""},
+  {"id": "images", "check": "Images", "before": "PASS", "note": ""},
+  {"id": "task1", "check": "Task 1: sim vs NumPy, SBY, EQY", "before": "PASS", "note": "EQY compared RTL against the generic Yosys netlist, not the routed nangate45 netlist"},
+  {"id": "task2", "check": "Task 2: ORFS gcd within thresholds", "before": "PASS", "note": "Neither reference design is timing-closed at its reference clock: nangate45 0.25 ns, WNS -0.16 ns; sky130hd 1.1 ns, WNS -1.46 ns"},
+  {"id": "task3", "check": "Task 3: SCALE-Sim vs analytic", "before": "FAIL", "note": "Only the roofline-vs-stalls agreement criteria fail; analytic cycle fit and byte identity pass"},
+  {"id": "sweepA", "check": "Sweep A", "before": "Incomplete", "note": "165 of 264 points done, 97 not reached, 1 error, 1 timeout"},
+  {"id": "sweepB", "check": "Sweep B", "before": "Coarse", "note": "gcd frontier about 0.42 ns; systolic_os closes at 1.6 ns, fails at 1.2 ns, 30 % utilization only"},
+  {"id": "repro", "check": "Repro", "before": "PASS", "note": "10/10, but Task 2 reused its original two runs; systolic_os has a single run"},
+  {"id": "recipes", "check": "Make recipes", "before": "Untested", "note": "Only make preflight was executed as a recipe"}
+ ]}
