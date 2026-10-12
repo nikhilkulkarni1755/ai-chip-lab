@@ -2,24 +2,24 @@ $ yosys -p 'script eqy/synth.ys; stat; write_verilog -noattr <work>/systolic_os_
 $ eqy -f -j 2 -d <work>/eqy_mac_int8 <work>/mac_int8.eqy   (from eqy/mac_int8.eqy.in)
 # per PE: RTL mac_int8 vs netlist mac_int8 (multiplier + accumulator)
 partitions: 2, proved: 2, failed: 0
-EQY 13:04:53 [eqy_mac_int8] Successfully proved designs equivalent
-EQY 13:04:53 [eqy_mac_int8] summary: Elapsed clock time [H:MM:SS (secs)]: 0:02:06 (126)
-EQY 13:04:53 [eqy_mac_int8] summary: Elapsed process time [H:MM:SS (secs)]: 0:01:46 (106)
-EQY 13:04:53 [eqy_mac_int8] DONE (PASS, rc=0)
+EQY 21:41:27 [eqy_mac_int8] Successfully proved designs equivalent
+EQY 21:41:27 [eqy_mac_int8] summary: Elapsed clock time [H:MM:SS (secs)]: 0:01:44 (104)
+EQY 21:41:27 [eqy_mac_int8] summary: Elapsed process time [H:MM:SS (secs)]: 0:01:45 (105)
+EQY 21:41:27 [eqy_mac_int8] DONE (PASS, rc=0)
 $ eqy -f -j 2 -d <work>/eqy_systolic_os <work>/systolic_os.eqy   (from eqy/systolic_os.eqy.in)
 # full 4x4 systolic_os vs netlist, mac_int8 black-boxed on both sides
 partitions: 295, proved: 295, failed: 0
-EQY 13:09:38 [eqy_systolic_os] Successfully proved designs equivalent
-EQY 13:09:38 [eqy_systolic_os] summary: Elapsed clock time [H:MM:SS (secs)]: 0:04:44 (284)
-EQY 13:09:38 [eqy_systolic_os] summary: Elapsed process time [H:MM:SS (secs)]: 0:04:47 (287)
-EQY 13:09:38 [eqy_systolic_os] DONE (PASS, rc=0)
+EQY 21:57:25 [eqy_systolic_os] Successfully proved designs equivalent
+EQY 21:57:25 [eqy_systolic_os] summary: Elapsed clock time [H:MM:SS (secs)]: 0:03:57 (237)
+EQY 21:57:25 [eqy_systolic_os] summary: Elapsed process time [H:MM:SS (secs)]: 0:06:10 (370)
+EQY 21:57:25 [eqy_systolic_os] DONE (PASS, rc=0)
 # negative control (mac_int8): injected bug, EQY must report it
 <     else if (valid) acc <= acc + 32'(prod);
 >     else if (valid) acc <= acc + 32'(prod) + 32'sd1;
-EQY 13:09:41 [neg_mac_int8] run: Could not prove equivalence of partition 'mac_int8.acc' using strategy 'smt': equivalence unknown
+EQY 22:09:26 [neg_mac_int8] run: Could not prove equivalence of partition 'mac_int8.acc' using strategy 'smt': equivalence unknown
 neg_mac_int8: EQY status FAIL (expected FAIL)
 # negative control (systolic_os): injected bug, EQY must report it
 <         always_ff @(posedge clk) a_q <= a_w[i][j];
 >         always_ff @(posedge clk) a_q <= a_w[i][j] ^ 8'd1;
-EQY 13:09:52 [neg_systolic_os] run: Could not prove equivalence of partition 'systolic_os.g_row.0.g_col.0.g_east.a_q' using strategy 'smt': partitions not equivalent
+EQY 22:09:40 [neg_systolic_os] run: Could not prove equivalence of partition 'systolic_os.g_row.0.g_col.0.g_east.a_q' using strategy 'smt': partitions not equivalent
 neg_systolic_os: EQY status FAIL (expected FAIL)

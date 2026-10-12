@@ -70,11 +70,11 @@
     "eqy_routed_hold7": 333,
     "eqy_routed_hold8": 330,
     "eqy_routed_hold9": 342,
-    "eqy_routed_verdict": 44,
+    "eqy_routed_verdict": 43,
     "gls_icarus": 67,
     "gls_neg": 18,
     "gls_verilator": 544,
-    "total_wall": 19053
+    "total_wall": 19614
   },
   "stage": "11_eqy_routed",
   "step_exit_codes": {
