@@ -1,0 +1,5 @@
+30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes).
+PASS: bundled ws/os/is runs + reports saved; two reruns byte-identical (15 files); analytic model exact (residual 0 cycles on held-out 2R/2C/2K/2M/2N points).
+FAIL: roofline classification vs SCALE-Sim stalls (agreement ws 62%, os 31%, is 62% for the effective-traffic roofline; compulsory-AI roofline 44/19/44%; threshold 80%).
+Diagnosis: SCALE-Sim exposes DRAM time as prefetch before cycle 0 (no stall cycles) for layers whose working set fits the 64 kB SRAM; stalls only appear for layers that re-stream operands (sq192/sq256, GEMVs). A traffic-based roofline therefore over-predicts bandwidth-bound. Details: results/t3_summary.json (roofline), results/t3/roofline.json. Bundled google.cfg gives 0 stalls for all 3 dataflows (finding).
+Rerun: scripts/t3_run.sh
