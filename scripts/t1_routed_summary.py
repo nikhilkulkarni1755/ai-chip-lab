@@ -150,6 +150,11 @@ def summary(a):
         "verilog_cell_models": "generated from the Liberty functions with Yosys (read_liberty; proc; "
                                "write_verilog); the ORFS nangate45 platform ships no Verilog simulation library",
         "verilog_cell_models_sha256": sha256(cells_v) if os.path.exists(cells_v) else None,
+        "gls_sources": {
+            "icarus": "routed netlist as written by OpenROAD + one Verilog cell module per instance",
+            "verilator": "the same netlist with the cell functions inlined by Yosys (flatten only, no "
+                         "optimisation); per-instance cell modules take > 30 min to compile with Verilator here",
+        },
         "gold_rtl": ["rtl/mac_int8.sv", "rtl/systolic_os.sv"],
         "gold_rtl_sha256": [sha256("rtl/mac_int8.sv"), sha256("rtl/systolic_os.sv")],
     }

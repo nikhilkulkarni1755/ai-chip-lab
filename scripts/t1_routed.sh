@@ -25,14 +25,14 @@
 # Environment: T1R_STEPS = subset of "gls eqy" (default both; "gls" alone is the
 # quick demo check).
 #
-# Lock use: the stage runs as several short container jobs, each under its own
-# scripts/with_lock.sh acquisition, so shorter jobs of other stages can interleave:
-#   1. cell models + gate-level simulation,
-#   2. EQY in resumable chunks of at most T1R_CHUNK_SECONDS (default 540 s; `eqy -c`
-#      continues with the partitions that are not finished yet),
-#   3. negative controls + summary.
-# A caller that already holds the lock (LAB_LOCK_HELD=1) gets the same phases without
-# re-locking.
+# Lock use: every step is its own short container job under its own
+# scripts/with_lock.sh acquisition (cell models, Icarus GLS, Verilator GLS, GLS negative
+# control, EQY in resumable chunks of at most T1R_CHUNK_SECONDS = 540 s -- `eqy -c`
+# continues with the partitions that have no result yet --, each EQY negative control,
+# summary), so other stages' short jobs interleave.  The lock is re-entrant: a caller
+# that already holds it (LAB_LOCK_HELD=1) gets the same steps without re-locking.
+# T1R_RESUME=1 continues an interrupted or partly failed run: steps that already
+# succeeded (rc 0 in <work>/steps.tsv) are skipped, the others run again.
 set -u -o pipefail
 
 NCASES="${1:-200}"
@@ -65,7 +65,7 @@ if [ -z "${T1R_INSIDE:-}" ]; then
     "${LOCK[@]}" docker run --rm --platform linux/amd64 --cpus 2 \
       -v "$LAB_DIR":/lab -w /lab \
       -e T1R_INSIDE=1 -e T1R_PHASE="$1" -e T1R_STEPS="$STEPS" -e PYTHONHASHSEED=0 \
-      -e T1R_CHUNK_SECONDS="${T1R_CHUNK_SECONDS:-540}" \
+      -e T1R_CHUNK_SECONDS="${T1R_CHUNK_SECONDS:-540}" -e T1R_RESUME="${T1R_RESUME:-0}" \
       -e T1_ROUTED_NETLIST="${T1_ROUTED_NETLIST:-}" \
       -e T1R_IMAGE_REF="$LAB_SIM_IMAGE" -e T1R_ORFS_IMAGE="$ORFS_IMAGE" -e T1R_LIB_IN_IMAGE="$LIB_IN_IMAGE" \
       -e T1R_IMAGE_ID="$IMAGE_ID" \
@@ -88,12 +88,16 @@ if [ -z "${T1R_INSIDE:-}" ]; then
     } > "/lab/$1/kepler_check.txt" 2>&1
   ' "$LIB_IN_IMAGE" "$WORK" || { echo "cannot copy Liberty from ORFS image" >&2; exit 3; }
   phase prep || true
+  if [[ " $STEPS " == *" gls "* ]]; then
+    for st in gls_icarus gls_verilator gls_neg; do phase "$st" || true; done
+  fi
   if [[ " $STEPS " == *" eqy "* ]]; then
     for chunk in $(seq 1 "${T1R_MAX_CHUNKS:-12}"); do
       [ -f "$WORK/eqy_routed.finished" ] && break
       echo "[t1r] EQY chunk $chunk"
       phase eqy || true
     done
+    for st in eqy_neg_rtl_mac eqy_neg_rtl_reg eqy_neg_netlist; do phase "$st" || true; done
   fi
   phase finish
   exit $?
@@ -117,7 +121,8 @@ PHASE="${T1R_PHASE:-all}"
 mkdir -p "$OUT" "$WORK" "$LOGS"
 OUT_ABS="$(cd "$OUT" && pwd)"; WORK_ABS="$(cd "$WORK" && pwd)"
 NETLIST_ABS="$(cd "$(dirname "$NETLIST")" && pwd)/$(basename "$NETLIST")"
-if [ "$PHASE" = prep ] || [ "$PHASE" = all ]; then      # a new run starts here: clean slate
+RESUME=0; [ "${T1R_RESUME:-0}" = 1 ] && [ -s "$WORK/steps.tsv" ] && RESUME=1
+if { [ "$PHASE" = prep ] || [ "$PHASE" = all ]; } && [ "$RESUME" = 0 ]; then   # new run: clean slate
   find "$WORK" -mindepth 1 -maxdepth 1 ! -name cells ! -name .gitignore ! -name kepler_check.txt -exec rm -rf {} +
   rm -f "$OUT"/t1_routed_gls_*.csv "$OUT"/t1_routed_summary.json "$CELLS_V" "$LOGS"/step_*.log
   : > "$WORK/steps.tsv"; date +%s > "$WORK/t_start"
@@ -132,6 +137,10 @@ tmo() { local secs="$1"; shift; timeout "$secs" "$@"; }
 want() { case " $STEPS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 step() {  # step <name> <timeout-seconds> <function> [args]
   local name="$1" secs="$2" t0 rc; shift 2
+  if [ "$RESUME" = 1 ] && grep -q "^$name	0	" "$WORK/steps.tsv"; then
+    echo "[t1r] $name: already done in this run (resume), skipped"; return 0
+  fi
+  grep -v "^$name	" "$WORK/steps.tsv" > "$WORK/steps.tsv.tmp" 2>/dev/null; mv "$WORK/steps.tsv.tmp" "$WORK/steps.tsv"
   t0=$(date +%s); echo "[t1r] $name ..."
   TMO="$secs"
   "$@" > "$LOGS/step_$name.log" 2>&1
@@ -158,6 +167,18 @@ gls() {  # gls <sim> <netlist> <csv tag> <ncases>
     tmo "$TMO" make -C tb SIM="$1" SIM_BUILD="$WORK_ABS/sim_$3" COCOTB_RESULTS_FILE="$WORK_ABS/results_$3.xml" \
       T1_GATE_NETLIST="$2" T1_GATE_CELLS="$WORK_ABS/cells/nangate45_cells_from_liberty.v"
 }
+# Verilator: with one module instance per standard cell (27k scopes, all public for
+# cocotb) the generated C++ takes over half an hour to compile on this machine, so
+# Verilator simulates the same netlist after Yosys has inlined the cell functions
+# (flatten only: every gate and flop is kept, nothing is optimised).  Icarus simulates
+# the netlist exactly as OpenROAD wrote it, with one cell module per instance.
+gls_verilator() {
+  tmo 300 yosys -q -l "$WORK/netlist_flat_for_verilator.log" -p "read_liberty -ignore_miss_func $LIB; read_verilog $NETLIST; hierarchy -check -top systolic_os; flatten; select -assert-none t:* t:\$* %d; proc; clean; write_verilog -noattr $WORK/netlist_flat_for_verilator.v" || return 1
+  T1_NCASES="$NCASES" T1_SEED=1234 \
+  T1_CSV="$OUT_ABS/t1_routed_gls_verilator.csv" T1_COV="$WORK_ABS/coverage_gls_verilator.json" \
+    tmo "$TMO" make -C tb SIM=verilator SIM_BUILD="$WORK_ABS/sim_verilator" COCOTB_RESULTS_FILE="$WORK_ABS/results_verilator.xml" \
+      T1_GATE_NETLIST="$WORK_ABS/netlist_flat_for_verilator.v" T1_GATE_CELLS=
+}
 # Negative control: swap the D inputs of two operand-register flops in a copy of the
 # netlist; the simulation must then report mismatches (make exits non-zero).
 gls_neg() {
@@ -170,10 +191,10 @@ gls_neg() {
   echo "make exit code: $rc (non-zero expected: the testbench must report mismatches)"
   [ $rc -ne 0 ] && [ $rc -ne 124 ]
 }
-if want gls && in_phase prep; then
-  step gls_icarus 1800 gls icarus "$NETLIST_ABS" icarus "$NCASES"
-  step gls_verilator 2400 gls verilator "$NETLIST_ABS" verilator "$NCASES"
-  step gls_neg 900 gls_neg
+if want gls; then
+  in_phase gls_icarus && step gls_icarus 540 gls icarus "$NETLIST_ABS" icarus "$NCASES"
+  in_phase gls_verilator && { rm -rf "$WORK/sim_verilator"; step gls_verilator 540 gls_verilator; }
+  in_phase gls_neg && step gls_neg 540 gls_neg
 fi
 
 # ------------------------------------------------------------------- 2. EQY
@@ -220,22 +241,14 @@ if want eqy && in_phase eqy && [ ! -f "$WORK/eqy_routed.finished" ]; then
   n=$(grep -c '^eqy_routed_chunk' "$WORK/steps.tsv" 2>/dev/null || true)
   step "eqy_routed_chunk$(( ${n:-0} + 1 ))" 900 equiv
 fi
-if want eqy && [ "$PHASE" = all ]; then      # caller holds the lock: finish the chunks here
-  for _ in $(seq 1 12); do
-    [ -f "$WORK/eqy_routed.finished" ] && break
-    n=$(grep -c '^eqy_routed_chunk' "$WORK/steps.tsv" 2>/dev/null || true)
-    step "eqy_routed_chunk$(( ${n:-0} + 1 ))" 900 equiv
-  done
-fi
-if want eqy && in_phase finish; then
-  step eqy_neg_rtl_mac 600 equiv_neg rtl_mac systolic_os.acc_o.0 rtl mac_int8.sv \
+if want eqy; then
+  in_phase eqy_neg_rtl_mac && step eqy_neg_rtl_mac 540 equiv_neg rtl_mac systolic_os.acc_o.0 rtl mac_int8.sv \
     "s/acc <= acc + 32'(prod);/acc <= acc + 32'(prod) + 32'sd1;/"
-  step eqy_neg_rtl_reg 300 equiv_neg rtl_reg systolic_os.g_row.0.g_col.0.g_east.a_q.0 rtl systolic_os.sv \
+  in_phase eqy_neg_rtl_reg && step eqy_neg_rtl_reg 300 equiv_neg rtl_reg systolic_os.g_row.0.g_col.0.g_east.a_q.0 rtl systolic_os.sv \
     "s/a_q <= a_w\\[i\\]\\[j\\];/a_q <= a_w[i][j] ^ 8'd1;/"
-  step eqy_neg_netlist 300 equiv_neg netlist systolic_os.g_row.0.g_col.0.g_east.a_q.0 netlist
+  in_phase eqy_neg_netlist && step eqy_neg_netlist 300 equiv_neg netlist systolic_os.g_row.0.g_col.0.g_east.a_q.0 netlist
 fi
 
-# --------------------------------------------------------------- 3. summary
 in_phase finish || exit 0
 python3 scripts/t1_routed_summary.py summary --out "$OUT" --work "$WORK" --logs "$LOGS" \
   --ncases "$NCASES" --steps "$STEPS" --netlist "$NETLIST" --wall "$(( $(date +%s) - T_START ))"

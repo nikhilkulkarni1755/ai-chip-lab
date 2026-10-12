@@ -17,6 +17,12 @@
 # * Stage markers in results/.stages and demo/assets/t1_waveform.png are only
 #   touched by the official configuration (OUTDIR=results, NCASES>=10000, all steps).
 #
+# Lock use (Part 2): every step (lint, each simulator, waveform, formal, synthesis+EQY MAC,
+# EQY array, negative controls, summary) is its own container job under its own
+# scripts/with_lock.sh acquisition, so other stages' short jobs interleave; a caller that
+# already holds the lock (LAB_LOCK_HELD=1) gets the same steps without re-locking.
+# What is computed is unchanged.
+#
 # Environment knobs:
 #   T1_STEPS   space-separated subset of "lint sim wave formal eqy" (default: all).
 #              A partial run reports "complete": false and never writes a stage marker.
@@ -57,11 +63,20 @@ if [ -z "${T1_INSIDE:-}" ]; then
   # time).  A caller that already holds it says so with LAB_LOCK_HELD=1.
   LOCK=()
   [ "${LAB_LOCK_HELD:-0}" = 1 ] || LOCK=(bash scripts/with_lock.sh rtl env LAB_LOCK_HELD=1)
-  exec "${LOCK[@]}" docker run --rm --platform linux/amd64 --cpus 2 \
-    -v "$LAB_DIR":/lab -w /lab \
-    -e T1_INSIDE=1 -e T1_STEPS="$STEPS" -e PYTHONHASHSEED=0 \
-    -e T1_IMAGE_REF="$LAB_SIM_IMAGE" -e T1_IMAGE_ID="$IMAGE_ID" \
-    "$LAB_SIM_IMAGE" bash scripts/t1_run.sh "$NCASES" "$OUT_REL"
+  phase() {  # phase <name>: one container job = one lock acquisition
+    "${LOCK[@]}" docker run --rm --platform linux/amd64 --cpus 2 \
+      -v "$LAB_DIR":/lab -w /lab \
+      -e T1_INSIDE=1 -e T1_PHASE="$1" -e T1_STEPS="$STEPS" -e PYTHONHASHSEED=0 \
+      -e T1_IMAGE_REF="$LAB_SIM_IMAGE" -e T1_IMAGE_ID="$IMAGE_ID" \
+      "$LAB_SIM_IMAGE" bash scripts/t1_run.sh "$NCASES" "$OUT_REL"
+  }
+  phase prep || exit $?
+  for st in lint:lint sim:sim_verilator sim:sim_icarus wave:waveform formal:formal \
+            eqy:eqy_mac eqy:eqy_array eqy:eqy_neg; do
+    [[ " $STEPS " == *" ${st%%:*} "* ]] && { phase "${st#*:}" || true; }
+  done
+  phase finish
+  exit $?
 fi
 
 # --------------------------------------------------------- inside (container)
@@ -74,20 +89,26 @@ WORK="$OUT/t1_work"
 if [ "$OUT" = "results" ]; then LOGS="logs/10_rtl_verify"; else LOGS="$WORK/logs"; fi
 STAGE="results/.stages/10_rtl_verify"
 
-rm -rf "$WORK"
-rm -f "$OUT"/t1_icarus.csv "$OUT"/t1_verilator.csv "$OUT"/t1_coverage_*.json "$OUT"/t1_lint.txt \
-      "$OUT"/t1_summary.json "$OUT"/t1_waveform.png "$OUT"/t1_waveform_case.json
+PHASE="${T1_PHASE:-all}"
+in_phase() { [ "$PHASE" = all ] || [ "$PHASE" = "$1" ]; }
+if in_phase prep; then                                   # a new run starts here: clean slate
+  rm -rf "$WORK"
+  rm -f "$OUT"/t1_icarus.csv "$OUT"/t1_verilator.csv "$OUT"/t1_coverage_*.json "$OUT"/t1_lint.txt \
+        "$OUT"/t1_summary.json "$OUT"/t1_waveform.png "$OUT"/t1_waveform_case.json
+  mkdir -p "$OUT" "$WORK" "$LOGS"
+  rm -f "$LOGS"/*.log
+  echo '*' > "$WORK/.gitignore"
+  : > "$WORK/steps.tsv"; date +%s > "$WORK/t_start"
+  if [ "$OFFICIAL" = 1 ]; then
+    mkdir -p results/.stages
+    rm -f "$STAGE.done" "$STAGE.failed"
+    : > "$STAGE.running"
+    echo "$(date +%H:%M:%S) rtl: 10_rtl_verify official run started (N=$NCASES, image $T1_IMAGE_REF)" >> logs/run.log
+  fi
+fi
 mkdir -p "$OUT" "$WORK" "$LOGS"
-rm -f "$LOGS"/*.log
-echo '*' > "$WORK/.gitignore"
 OUT_ABS="$(cd "$OUT" && pwd)"
 WORK_ABS="$(cd "$WORK" && pwd)"
-if [ "$OFFICIAL" = 1 ]; then
-  mkdir -p results/.stages
-  rm -f "$STAGE.done" "$STAGE.failed"
-  : > "$STAGE.running"
-  echo "$(date +%H:%M:%S) rtl: 10_rtl_verify official run started (N=$NCASES, image $T1_IMAGE_REF)" >> logs/run.log
-fi
 
 tmo() {  # tmo <seconds> <cmd...>
   local secs="$1"; shift
@@ -107,8 +128,7 @@ step() {  # step <name> <timeout-seconds> <function> [args]   (records rc + wall
   echo "[t1] $name: rc=$rc, $(( $(date +%s) - t0 )) s"
   return $rc
 }
-: > "$WORK/steps.tsv"
-T_START=$(date +%s)
+T_START=$(cat "$WORK/t_start" 2>/dev/null || date +%s)
 
 # The OSS CAD Suite launchers export PYTHONHOME for the suite's private Python.
 # cocotb embeds the lab's own Python (venv with numpy, cocotb-coverage) into
@@ -144,7 +164,7 @@ lint() {
   cat "$OUT/t1_lint.txt"
   return $rc
 }
-want lint && step lint 300 lint
+want lint && in_phase lint && step lint 300 lint
 
 # -------------------------------------------------------------------- 2. sim
 sim() {  # sim <icarus|verilator>
@@ -153,8 +173,8 @@ sim() {  # sim <icarus|verilator>
     tmo "$TMO" make -C tb SIM="$1" SIM_BUILD="$WORK_ABS/sim_$1" COCOTB_RESULTS_FILE="$WORK_ABS/results_$1.xml"
 }
 if want sim; then
-  step sim_verilator 1800 sim verilator
-  step sim_icarus 3000 sim icarus
+  in_phase sim_verilator && step sim_verilator 1800 sim verilator
+  in_phase sim_icarus && step sim_icarus 3000 sim icarus
 fi
 
 # --------------------------------------------------------------- 3. waveform
@@ -165,7 +185,7 @@ wave() {
   python3 scripts/t1_waveform.py "$WORK/t1_small_case.vcd" "$OUT/t1_waveform_case.json" \
     "$OUT/t1_waveform.png"
 }
-want wave && step waveform 600 wave
+want wave && in_phase waveform && step waveform 600 wave
 
 # ----------------------------------------------------------------- 4. formal
 formal() { (cd formal && tmo "$TMO" sby -f -j 2 --prefix "$WORK_ABS/formal/mac" mac.sby); }
@@ -183,7 +203,7 @@ formal_neg() {
   echo "sby exit code: $rc (non-zero expected)"
   [ $rc -ne 0 ] && [ $rc -ne 124 ]
 }
-if want formal; then
+if want formal && in_phase formal; then
   step formal 2400 formal
   step formal_neg 600 formal_neg
 fi
@@ -217,17 +237,22 @@ equiv_neg() {  # equiv_neg <mac_int8|systolic_os> <file to mutate> <sed expr> <p
   [ $rc -ne 0 ] && [ $rc -ne 124 ]
 }
 if want eqy; then
-  if step synth 900 synth; then
-    step eqy_mac 1800 equiv mac_int8
-    step eqy_array 2400 equiv systolic_os
-    step eqy_neg_mac 900 equiv_neg mac_int8 mac_int8.sv \
-      "s/acc <= acc + 32'(prod);/acc <= acc + 32'(prod) + 32'sd1;/" mac_int8.acc
-    step eqy_neg_array 900 equiv_neg systolic_os systolic_os.sv \
-      "s/a_q <= a_w\\[i\\]\\[j\\];/a_q <= a_w[i][j] ^ 8'd1;/" systolic_os.g_row.0.g_col.0.g_east.a_q
+  if in_phase eqy_mac; then
+    step synth 900 synth && step eqy_mac 1800 equiv mac_int8
+  fi
+  if [ -s "$WORK/systolic_os_netlist.v" ]; then
+    in_phase eqy_array && step eqy_array 2400 equiv systolic_os
+    if in_phase eqy_neg; then
+      step eqy_neg_mac 900 equiv_neg mac_int8 mac_int8.sv \
+        "s/acc <= acc + 32'(prod);/acc <= acc + 32'(prod) + 32'sd1;/" mac_int8.acc
+      step eqy_neg_array 900 equiv_neg systolic_os systolic_os.sv \
+        "s/a_q <= a_w\\[i\\]\\[j\\];/a_q <= a_w[i][j] ^ 8'd1;/" systolic_os.g_row.0.g_col.0.g_east.a_q
+    fi
   fi
 fi
 
 # ---------------------------------------------------------------- 6. summary
+in_phase finish || exit 0
 python3 scripts/t1_summary.py --out "$OUT" --work "$WORK" --logs "$LOGS" --ncases "$NCASES" \
   --steps "$STEPS" --wall "$(( $(date +%s) - T_START ))"
 RC=$?
