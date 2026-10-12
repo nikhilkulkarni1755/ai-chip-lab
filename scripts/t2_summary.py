@@ -94,13 +94,13 @@ def main():
             rj = json.load(open(X.paths(plat, des, b)["run"]))
             if rj.get("rtl_sha256"):
                 d["rtl"] = {"sha256_mac_plus_systolic": rj["rtl_sha256"], "last_rtl_commit": rj.get("rtl_last_commit")}
-            else:  # run predates sha recording: built from the first RTL commit (before 7173c7f)
-                d["rtl"] = {"last_rtl_commit": "a2cf73c", "note": "EARLIER RTL (per-PE valid registers), superseded by 7173c7f; recorded from git history, not hashed at run time"}
+            else:  # run predates sha recording: built from the first RTL commit (before cebd174)
+                d["rtl"] = {"last_rtl_commit": "bf4685e", "note": "EARLIER RTL (per-PE valid registers), superseded by cebd174; recorded from git history, not hashed at run time"}
         if des == "systolic_os":
             pm = os.path.join(X.WORK, "prev_rtl", "reports", "metadata.json")
             if os.path.exists(pm):
                 md = X.rd(pm); pm_ppa = {n: next((md[c] for c in cs if c in md), None) for n, cs in X.KEYS.items()}
-                d["previous_rtl_result"] = {"rtl_last_commit": "a2cf73c", "note": "earlier RTL (per-PE valid registers), superseded by 7173c7f; kept for comparison",
+                d["previous_rtl_result"] = {"rtl_last_commit": "bf4685e", "note": "earlier RTL (per-PE valid registers), superseded by cebd174; kept for comparison",
                     "ppa": {k: pm_ppa.get(k) for k in d["ppa"]}, "wall_s": X.rd(os.path.join(X.WORK, "prev_rtl", "reports", "t2_run.json")).get("wall_s")}
         d["pass"] = all(v for v in d["checks"].values() if v is not None)
         if gate: ok_all &= d["pass"]

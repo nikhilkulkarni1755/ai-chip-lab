@@ -362,11 +362,11 @@
       "threshold_check": null,
       "rtl": {
         "sha256_mac_plus_systolic": "85f945db2d569064eb5e6262f9986ef1cced65591641aa9cd3ac51d0fc5bd3f9",
-        "last_rtl_commit": "7173c7f"
+        "last_rtl_commit": "cebd174"
       },
       "previous_rtl_result": {
-        "rtl_last_commit": "a2cf73c",
-        "note": "earlier RTL (per-PE valid registers), superseded by 7173c7f; kept for comparison",
+        "rtl_last_commit": "bf4685e",
+        "note": "earlier RTL (per-PE valid registers), superseded by cebd174; kept for comparison",
         "ppa": {
           "area_um2": 22961.1,
           "utilization_frac": 0.307407,

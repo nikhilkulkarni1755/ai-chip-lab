@@ -3,6 +3,6 @@ SWEPT: gcd, CORE_UTILIZATION {30,40,50,60} x clock period {0.60,0.50,0.45,0.40,0
   Frontier (fastest closing period): u30 0.425, u40 0.425, u50 0.420 (WNS +5.9e-05 ns, ~zero margin), u60 0.425 ns. Reference clock 0.25 ns does not close.
   1 failed point: gcd 0.30 ns / u60 -- flow aborted in global_route (ERROR DPL-0033 detailed-placement overlap check), no metadata, extractor FileNotFoundError is a consequence. Retry: python3 sweeps/phys_sweep.py --design gcd --retry --max-points 1 (flow is deterministic, expect same failure).
   Not swept for gcd: periods below 0.30 ns, utilization outside 30-60 %, other platforms (sky130hd).
-SWEPT: systolic_os (4x4, final RTL 7173c7f), utilization 30 % ONLY, periods 2.4, 2.0, 1.6, 1.2, 1.0 ns. Closes at 1.6 ns (+0.177), fails at 1.2 ns by 7 ps (-0.007), 1.0 ns -0.205.
+SWEPT: systolic_os (4x4, final RTL cebd174), utilization 30 % ONLY, periods 2.4, 2.0, 1.6, 1.2, 1.0 ns. Closes at 1.6 ns (+0.177), fails at 1.2 ns by 7 ps (-0.007), 1.0 ns -0.205.
   Not swept: other utilizations; no bisection between 1.2 and 1.6 (frontier resolution 0.4 ns).
 Plots: demo/assets/sweepB_{frontier,wns_heatmap}_{gcd,systolic_os}.png; table: results/sweeps/phys_frontier.json; evidence: results/evidence/40_sweepB_frontier.txt

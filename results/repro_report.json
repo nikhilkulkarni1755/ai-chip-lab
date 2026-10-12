@@ -756,7 +756,7 @@
       },
       "note": "git object SHAs of the input paths at HEAD; see provenance block",
       "rerun": {
-        "head": "6f6df38cf738637b9bbe5b26aa28aee09955f996",
+        "head": "59c83fd317907d36ea9d96481aa91fad7602cc5b",
         "inputs_unchanged_start_to_end": true,
         "no_uncommitted_changes": true,
         "object_shas": {
@@ -780,7 +780,7 @@
       },
       "note": "git object SHAs of the input paths at HEAD; see provenance block",
       "rerun": {
-        "head": "029c6972e9d174e1476fadf6f10f49880d45ed6f",
+        "head": "eec6222a7e17569e1550d5a5bd958985b629e8e1",
         "inputs_unchanged_start_to_end": true,
         "no_uncommitted_changes": true,
         "object_shas": {
@@ -803,7 +803,7 @@
   "provenance": {
     "t1": {
       "end": {
-        "head": "cd7448368b2b966d99a42fced4b69b75895ff393",
+        "head": "576531fa1a582b043a5240d3c719728fbe4f03de",
         "paths": {
           "docker/requirements.lock": {
             "git_object_sha": "d8008ae06d54c2e7d67cd7cb57117b6aa04075a1",
@@ -849,7 +849,7 @@
         "time": "2026-10-12 06:30:06"
       },
       "start": {
-        "head": "6f6df38cf738637b9bbe5b26aa28aee09955f996",
+        "head": "59c83fd317907d36ea9d96481aa91fad7602cc5b",
         "paths": {
           "docker/requirements.lock": {
             "git_object_sha": "d8008ae06d54c2e7d67cd7cb57117b6aa04075a1",
@@ -897,7 +897,7 @@
     },
     "t3": {
       "end": {
-        "head": "029c6972e9d174e1476fadf6f10f49880d45ed6f",
+        "head": "eec6222a7e17569e1550d5a5bd958985b629e8e1",
         "paths": {
           "arch": {
             "git_object_sha": "96fc0608c69b89b457b8450bd8e04f34e868f639",
@@ -923,7 +923,7 @@
         "time": "2026-10-12 06:04:00"
       },
       "start": {
-        "head": "029c6972e9d174e1476fadf6f10f49880d45ed6f",
+        "head": "eec6222a7e17569e1550d5a5bd958985b629e8e1",
         "paths": {
           "arch": {
             "git_object_sha": "96fc0608c69b89b457b8450bd8e04f34e868f639",

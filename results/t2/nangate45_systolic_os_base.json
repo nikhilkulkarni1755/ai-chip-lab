@@ -50,7 +50,7 @@
     "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
     "num_cores": 3,
     "rtl_sha256": "85f945db2d569064eb5e6262f9986ef1cced65591641aa9cd3ac51d0fc5bd3f9",
-    "rtl_last_commit": "7173c7f"
+    "rtl_last_commit": "cebd174"
   },
   "gds": {
     "path": "orfs/work/results/nangate45/systolic_os/base/6_final.gds",
