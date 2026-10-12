@@ -28,40 +28,31 @@ closure clock was not swept.
 
 ## Cross-check against ORFS's published values
 
-**What the "published reference" is, exactly.** At the pinned commit ORFS ships **no measured reference metrics for gcd**: the golden
-`metadata-base-ok.json` files were removed from the repo in Feb 2025, there is no published power value, and the CI dashboard is
-online-only. What *is* shipped is `rules-base.json` (limits). The reference values used here are therefore **implied**: the limits un-padded with the
-formulas of ORFS's rule generator (`genRuleFile.py`, same commit). They are an inference of what ORFS's reference run produced
-when the rules were last regenerated (nangate45 2026-08-21, sky130hd 2026-08-25), not a published measurement. The criterion
-`matches_published` is named for the demo schema, but means "matches the reference implied by the shipped rules".
+Two comparisons were made. The second one is the real one.
 
-`docs/t2_crosscheck_tolerance.md` fixes the tolerance (committed as a2c2d54, before the comparison); `results/t2_crosscheck.json` has the result.
+**1. Against the reference implied by `rules-base.json` (superseded).** ORFS ships no measured gcd metadata in the repo at the pinned commit (the golden
+`metadata-base-ok.json` files were deleted in Feb 2025; no power value). I un-padded the rule limits with ORFS's generator formulas
+(`docs/t2_crosscheck_tolerance.md`, commit a2c2d54, fixed before comparing). sky130hd/gcd matched; nangate45/gcd did not (setup WNS -0.162 vs implied -0.1805,
+TNS -7.09 vs -7.94, wirelength 4429 vs ~6277; all better than the reference). This criterion compared against an *inferred* number and is kept in
+`results/p2_21_orfs_crosscheck.json` as `superseded` (Decision P2-5).
 
-| design | metric | ours | implied reference (+- margin) | |
-|---|---|---|---|---|
-| sky130hd/gcd | setup WNS | -1.460 ns | -1.465 (0.055) | in |
-| | setup TNS | -64.94 ns | -65.08 (0.22) | in |
-| | instance area | 5412.7 | 5053.9 (15 %) | in |
-| | placeopt area | 4055.1 | 4054.8 | in |
-| | placeopt std cells | 478 | 478.3 | in |
-| | wirelength | 11728 | 11786 | in |
-| nangate45/gcd | setup WNS | -0.162 ns | -0.1805 (0.0125) | **out (better)** |
-| | setup TNS | -7.09 ns | -7.94 (0.05) | **out (better)** |
-| | instance area | 943.5 | 969.6 (15 %) | in |
-| | placeopt area | 827.5 | 827.8 | in |
-| | placeopt std cells | 711 | 711.3 | in |
-| | wirelength | 4429 | 6277 (15 %) | **out (29 % shorter)** |
+**2. Against ORFS's measured CI build of the exact pinned commit (`matches_published_dashboard`).** The public QoR dashboard
+(https://dashboard.precisioninno.com, `GET /api/commits/25781/metrics`, retrieved 2026-10-12, raw files in `results/t2/published/`) holds the CI build of commit
+3a964e13f itself. Tolerances were pre-registered in `docs/t2_dashboard_crosscheck_tolerance.md` (commit 9b81746, before the comparison; the raw files were
+fetched first). Result: **true for both designs**, and in fact exact: setup WNS, setup TNS, instance area, placement area and cell count, routed wirelength (4429 / 11728), power total
+(6.33406 mW / 9.85037 mW) and final DRC (0) equal the dashboard values to every printed digit; 430 (nangate45) and 439 (sky130hd) numeric metrics were compared and
+only 9 differ per design, all of them FastRoute wall-clock profiling fields. A first run of the comparison script reported DRC 63/289 vs 0: that was a script bug
+(iteration-0 rows of the detailed-route series overwrote the final value); the per-iteration series (63 -> 18 -> 10 -> 0 errors) is itself identical to ours. The tolerance was not touched.
 
-sky130hd/gcd matches; nangate45/gcd does **not** (3 of 6 band metrics), and the result stays false.
-
-**Diagnosis of the nangate45 miss, from the evidence (not assumed).**
-* The synthesis netlist hashes in the rules are reproduced **exactly** for sky130hd (both hashes equal), so the Yosys in this image
-  is the one that produced ORFS's sky130hd reference. For nangate45 both hashes differ, so the synthesised netlist is not bit-identical to ORFS's.
-* But the netlist difference is tiny: synth stdcell area is 626.696 vs implied 626.96 (-0.04 %), placeopt area/count also -0.04 %, CTS setup WNS
-  -0.1566 vs implied -0.1565 (-0.06 %). Our run tracks the reference to <0.1 % through CTS (TNS +1.2 %).
-* The departure starts at global routing (setup WNS +5.5 % better, TNS +9.4 %) and grows in detailed route (wirelength -29 %) and finish (WNS +10.5 %).
-* So the evidence does **not** support "a different Yosys build explains the miss" as the main cause: synthesis, placement and CTS agree to
-  tenths of a percent, and the gap opens in the routing stages. The more likely cause is that routing/finishing behaviour changed between the
-  rule regeneration (2026-08-21) and the pinned flow commit (2026-09-19); we cannot prove it without ORFS's reference run, so it stays a hypothesis. The
-  differing nangate45 hash is a real but, by these numbers, minor difference (possible cause: ABC/synthesis script changes after the rules were written).
-* All deviations are in the favourable direction, and ORFS's own threshold check passes 27/27 for both designs.
+**Why the implied comparison missed (evidence).**
+* Our nangate45 numbers equal the measured CI numbers of the same commit, so the flow behaves as ORFS's own CI does; the miss against the implied band comes from
+  `rules-base.json`, whose nangate45/gcd limits were last regenerated on 2026-08-21, four weeks before the pinned commit (2026-09-19). Rules are padded limits that only get
+  rewritten when someone regenerates them; they are not a snapshot of the pinned commit.
+* The Part 1 checker warning that `synth__netlist__hash` / `synth__canonical_netlist__hash` differ from the rules' recorded hashes is therefore not a different Yosys build. The
+  hashes recorded in the rules are also from the 08-21 generation. The pinned commit is itself the merge of PR #4543 "synth: strip src attributes again after techmap under
+  SYNTH_REPEATABLE_BUILD", which changes the netlist text (hence its hash) without changing its logic; nangate45/gcd sets `SYNTH_REPEATABLE_BUILD ?= 1`, sky130hd/gcd does not, and
+  precisely the sky130hd hashes still match the rules while the nangate45 ones do not. The dashboard stores numeric metrics only, so it cannot confirm hash equality, but identical
+  area, timing and power to six digits at every stage means an equivalent netlist. This explanation is supported by the commit history and the numbers, not by a hash comparison
+  with ORFS's CI.
+* Context only (not used for any criterion): the older `metadata-base-ok.json` golden files and the history of `rules-base.json` would show the drift of the references over
+  months; they describe older flows and were not compared.

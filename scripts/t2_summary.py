@@ -125,17 +125,19 @@ def main():
     if os.path.exists(fp):
         S["sweep_B"] = {"frontier_file": "results/sweeps/phys_frontier.json", "data": "results/sweeps/phys.jsonl",
                         "frontier": json.load(open(fp))["frontier"], "failed_points": json.load(open(fp))["failed_points"]}
-    cp = os.path.join(LAB, "results", "t2_crosscheck.json")
+    cp = os.path.join(LAB, "results", "t2_dashboard_crosscheck.json"); ip = os.path.join(LAB, "results", "t2_crosscheck.json")
     if os.path.exists(cp):
-        cc = json.load(open(cp))
-        S["crosscheck_published"] = {"criterion": "matches_published", "value": cc["matches_published"], "file": "results/t2_crosscheck.json",
-            "tolerance_doc": "docs/t2_crosscheck_tolerance.md", "explained_in": "docs/t2_timing_explained.md",
-            "reference_kind": cc["reference_kind"], "per_design": {k: v["matches_published"] for k, v in cc["designs"].items()},
+        cc = json.load(open(cp)); old = json.load(open(ip)) if os.path.exists(ip) else None
+        S["crosscheck_published"] = {"criterion": "matches_published_dashboard", "value": cc["matches_published_dashboard"], "file": "results/t2_dashboard_crosscheck.json",
+            "reference": cc["reference"], "tolerance_doc": cc["tolerance_doc"], "explained_in": "docs/t2_timing_explained.md",
+            "per_design": {k: v["matches_published_dashboard"] for k, v in cc["designs"].items()},
+            "superseded": {"criterion": "matches_published (implied from rules-base.json)", "per_design": {k: v["matches_published"] for k, v in old["designs"].items()} if old else None,
+                           "reason": "compared against an inferred number, not a publication (Decision P2-5)"},
             "note": "reported separately; does not change the Part 1 'pass' (thresholds/DRC/GDS/determinism)"}
-        S["matches_published"] = cc["matches_published"]
+        S["matches_published"] = cc["matches_published_dashboard"]
         for k, v in cc["designs"].items():
             if k in S["designs"] and S["designs"][k].get("status") == "run":
-                S["designs"][k]["matches_published"] = v["matches_published"]
+                S["designs"][k]["matches_published"] = v["matches_published_dashboard"]
     S["pass"] = bool(ok_all)
     json.dump(S, open(os.path.join(LAB, "results", "t2_summary.json"), "w"), indent=2)
     print(scrub(json.dumps(S, indent=2)))
