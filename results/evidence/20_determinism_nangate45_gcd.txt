@@ -1,0 +1,13 @@
+{
+  "verdict": "PASS",
+  "compared_fields": 444,
+  "identical_fields": 444,
+  "differing_fields": {},
+  "gds_sha256_timestamps_zeroed": [
+    "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d",
+    "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d"
+  ],
+  "gds_identical_ignoring_timestamps": true
+}
+raw GDS sha256 (differ only in GDSII BGNLIB/BGNSTR timestamp records): ['619476af08c123ffe22f9246fb436366c1b6b253d055ce410eca0683cb98dd2b', 'a012aeff187bf8f2ec9ba562f17755b2d964d5736a687b6529c87d324d2b6bd5']
+excluded wall-clock/profiling fields: 61

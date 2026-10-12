@@ -1,0 +1,153 @@
+{
+  "generated_epoch": 1791800542,
+  "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
+  "tool_versions": [
+    "unknown ",
+    "Yosys 0.68+post (git sha1 UNKNOWN, Release, GNU /usr/local/bin/wrapped-cc/g++ 11.4.0)",
+    "KLayout 0.30.12"
+  ],
+  "designs": {
+    "nangate45/gcd": {
+      "status": "run",
+      "ppa": {
+        "area_um2": 943.502,
+        "utilization_pct": 0.876235,
+        "wns_setup_ns": -0.161583,
+        "tns_setup_ns": -7.08646,
+        "wns_hold_ns": 0.0880612,
+        "power_total_w": 0.00633406,
+        "power_leakage_w": 2.53207e-05,
+        "cell_count": 968,
+        "stdcell_count": 735,
+        "drc_errors": 0,
+        "wirelength": 4429
+      },
+      "stage_runtime_s": {
+        "cts": 32.03,
+        "detailedplace": 2.15,
+        "finish": 8.6,
+        "finish_merge": 4.62,
+        "floorplan": 22.97,
+        "globalplace": 7.01,
+        "globalplace_io": 0.84,
+        "globalplace_skip_io": 3.9,
+        "globalroute": 131.77,
+        "placeopt": 1.96,
+        "synth": 2.55
+      },
+      "wall_s": 302,
+      "gds": {
+        "path": "orfs/work/results/nangate45/gcd/base/6_final.gds",
+        "bytes": 609862,
+        "sha256": "a012aeff187bf8f2ec9ba562f17755b2d964d5736a687b6529c87d324d2b6bd5",
+        "sha256_timestamps_zeroed": "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d"
+      },
+      "checks": {
+        "thresholds_pass": true,
+        "drc_errors_zero": true,
+        "gds_exists": true,
+        "deterministic": true
+      },
+      "threshold_check": {
+        "passed": true,
+        "n_rules": 27,
+        "warnings": [
+          "[WARN] synth__canonical_netlist__hash differs test: 061b4cd4004130e38a0d4380ac60e08e664a6eb9 == 6eab9bf1a5bd88a4f570c5a4fa7e0a72f6cd0e38",
+          "[WARN] synth__netlist__hash differs test: 9e39a316f1ac13251b7cb6a660740991997af5c3 == d0ed08e4f1392b96375711f43f15c146df735c44"
+        ],
+        "failures": []
+      },
+      "determinism": {
+        "verdict": "PASS",
+        "gds_sha256_timestamps_zeroed": [
+          "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d",
+          "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d"
+        ],
+        "gds_identical_ignoring_timestamps": true,
+        "compared_fields": 444,
+        "identical_fields": 444,
+        "differing_fields": {},
+        "excluded_fields": [
+          "cts__cpu__total",
+          "cts__elapsed_seconds",
+          "cts__mem__peak",
+          "cts__runtime__total",
+          "detailedplace__cpu__total",
+          "detailedplace__elapsed_seconds",
+          "detailedplace__mem__peak",
+          "detailedplace__runtime__total",
+          "finish__cpu__total",
+          "finish__elapsed_seconds",
+          "finish__mem__peak",
+          "finish__runtime__total",
+          "finish_merge__cpu__total",
+          "finish_merge__elapsed_seconds",
+          "finish_merge__mem__peak",
+          "finish_merge__runtime__total",
+          "floorplan__cpu__total",
+          "floorplan__elapsed_seconds",
+          "floorplan__mem__peak",
+          "floorplan__runtime__total",
+          "globalplace__cpu__total",
+          "globalplace__elapsed_seconds",
+          "globalplace__mem__peak",
+          "globalplace__runtime__total",
+          "globalplace_io__cpu__total",
+          "globalplace_io__elapsed_seconds",
+          "globalplace_io__mem__peak",
+          "globalplace_io__runtime__total",
+          "globalplace_skip_io__cpu__total",
+          "globalplace_skip_io__elapsed_seconds",
+          "globalplace_skip_io__mem__peak",
+          "globalplace_skip_io__runtime__total",
+          "globalroute__cpu__total",
+          "globalroute__elapsed_seconds",
+          "globalroute__global_route__fastroute__congestion_rsmt_s",
+          "globalroute__global_route__fastroute__finalization_s",
+          "globalroute__global_route__fastroute__initial_rsmt_s",
+          "globalroute__global_route__fastroute__monotonic_s",
+          "globalroute__global_route__fastroute__new_route_l_s",
+          "globalroute__global_route__fastroute__overflow_iterations_s",
+          "globalroute__global_route__fastroute__route_l_s",
+          "globalroute__global_route__fastroute__route_z_s",
+          "globalroute__global_route__fastroute__run_s",
+          "globalroute__global_route__fastroute__snapshot_batch_apply_s",
+          "globalroute__global_route__fastroute__snapshot_batch_route_s",
+          "globalroute__global_route__fastroute__snapshot_batch_sync_s",
+          "globalroute__global_route__fastroute__spiral_s",
+          "globalroute__mem__peak",
+          "globalroute__runtime__total",
+          "placeopt__cpu__total",
+          "placeopt__elapsed_seconds",
+          "placeopt__mem__peak",
+          "placeopt__runtime__total",
+          "run__flow__generate_date",
+          "run__flow__uuid",
+          "synth__cpu__total",
+          "synth__elapsed_seconds",
+          "synth__mem__peak",
+          "synth__runtime__total",
+          "total_elapsed_seconds",
+          "total_time"
+        ],
+        "gds_sha256": [
+          "619476af08c123ffe22f9246fb436366c1b6b253d055ce410eca0683cb98dd2b",
+          "a012aeff187bf8f2ec9ba562f17755b2d964d5736a687b6529c87d324d2b6bd5"
+        ],
+        "gds_identical": false,
+        "identical": true
+      },
+      "run1_wall_s": 259,
+      "pass": true
+    },
+    "sky130hd/gcd": {
+      "status": "skipped",
+      "reason": "pending"
+    },
+    "nangate45/systolic_os": {
+      "status": "skipped",
+      "reason": "running"
+    }
+  },
+  "pass": true
+}

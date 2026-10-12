@@ -1,0 +1,61 @@
+{
+  "platform": "nangate45",
+  "design": "gcd",
+  "variant": "base",
+  "metrics": {
+    "area_um2": 943.502,
+    "stdcell_area_um2": 943.502,
+    "utilization_pct": 0.876235,
+    "wns_setup_ns": -0.161583,
+    "tns_setup_ns": -7.08646,
+    "wns_hold_ns": 0.0880612,
+    "tns_hold_ns": 0,
+    "power_total_w": 0.00633406,
+    "power_internal_w": 0.00350872,
+    "power_switching_w": 0.00280002,
+    "power_leakage_w": 2.53207e-05,
+    "cell_count": 968,
+    "stdcell_count": 735,
+    "drc_errors": 0,
+    "antenna_violating_nets": 0,
+    "wirelength": 4429,
+    "synth_area_um2": 626.696
+  },
+  "missing": [
+    "clock_period_ns"
+  ],
+  "stage_runtime_s": {
+    "cts": 20.89,
+    "detailedplace": 2.29,
+    "finish": 8.85,
+    "finish_merge": 7.64,
+    "floorplan": 13.56,
+    "globalplace": 4.53,
+    "globalplace_io": 0.91,
+    "globalplace_skip_io": 2.04,
+    "globalroute": 108.58,
+    "placeopt": 2.09,
+    "synth": 1.86
+  },
+  "total_elapsed_s_flow": 173.24,
+  "run": {
+    "platform": "nangate45",
+    "design": "gcd",
+    "variant": "base",
+    "rc": 0,
+    "wall_s": 259,
+    "start_epoch": 1791799773,
+    "config": "/OpenROAD-flow-scripts/flow/designs/nangate45/gcd/config.mk",
+    "extra": "",
+    "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
+    "num_cores": 3
+  },
+  "gds": {
+    "path": "orfs/work/results/nangate45/gcd/base/6_final.gds",
+    "bytes": 609862,
+    "sha256": "619476af08c123ffe22f9246fb436366c1b6b253d055ce410eca0683cb98dd2b"
+  },
+  "flow_version": "unknown",
+  "n_metadata_fields": 505,
+  "deterministic_fields_sha256": "7525e449ff51a5087395136c4755a8122ae59ab41d600f9c8babeab900fd2b46"
+}
