@@ -1,29 +1,53 @@
 #!/usr/bin/env bash
-# Task 3 (stage 30_arch_model): SCALE-Sim (bundled TPU-like config, bundled topology, ws/os/is)
-# vs analytic model + roofline.  Runs inside the lab-sim container; two full passes; byte-identity check.
+# Task 3 (stage 30_arch_model + 31_roofline_fix): SCALE-Sim vs analytic model + pre-registered roofline check.
 #   scripts/t3_run.sh [OUTDIR]        default OUTDIR=results/t3   (relative to the lab / main checkout)
-#   env: T3_SUMMARY=path   summary JSON (default results/t3_summary.json); T3_PLOTS=1|0 (default 1)
-#        T3_PASSES=1 skips the rerun (demo quick mode; then reruns_byte_identical is not evaluated)
+# Jobs (model/t3_stage.py list): bundled ws/os/is runs, analytic fit, superseded synthetic roofline, 9 USER-bandwidth
+# + 3 CALC-mode ResNet-18 runs. Two full passes + byte-identity compare.  Env:
+#   T3_SUMMARY=path   summary JSON (default results/t3_summary.json)     T3_PLOTS=1|0 (default 1)
+#   T3_PASSES=1       single pass (quick/repro mode; identity then trivially true and flagged)
+#   T3_LOCK=1         host mode: every job is its own container run under scripts/with_lock.sh (the CALLER must NOT
+#                     hold the lock); default: one container, the caller is responsible for the lock.
+#   T3_RESUME=1       keep OUTDIR.partial / OUTDIR.rerun.tmp from an interrupted run and skip finished jobs
 set -euo pipefail
 LAB="${LAB:-$HOME/ai-chip-lab}"
+JOBS="bundled_ws bundled_os bundled_is fit roofline_synthetic rl2_user_ws_low rl2_user_ws_mid rl2_user_ws_high rl2_user_os_low rl2_user_os_mid rl2_user_os_high rl2_user_is_low rl2_user_is_mid rl2_user_is_high rl2_calc_ws rl2_calc_os rl2_calc_is"
+OUT_ARG="${1:-results/t3}"; SUMMARY="${T3_SUMMARY:-results/t3_summary.json}"
+FINAL="$OUT_ARG"; OUT="${FINAL}.partial"; RERUN="${FINAL}.rerun.tmp"
 if [ ! -f /.dockerenv ]; then
-  # host: re-exec inside the container
   source "$LAB/env.sh"; source "$LAB/coord/images.env"
-  exec docker run --rm --platform linux/amd64 -e PYTHONHASHSEED=0 -e T3_SUMMARY -e T3_PLOTS -e T3_PASSES \
-    -v "$LAB":/lab -w /lab "$LAB_SIM_IMAGE" bash scripts/t3_run.sh "$@"
+  dk() { docker run --rm --platform linux/amd64 -e PYTHONHASHSEED=0 -e T3_SUMMARY -e T3_PLOTS -e T3_PASSES -e T3_LOCK -e T3_RESUME \
+           -v "$LAB":/lab -w /lab "$LAB_SIM_IMAGE" "$@"; }
+  if [ "${T3_LOCK:-0}" != "1" ]; then dk bash scripts/t3_run.sh "$@"; exit $?; fi
+  LK="$LAB/scripts/with_lock.sh arch"
+  cd "$LAB"; mkdir -p logs/part2/31_roofline_fix
+  if [ "${T3_RESUME:-0}" != "1" ]; then rm -rf "$OUT" "$RERUN"; fi
+  for pass in 1 2; do
+    [ "$pass" = 2 ] && [ "${T3_PASSES:-2}" -lt 2 ] && break
+    D="$OUT"; [ "$pass" = 2 ] && D="$RERUN"
+    for j in $JOBS; do
+      if [ -e "$D/.jobs/$j.done" ]; then continue; fi
+      echo "== t3 pass $pass job $j $(date +%T)"
+      $LK dk python3 model/t3_stage.py job "$j" --out "$D" > "logs/part2/31_roofline_fix/pass${pass}_$j.log" 2>&1 \
+        || { echo "JOB FAILED: $j (see logs/part2/31_roofline_fix/pass${pass}_$j.log)"; tail -20 "logs/part2/31_roofline_fix/pass${pass}_$j.log"; exit 1; }
+    done
+  done
+  if [ "${T3_PASSES:-2}" -lt 2 ]; then rm -rf "$RERUN"; cp -r "$OUT" "$RERUN"; fi   # quick mode: identity trivially true
+  $LK dk bash -c "python3 model/t3_stage.py summary --out '$OUT' --rerun '$RERUN' --summary-json '$SUMMARY' && { [ \"\${T3_PLOTS:-1}\" != 1 ] || python3 model/t3_plots.py '$OUT' '$SUMMARY'; }"
+  rm -rf "$RERUN"; rm -rf "$FINAL"; mv "$OUT" "$FINAL"
+  exit 0
 fi
+# ---- inside the container (single-container mode) ----
 cd /lab
 export PYTHONHASHSEED=0 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMBA_NUM_THREADS=1 MPLBACKEND=Agg
-OUT="${1:-results/t3}"; SUMMARY="${T3_SUMMARY:-results/t3_summary.json}"
-FINAL="$OUT"; OUT="${FINAL}.partial"; RERUN="${FINAL}.rerun.tmp"
-rm -rf "$OUT" "$RERUN"; mkdir -p logs/30_arch_model
+if [ "${T3_RESUME:-0}" != "1" ]; then rm -rf "$OUT" "$RERUN"; fi
+mkdir -p logs/part2/31_roofline_fix
 echo "== t3 pass 1 -> $OUT"
-python3 model/t3_stage.py pass --out "$OUT" 2>&1 | tee logs/30_arch_model/pass1.log
+python3 model/t3_stage.py pass --out "$OUT" 2>&1 | tee logs/part2/31_roofline_fix/pass1.log
 if [ "${T3_PASSES:-2}" -ge 2 ]; then
   echo "== t3 pass 2 (rerun) -> $RERUN"
-  python3 model/t3_stage.py pass --out "$RERUN" > logs/30_arch_model/pass2.log 2>&1
+  python3 model/t3_stage.py pass --out "$RERUN" > logs/part2/31_roofline_fix/pass2.log 2>&1
 else
-  cp -r "$OUT" "$RERUN"   # quick mode: identity trivially true; flagged in summary
+  rm -rf "$RERUN"; cp -r "$OUT" "$RERUN"   # quick mode: identity trivially true; flagged in summary
 fi
 python3 model/t3_stage.py summary --out "$OUT" --rerun "$RERUN" --summary-json "$SUMMARY"
 if [ "${T3_PLOTS:-1}" = "1" ] && [ -f model/t3_plots.py ]; then python3 model/t3_plots.py "$OUT" "$SUMMARY"; fi

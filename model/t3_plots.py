@@ -9,6 +9,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 LAB = os.environ.get("LAB") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(LAB, "demo/assets")
 COL = {"os": "#1b6ca8", "ws": "#d1495b", "is": "#2a9d8f"}
@@ -40,28 +41,38 @@ def cycles_plot(out):
 
 
 def roofline_plot(out):
-    p = os.path.join(out, "roofline.json")
-    if not os.path.exists(p):
+    d2 = os.path.join(out, "roofline2")
+    if not os.path.isdir(d2):
         return
-    r = json.load(open(p))
-    fig, axes = plt.subplots(1, len(r["runs"]), figsize=(6 * len(r["runs"]), 4.8), squeeze=False)
-    for ax, (name, run) in zip(axes[0], r["runs"].items()):
-        peak, bw = run["peak_flops_per_cycle"], run["dram_words_per_cycle"]
-        xs = [10 ** (i / 20) for i in range(-10, 80)]
-        ax.plot(xs, [min(peak, bw * x) for x in xs], "k-", lw=1.5, label="roofline")
-        for L in run["layers"]:
-            c = "#d1495b" if L["obs_bandwidth_bound"] else "#2a9d8f"
-            ax.scatter(L["ai_eff"], L["achieved_flops_per_cycle"], color=c, s=40, zorder=3)
-            ax.annotate(L["name"], (L["ai_eff"], L["achieved_flops_per_cycle"]), fontsize=6, xytext=(3, 3),
-                        textcoords="offset points")
-        ax.axvline(run["ridge_ai"], color="gray", ls=":", label=f"ridge AI = {run['ridge_ai']:.1f}")
-        ax.scatter([], [], color="#d1495b", label="stall cycles > 5% (SCALE-Sim)")
-        ax.scatter([], [], color="#2a9d8f", label="stalls <= 5%")
+    import t3_roofline2 as R2
+    dfs = R2.DFS
+    fig, axes = plt.subplots(2, 3, figsize=(14, 8))
+    cols = {"low": "#d1495b", "mid": "#e9a03b", "high": "#1b6ca8"}
+    r2 = json.load(open(os.path.join(out, "roofline2.json")))
+    for k, df in enumerate(dfs):
+        ax = axes[0][k]
+        for b, B in R2.BW.items():
+            r = json.load(open(os.path.join(d2, f"rl2_user_{df}_{b}.json")))
+            ax.scatter([l["ai"] for l in r["layers"]], [max(l["stall_frac"], 1e-4) for l in r["layers"]],
+                       s=26, color=cols[b], alpha=.85,
+                       label=f"B={B} w/cyc, rho={r2['per_dataflow'][df]['user'][b]['rho']:+.2f}")
+        ax.set_xscale("log"); ax.set_yscale("log"); ax.set_ylim(8e-5, 1.5)
+        ax.set_title(f"{df}: stall fraction vs arithmetic intensity (USER bandwidth)", fontsize=9)
+        ax.set_xlabel("arithmetic intensity (FLOP / compulsory DRAM byte)")
+        ax.set_ylabel("stall cycles / total cycles (0 drawn at 1e-4)")
+        ax.legend(frameon=False, fontsize=7)
+        ax = axes[1][k]
+        r = json.load(open(os.path.join(d2, f"rl2_calc_{df}.json")))
+        ax.scatter([l["ai"] for l in r["layers"]], [l["required_bw_words_per_cycle"] for l in r["layers"]], s=26, color="#2a9d8f")
+        for l in r["layers"]:
+            if l["name"] in ("FC", "Conv1", "Conv5_1b", "Conv3_s"):
+                ax.annotate(l["name"], (l["ai"], l["required_bw_words_per_cycle"]), fontsize=7, xytext=(3, 3), textcoords="offset points")
         ax.set_xscale("log"); ax.set_yscale("log")
-        ax.set_xlabel("arithmetic intensity (FLOP / DRAM byte actually moved in SCALE-Sim)"); ax.set_ylabel("achieved FLOP / cycle")
-        ax.set_title(f"{name}: effective-roofline agreement {run['agreement']:.0%}, rho = {run['spearman_ai_stallfrac']:.2f}",
-                     fontsize=9)
-        ax.legend(frameon=False, fontsize=7, loc="lower right")
+        ax.set_title(f"{df}: CALC mode, required DRAM bandwidth, rho = {r2['per_dataflow'][df]['calc_rho_ai_vs_required_bw']:+.2f}", fontsize=9)
+        ax.set_xlabel("arithmetic intensity (FLOP / compulsory DRAM byte)")
+        ax.set_ylabel("SCALE-Sim required DRAM BW (words/cycle)")
+    fig.suptitle("Task 3 roofline check (pre-registered): ResNet-18, 21 layers, 128x128 array. "
+                 f"{'PASS' if r2['passed'] else 'FAIL'}: criteria rho <= -0.6", fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(ASSETS, "t3_roofline.png"), dpi=130)
 
