@@ -10,7 +10,14 @@ TWO = {  # metric -> (kind, pad)
     "placeopt__design__instance__count__stdcell": ("pct", 15), "detailedroute__route__wirelength": ("pct", 15)}
 ONE = ["finish__timing__hold__ws", "finish__timing__hold__tns"]
 NOPUB = ["finish__power__total", "finish__design__instance__utilization", "total_elapsed_seconds"]
-out = {"tolerance_doc": "docs/t2_crosscheck_tolerance.md", "designs": {}}
+# informational stage-by-stage progression (NOT part of the criterion): where does our run start to depart from the implied reference?
+PROG = {"synth__design__instance__area__stdcell": ("pct", 15), "placeopt__design__instance__area": ("pct", 15),
+        "placeopt__design__instance__count__stdcell": ("pct", 15), "cts__timing__setup__ws": ("period", 5), "cts__timing__setup__tns": ("period", 20),
+        "globalroute__timing__setup__ws": ("period", 5), "globalroute__timing__setup__tns": ("period", 20),
+        "detailedroute__route__wirelength": ("pct", 15), "finish__timing__setup__ws": ("period", 5), "finish__timing__setup__tns": ("period", 20),
+        "finish__design__instance__area": ("pct", 15)}
+out = {"reference_kind": "IMPLIED: rules-base.json limits un-padded with genRuleFile.py formulas; ORFS publishes no measured metadata for gcd at this commit",
+       "tolerance_doc": "docs/t2_crosscheck_tolerance.md", "designs": {}}
 for plat in ("nangate45", "sky130hd"):
     rules = R(f"results/t2/rules_{plat}_gcd.json"); md = R(f"results/t2/metadata_{plat}_gcd.json")
     T = float(re.match(r".*: ([\d.]+)", md["constraints__clocks__details"][0]).group(1))
@@ -32,7 +39,12 @@ for plat in ("nangate45", "sky130hd"):
         ref = min(ref, 0)
         one[m] = {"rule_limit": lim, "implied_reference": round(ref, 5), "ours": md[m], "not_worse": md[m] >= ref - 1e-12}
         ok &= one[m]["not_worse"]
-    out["designs"][f"{plat}/gcd"] = {"clock_period_ns": T, "two_sided": rows, "one_sided_hold": one,
+    prog = {}
+    for m, (kind, pad) in PROG.items():
+        lim = rules[m]["value"]; ref = lim + pad / 100 * T if kind == "period" else lim / (1 + pad / 100)
+        prog[m] = {"implied_reference": round(ref, 5), "ours": md[m], "relative_delta_pct": round(100 * (md[m] - ref) / abs(ref), 2)}
+    hashes = {h: {"rule": rules[h]["value"], "ours": md[h], "equal": rules[h]["value"] == md[h]} for h in ("synth__canonical_netlist__hash", "synth__netlist__hash")}
+    out["designs"][f"{plat}/gcd"] = {"stage_progression_informational": prog, "synth_netlist_hashes_vs_rules": hashes, "clock_period_ns": T, "two_sided": rows, "one_sided_hold": one,
         "no_published_value": {k: md.get(k) for k in NOPUB}, "matches_published": bool(ok)}
 out["matches_published"] = all(d["matches_published"] for d in out["designs"].values())
 json.dump(out, open(os.path.join(LAB, "results", "t2_crosscheck.json"), "w"), indent=2)
@@ -40,3 +52,19 @@ for k, d in out["designs"].items():
     print(k, "matches_published =", d["matches_published"])
     for m, r in d["two_sided"].items(): print("  ", m, "ours", r["ours"], "ref~", r["implied_reference"], "+-", r["margin"], "->", "IN" if r["within_band"] else "OUT", r["direction"])
     for m, r in d["one_sided_hold"].items(): print("  ", m, "ours", r["ours"], "ref~", r["implied_reference"], "not worse:", r["not_worse"])
+
+# ---- common Part 2 stage schema (results/p2_21_orfs_crosscheck.json) ----
+crit = []
+for k, d in out["designs"].items():
+    meas = "; ".join(f"{m}: ours {r['ours']} vs implied ref {r['implied_reference']} +-{r['margin']} -> {'in' if r['within_band'] else 'OUT (' + r['direction'] + ')'}"
+                     for m, r in d["two_sided"].items())
+    crit.append({"name": f"matches_published[{k}] (reference IMPLIED from rules-base.json, not a measured published file)",
+                 "threshold": "all 6 two-sided metrics within implied reference +- ORFS's own margin; hold ws/tns not worse (docs/t2_crosscheck_tolerance.md)",
+                 "written_before_run": "a2c2d54", "measured": meas, "pass": d["matches_published"]})
+p2 = {"stage": "21_orfs_crosscheck", "pass": out["matches_published"],
+      "oracle": "ORFS's own shipped rules-base.json (limits generated from ORFS's reference runs by genRuleFile.py); the reference values are implied by un-padding the limits, because ORFS publishes no measured metadata for gcd at the pinned commit",
+      "criteria": crit, "superseded": [],
+      "commands": ["python3 scripts/t2_crosscheck.py", "scripts/t2_check.sh nangate45 gcd base"],
+      "seeds": "none", "evidence": ["results/evidence/21_orfs_crosscheck.txt", "results/t2_crosscheck.json", "docs/t2_timing_explained.md"],
+      "finding": "nangate45/gcd outside the band on setup WNS, setup TNS and wirelength (all better than implied reference); matches through CTS, departs from global route onward; see docs/t2_timing_explained.md"}
+json.dump(p2, open(os.path.join(LAB, "results", "p2_21_orfs_crosscheck.json"), "w"), indent=2)

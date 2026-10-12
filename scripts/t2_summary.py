@@ -130,8 +130,12 @@ def main():
         cc = json.load(open(cp))
         S["crosscheck_published"] = {"criterion": "matches_published", "value": cc["matches_published"], "file": "results/t2_crosscheck.json",
             "tolerance_doc": "docs/t2_crosscheck_tolerance.md", "explained_in": "docs/t2_timing_explained.md",
-            "per_design": {k: v["matches_published"] for k, v in cc["designs"].items()},
+            "reference_kind": cc["reference_kind"], "per_design": {k: v["matches_published"] for k, v in cc["designs"].items()},
             "note": "reported separately; does not change the Part 1 'pass' (thresholds/DRC/GDS/determinism)"}
+        S["matches_published"] = cc["matches_published"]
+        for k, v in cc["designs"].items():
+            if k in S["designs"] and S["designs"][k].get("status") == "run":
+                S["designs"][k]["matches_published"] = v["matches_published"]
     S["pass"] = bool(ok_all)
     json.dump(S, open(os.path.join(LAB, "results", "t2_summary.json"), "w"), indent=2)
     print(scrub(json.dumps(S, indent=2)))

@@ -27,10 +27,41 @@ utilization, 0.420 ns at 50 % where WNS is +5.9e-05 ns, i.e. zero margin), versu
 closure clock was not swept.
 
 ## Cross-check against ORFS's published values
-`docs/t2_crosscheck_tolerance.md` fixes the tolerance (committed before the comparison); `results/t2_crosscheck.json` has the
-result. The published reference values are only *implied* by the rules (ORFS removed the golden `metadata-base-ok.json` files
-and has no published power number). sky130hd/gcd matches within the stated band on every metric; nangate45/gcd does **not** match on
-3 of 6 band metrics (setup WNS, setup TNS, routed wirelength), all three on the *better* side (e.g. wirelength 4429 vs implied
-reference ~6277). Placement-stage numbers match closely (placeopt area 827.5 vs implied 827.8). Probable cause, not proven:
-the nangate45 rules were last regenerated on 2026-08-21, four weeks before the pinned flow commit (2026-09-19), so later
-CTS/routing changes moved the numbers. We did not widen the tolerance.
+
+**What the "published reference" is, exactly.** At the pinned commit ORFS ships **no measured reference metrics for gcd**: the golden
+`metadata-base-ok.json` files were removed from the repo in Feb 2025, there is no published power value, and the CI dashboard is
+online-only. What *is* shipped is `rules-base.json` (limits). The reference values used here are therefore **implied**: the limits un-padded with the
+formulas of ORFS's rule generator (`genRuleFile.py`, same commit). They are an inference of what ORFS's reference run produced
+when the rules were last regenerated (nangate45 2026-08-21, sky130hd 2026-08-25), not a published measurement. The criterion
+`matches_published` is named for the demo schema, but means "matches the reference implied by the shipped rules".
+
+`docs/t2_crosscheck_tolerance.md` fixes the tolerance (committed as a2c2d54, before the comparison); `results/t2_crosscheck.json` has the result.
+
+| design | metric | ours | implied reference (+- margin) | |
+|---|---|---|---|---|
+| sky130hd/gcd | setup WNS | -1.460 ns | -1.465 (0.055) | in |
+| | setup TNS | -64.94 ns | -65.08 (0.22) | in |
+| | instance area | 5412.7 | 5053.9 (15 %) | in |
+| | placeopt area | 4055.1 | 4054.8 | in |
+| | placeopt std cells | 478 | 478.3 | in |
+| | wirelength | 11728 | 11786 | in |
+| nangate45/gcd | setup WNS | -0.162 ns | -0.1805 (0.0125) | **out (better)** |
+| | setup TNS | -7.09 ns | -7.94 (0.05) | **out (better)** |
+| | instance area | 943.5 | 969.6 (15 %) | in |
+| | placeopt area | 827.5 | 827.8 | in |
+| | placeopt std cells | 711 | 711.3 | in |
+| | wirelength | 4429 | 6277 (15 %) | **out (29 % shorter)** |
+
+sky130hd/gcd matches; nangate45/gcd does **not** (3 of 6 band metrics), and the result stays false.
+
+**Diagnosis of the nangate45 miss, from the evidence (not assumed).**
+* The synthesis netlist hashes in the rules are reproduced **exactly** for sky130hd (both hashes equal), so the Yosys in this image
+  is the one that produced ORFS's sky130hd reference. For nangate45 both hashes differ, so the synthesised netlist is not bit-identical to ORFS's.
+* But the netlist difference is tiny: synth stdcell area is 626.696 vs implied 626.96 (-0.04 %), placeopt area/count also -0.04 %, CTS setup WNS
+  -0.1566 vs implied -0.1565 (-0.06 %). Our run tracks the reference to <0.1 % through CTS (TNS +1.2 %).
+* The departure starts at global routing (setup WNS +5.5 % better, TNS +9.4 %) and grows in detailed route (wirelength -29 %) and finish (WNS +10.5 %).
+* So the evidence does **not** support "a different Yosys build explains the miss" as the main cause: synthesis, placement and CTS agree to
+  tenths of a percent, and the gap opens in the routing stages. The more likely cause is that routing/finishing behaviour changed between the
+  rule regeneration (2026-08-21) and the pinned flow commit (2026-09-19); we cannot prove it without ORFS's reference run, so it stays a hypothesis. The
+  differing nangate45 hash is a real but, by these numbers, minor difference (possible cause: ABC/synthesis script changes after the rules were written).
+* All deviations are in the favourable direction, and ORFS's own threshold check passes 27/27 for both designs.
