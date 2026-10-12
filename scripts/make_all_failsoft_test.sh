@@ -18,7 +18,9 @@ LOGD=logs/part2/32_make_recipes; mkdir -p "$LOGD"; LOG="$LOGD/failsoft_test_$(da
 T0=$(date +%s)
 # marker-only resume (stages that succeeded before are skipped without the input check), sweeps drivers are not
 # waited for, and Task 3's criterion-A jobs are not started: this test is about the control flow of `make all`.
-MAKE_ALL_FAIL="$STAGE" RESUME=markers SWEEPS_DETACH=1 T3_USER_DEADLINE=1 make all > "$LOG" 2>&1; RC=$?
+# FAILSOFT_EXCLUDE (default empty): stages left out of this test for cost, recorded as "excluded" with the reason.
+MAKE_ALL_FAIL="$STAGE" RESUME=markers SWEEPS_DETACH=1 T3_USER_DEADLINE=1 MAKE_ALL_EXCLUDE="${FAILSOFT_EXCLUDE:-}" \
+  MAKE_ALL_EXCLUDE_REASON="${FAILSOFT_EXCLUDE_REASON:-cost}" make all > "$LOG" 2>&1; RC=$?
 cp results/make_all_last.json "$LOGD/failsoft_make_all_last.json" 2>/dev/null
 # restore the marker(s) no matter what
 restored=1
@@ -43,7 +45,7 @@ checks = {
     "exit_status_nonzero": rc != 0,
     "failed_stage_listed": ("stages that failed: " in text) and stage in last["failed_stages"],
     "every_stage_has_an_outcome": all(s in st for s in order),
-    "later_stages_not_dropped": all(st[s]["action"] in ("ran", "skipped") for s in after if s in st),
+    "later_stages_not_dropped": all(st[s]["action"] in ("ran", "skipped", "excluded") for s in after if s in st),
     "demo_ran_after_the_failure_and_succeeded": st.get("demo", {}).get("action") == "ran" and st["demo"]["exit_code"] == 0,
     "forced_stage_is_first_in_failed_list": last["failed_stages"][:1] == [stage],
     "marker_restored": restored and all(os.path.exists("results/.stages/%s.done" % m) and not os.path.exists("results/.stages/%s.failed" % m) for m in markers),
@@ -57,6 +59,7 @@ doc = {
     "executed_for_real": [s for s in order if st.get(s, {}).get("action") == "ran"],
     "skipped_with_reason": {s: st[s]["reason"] for s in order if st.get(s, {}).get("action") == "skipped"},
     "not_run_forced_failure": [s for s in order if st.get(s, {}).get("action") == "forced_fail"],
+    "excluded_from_this_test": {s: st[s]["reason"] for s in order if st.get(s, {}).get("action") == "excluded"},
     "stages": last["stages"],
     "scope_note": "This test proves the control flow of `make all` (continue after a failure, always build the demo, "
                   "non-zero exit listing the failed stage). The forced stage's recipe was NOT executed; stages listed under "

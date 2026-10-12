@@ -60,10 +60,11 @@ def main():
     if ft:
         L.append("**`make all` fail-soft test: %s.** Command: `%s`. `make all` exited %d and listed the failed stage; "
                  "the demo was built after the failure. In this test the forced stage's recipe was not run (%s); "
-                 "executed for real: %s; skipped by the resume rule (inputs unchanged since their last success): %s. "
+                 "executed for real: %s; skipped because they had already succeeded (marker-only resume of the test, see each reason): %s; excluded from the test: %s. "
                  "The marker was restored and the demo rebuilt afterwards. Details: `results/make_all_failsoft.json`."
                  % ("PASS" if ft["pass"] else "FAIL", ft["command"], ft["make_all_exit_code"], ", ".join(ft["not_run_forced_failure"]) or "-",
-                    ", ".join(ft["executed_for_real"]) or "none", ", ".join(ft["skipped_with_reason"]) or "none"))
+                    ", ".join(ft["executed_for_real"]) or "none", ", ".join(ft["skipped_with_reason"]) or "none",
+                    "; ".join("%s (%s)" % kv for kv in ft.get("excluded_from_this_test", {}).items()) or "none"))
     else:
         L.append("**`make all` fail-soft test:** not run yet.")
     al = d.get("make_all_run")

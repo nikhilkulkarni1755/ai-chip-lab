@@ -10,6 +10,7 @@
   MAKE_ALL_FAIL=<stage>    TEST HOOK (scripts/make_all_failsoft_test.sh): do not run that stage's recipe, set its
                            stage marker to .failed ("forced by the fail-soft test") and count it as failed
   ALL_STAGES="a b c"       run only these stages (same order rules)
+  MAKE_ALL_EXCLUDE="a b"   TEST HOOK: do not run these stages; logged as "excluded" with MAKE_ALL_EXCLUDE_REASON
 
 Rules: a failing stage (non-zero recipe, including an honest scientific FAIL) never stops later stages; `demo` is
 always run last, even in RESUME mode and even after failures; exit status is 1 if any stage failed and the failed
@@ -122,6 +123,8 @@ def main():
                 open(os.path.join(ST, m + ".failed"), "w").write("forced by the fail-soft test of `make all` (MAKE_ALL_FAIL=%s); the recipe was not run\n" % s)
             e.update(action="forced_fail", reason="MAKE_ALL_FAIL test hook: recipe not run, marker set to .failed", exit_code=1, runtime_s=0)
             failed.append(s)
+        elif s in env.get("MAKE_ALL_EXCLUDE", "").split():
+            e.update(action="excluded", reason="MAKE_ALL_EXCLUDE (test hook): " + env.get("MAKE_ALL_EXCLUDE_REASON", "excluded by the caller"), exit_code=None, runtime_s=0)
         elif dry and not c.get("dry"):
             e.update(action="dry_skipped", reason="DRY_RUN=1 and the recipe has no dry mode", exit_code=None, runtime_s=0)
         else:
