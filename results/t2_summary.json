@@ -1,8 +1,8 @@
 {
-  "generated_epoch": 1791803054,
+  "generated_epoch": 1791803727,
   "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
   "tool_versions": [
-    "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; `openroad -version` prints 'unknown' in this build)",
+    "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)",
     "unknown ",
     "Yosys 0.68+post (git sha1 UNKNOWN, Release, GNU /usr/local/bin/wrapped-cc/g++ 11.4.0)",
     "KLayout 0.30.12"
@@ -12,7 +12,7 @@
       "status": "run",
       "ppa": {
         "area_um2": 943.502,
-        "utilization_pct": 0.876235,
+        "utilization_frac": 0.876235,
         "wns_setup_ns": -0.161583,
         "tns_setup_ns": -7.08646,
         "wns_hold_ns": 0.0880612,
@@ -145,7 +145,7 @@
       "status": "run",
       "ppa": {
         "area_um2": 5412.69,
-        "utilization_pct": 0.919643,
+        "utilization_frac": 0.919643,
         "wns_setup_ns": -1.45954,
         "tns_setup_ns": -64.9417,
         "wns_hold_ns": 0.532397,
@@ -275,7 +275,7 @@
       "status": "run",
       "ppa": {
         "area_um2": 22961.1,
-        "utilization_pct": 0.307407,
+        "utilization_frac": 0.307407,
         "wns_setup_ns": 2.02852,
         "tns_setup_ns": 0,
         "wns_hold_ns": 0.0760753,
@@ -312,6 +312,10 @@
         "gds_exists": true
       },
       "threshold_check": null,
+      "rtl": {
+        "last_rtl_commit": "a2cf73c",
+        "note": "EARLIER RTL (per-PE valid registers), superseded by 7173c7f; recorded from git history, not hashed at run time"
+      },
       "pass": true
     }
   },
