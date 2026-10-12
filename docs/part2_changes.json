@@ -1,0 +1,97 @@
+[
+ {
+  "agent": "rtl",
+  "stage": "11_eqy_routed",
+  "files": [
+   "scripts/t1_routed.sh",
+   "scripts/t1_routed_summary.py",
+   "eqy/systolic_os_routed.eqy.in",
+   "tb/Makefile",
+   "tb/test_systolic.py"
+  ],
+  "what": "Gate-level simulation and EQY equivalence of the RTL against the routed nangate45 netlist (cell functions from the pinned Liberty), with negative controls; one lock hold per step, resumable"
+ },
+ {
+  "agent": "rtl",
+  "stage": "11_eqy_routed",
+  "files": [
+   "results/t1_routed_summary.json",
+   "results/p2_11_eqy_routed.json",
+   "results/t1_summary.json",
+   "results/t1_routed_gls_icarus.csv",
+   "results/evidence/11_gls_routed.txt",
+   "results/evidence/11_eqy_routed.txt",
+   "results/evidence/11_orfs_lec_kepler.txt",
+   "results/part1_snapshot/systolic_os_routed/"
+  ],
+  "what": "Routed-netlist results: gls_routed_pass / eqy_routed_pass added to t1_summary.json, exact scope and per-partition results, snapshot of the routed netlist that was checked"
+ },
+ {
+  "agent": "rtl",
+  "stage": "10_rtl_verify",
+  "files": [
+   "scripts/t1_run.sh",
+   "scripts/t1_summary.py"
+  ],
+  "what": "Task 1 runner takes the lab-wide lock once per step (nothing it computes changed); the summary keeps the routed-netlist fields when it is rewritten"
+ },
+ {
+  "agent": "rtl",
+  "stage": "61_pe_bf16",
+  "files": [
+   "rtl/mac_bf16.sv",
+   "tb/bf16_golden.py",
+   "tb/bf16_cases.py",
+   "tb/test_mac_bf16.py",
+   "scripts/t61_run.sh",
+   "scripts/t61_summary.py",
+   "scripts/t61_oracle_check.py",
+   "results/p2_61_pe_bf16_summary.json"
+  ],
+  "what": "bf16 x bf16 -> FP32 MAC: pass criteria committed first, then RTL, golden model with exact-rational cross-check and testbench (authored; not run in the container yet)"
+ },
+ {
+  "agent": "rtl",
+  "stage": "60_power_activity",
+  "files": [
+   "tb/test_power_vcd.py",
+   "scripts/t1_power_vcd.sh"
+  ],
+  "what": "Three fixed-seed activity workloads (random, 50 % zeros, all-max) that dump a VCD of the routed netlist for OpenROAD power analysis (authored; not run in the container yet)"
+ },
+ {
+  "agent": "demo",
+  "stage": "P1.7 / final steps",
+  "files": [
+   "scripts/demo_build.py",
+   "scripts/demo_part2.py"
+  ],
+  "what": "Page and README: Part 2 before/after, not-green list with diagnosis and next action, Task 3 INCOMPLETE state with criterion B correlations, routed EQY/GLS per simulator, make-recipes note, live sweep B frontier and plan accounting"
+ },
+ {
+  "agent": "demo",
+  "stage": "P1.1",
+  "files": [
+   "scripts/t3_criterion_b_recheck.py",
+   "demo/run_demo.sh"
+  ],
+  "what": "run_demo step that recomputes the Task 3 criterion B verdict from saved CALC-mode reports (seconds, no container); routed GLS left out (67 s, over the 1-minute rule)"
+ },
+ {
+  "agent": "demo",
+  "stage": "P1.4",
+  "files": [
+   "scripts/repro.sh",
+   "scripts/repro_compare.py"
+  ],
+  "what": "Repro reduced to Task 1 full + Task 3 cheap set; user-bandwidth runs reported as not rerun (cost); results/t2_reruns.json folded into repro_report.json"
+ },
+ {
+  "agent": "demo",
+  "stage": "64_roadmap",
+  "files": [
+   "docs/next.md"
+  ],
+  "what": "Roadmap for the next round with a one-line why and a cost on this machine per item"
+ }
+]
