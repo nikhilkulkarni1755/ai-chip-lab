@@ -23,3 +23,9 @@ coord/*.lock.d/
 orfs/work/
 orfs/sdc_gen/
 results/sweeps/phys.pid
+coord/heavy.waiting.d/
+coord/heavy.waiting.low.d/
+coord/heavy.break.d/
+results/sweeps/*.launcher
+results/.stages/make/
+*.failsoft_saved
