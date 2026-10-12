@@ -6,13 +6,14 @@
     "eqy_neg_rtl_mac_detected": true,
     "eqy_neg_rtl_reg_detected": true,
     "eqy_routed_all_partitions_proved": true,
-    "gls_both_simulators_as_first_scripted": false,
-    "gls_csv_equals_official_rtl_prefix": false,
-    "gls_csv_identical_across_simulators": false,
     "gls_icarus_csv_equals_official_rtl_prefix": true,
     "gls_icarus_zero_mismatches": true,
-    "gls_negative_control_detected": true,
-    "gls_verilator_zero_mismatches": false
+    "gls_negative_control_detected": true
+  },
+  "checks_not_evaluated": {
+    "gls_csv_equals_official_rtl_prefix": "no Verilator gate-level simulation result exists (not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists; 14 of 29 generated C++ files were compiled when it was stopped); this is the both-simulators form, the Icarus half is evaluated as gls_icarus_csv_equals_official_rtl_prefix",
+    "gls_csv_identical_across_simulators": "no Verilator gate-level simulation result exists (not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists; 14 of 29 generated C++ files were compiled when it was stopped); needs both CSVs",
+    "gls_verilator_zero_mismatches": "no Verilator gate-level simulation result exists (not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists; 14 of 29 generated C++ files were compiled when it was stopped)"
   },
   "complete": true,
   "config": {
@@ -21,6 +22,7 @@
   },
   "eqy_routed_pass": true,
   "gls_routed_pass": true,
+  "gls_routed_status": "pass on Icarus only; Verilator gate-level simulation not run (partial vs TASK2 P1.3 item 4)",
   "image": {
     "id": "sha256:c17110ff83f92b2b8da336ef44264f999d23a5fdedd4fc6f2c37588998fdcc3b",
     "ref": "lab-sim:20261012b"
@@ -74,7 +76,7 @@
     "gls_icarus": 67,
     "gls_neg": 18,
     "gls_verilator": 544,
-    "total_wall": 19614
+    "total_wall": 20177
   },
   "stage": "11_eqy_routed",
   "step_exit_codes": {
@@ -106,6 +108,12 @@
     "gls",
     "eqy"
   ],
+  "superseded_checks": {
+    "gls_both_simulators_as_first_scripted": {
+      "met": false,
+      "reason": "superseded by the Icarus-required criterion, COORDINATION.md Decision P2-R1: it could only be met with a Verilator result, and none exists"
+    }
+  },
   "values": {
     "cell_treatment": {
       "buffers (BUF_*), incl. timing-repair and output buffers": "Liberty function Z = A (identity); kept in the netlist, part of the proof and of the simulation",
@@ -424,6 +432,10 @@
       "error": "no CSV produced",
       "log_tail": "g++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__3.cpp\ng++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__4.cpp\ng++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__5.cpp\ng++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__6.cpp\ng++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__7.cpp\ng++ -Os  -I.  -MMD -I/opt/oss-cad-suite/share/verilator/include -I/opt/oss-cad-suite/share/verilator/include/vltstd -DVERILATOR=1 -DVM_COVERAGE=0 -DVM_SC=0 -DVM_TIMING=0 -DVM_TRACE=0 -DVM_TRACE_FST=0 -DVM_TRACE_VCD=0 -DVM_TRACE_SAIF=0 -DVM_VPI=1 -faligned-new -fcf-protection=none -Wno-bool-operation -Wno-int-in-bool-context -Wno-shadow -Wno-sign-compare -Wno-subobject-linkage -Wno-tautological-compare -Wno-uninitialized -Wno-unused-but-set-parameter -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-unused-variable  -DVM_PREFIX_INCLUDE=\"<Vtop.h>\" -DVM_PREFIX_INCLUDE_DPI=\"<Vtop__Dpi.h>\"     -include Vtop__pch.h.fast -c Vtop___024root__8.cpp\nmake[1]: *** [/opt/oss-cad-suite/share/verilator/include/verilated.mk:303: Vtop___024root__8.o] Terminated\nmake: *** [/opt/venv/lib/python3.12/site-packages/cocotb_tools/makefiles/simulators/Makefile.verilator:69: $LAB/results/t1_routed_work/sim_verilator/Vtop] Terminated"
     },
+    "gls_verilator_build_progress": {
+      "cpp_files": 29,
+      "object_files_compiled": 14
+    },
     "netlist_buffers": 893,
     "netlist_cell_instances": 10568,
     "netlist_cells_by_type": {
@@ -496,5 +508,30 @@
       "usable_here": false,
       "what": "ORFS LEC_CHECK=1 runs Kepler-Formal on 1_synth_lec.v vs 6_final_lec.v (synthesis netlist vs final netlist; it never compares against the RTL)"
     }
+  },
+  "verdict_definition": {
+    "checks": "every entry of `checks` was evaluated and is true or false; `checks_not_evaluated` lists checks that could not be evaluated, with the reason (neither pass nor fail, they decide nothing); `superseded_checks` holds criteria replaced by a recorded decision, with their result",
+    "eqy_routed_pass": {
+      "decided_by": [
+        "eqy_routed_all_partitions_proved",
+        "all_netlist_cells_have_models",
+        "all_flops_clocked_by_clk",
+        "eqy_neg_rtl_mac_detected",
+        "eqy_neg_rtl_reg_detected",
+        "eqy_neg_netlist_detected"
+      ]
+    },
+    "gls_routed_pass": {
+      "against_task": "TASK2 P1.3 item 4 asks for Icarus '(and Verilator if the cell models parse)'. The cell models do parse in Verilator, so the Verilator half of the task is NOT done when its simulation was not run: gls_routed_pass = true then means 'the Icarus gate-level simulation passes', a partial fulfilment of item 4, not a two-simulator result",
+      "coverage": "Icarus only",
+      "decided_by": [
+        "gls_icarus_zero_mismatches",
+        "gls_icarus_csv_equals_official_rtl_prefix",
+        "gls_negative_control_detected",
+        "all_netlist_cells_have_models"
+      ],
+      "plus": "a Verilator gate-level result, if one exists, must also pass (a failing one fails the verdict; a missing one does not)"
+    },
+    "pass": "complete AND gls_routed_pass AND eqy_routed_pass"
   }
 }

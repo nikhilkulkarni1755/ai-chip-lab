@@ -1,12 +1,43 @@
 {
   "stage": "11_eqy_routed",
   "pass": true,
-  "note": "logical check (zero-delay cell functions), not a timing check",
+  "note": "logical check (zero-delay cell functions), not a timing check; gate-level simulation: pass on Icarus only; Verilator gate-level simulation not run (partial vs TASK2 P1.3 item 4)",
   "eqy_routed_pass": true,
   "gls_routed_pass": true,
   "gls_routed_by_simulator": {
     "icarus": "pass",
     "verilator": "not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists"
+  },
+  "gls_routed_status": "pass on Icarus only; Verilator gate-level simulation not run (partial vs TASK2 P1.3 item 4)",
+  "verdict_definition": {
+    "pass": "complete AND gls_routed_pass AND eqy_routed_pass",
+    "gls_routed_pass": {
+      "decided_by": [
+        "gls_icarus_zero_mismatches",
+        "gls_icarus_csv_equals_official_rtl_prefix",
+        "gls_negative_control_detected",
+        "all_netlist_cells_have_models"
+      ],
+      "plus": "a Verilator gate-level result, if one exists, must also pass (a failing one fails the verdict; a missing one does not)",
+      "coverage": "Icarus only",
+      "against_task": "TASK2 P1.3 item 4 asks for Icarus '(and Verilator if the cell models parse)'. The cell models do parse in Verilator, so the Verilator half of the task is NOT done when its simulation was not run: gls_routed_pass = true then means 'the Icarus gate-level simulation passes', a partial fulfilment of item 4, not a two-simulator result"
+    },
+    "eqy_routed_pass": {
+      "decided_by": [
+        "eqy_routed_all_partitions_proved",
+        "all_netlist_cells_have_models",
+        "all_flops_clocked_by_clk",
+        "eqy_neg_rtl_mac_detected",
+        "eqy_neg_rtl_reg_detected",
+        "eqy_neg_netlist_detected"
+      ]
+    },
+    "checks": "every entry of `checks` was evaluated and is true or false; `checks_not_evaluated` lists checks that could not be evaluated, with the reason (neither pass nor fail, they decide nothing); `superseded_checks` holds criteria replaced by a recorded decision, with their result"
+  },
+  "checks_not_evaluated": {
+    "gls_verilator_zero_mismatches": "no Verilator gate-level simulation result exists (not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists; 14 of 29 generated C++ files were compiled when it was stopped)",
+    "gls_csv_identical_across_simulators": "no Verilator gate-level simulation result exists (not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists; 14 of 29 generated C++ files were compiled when it was stopped); needs both CSVs",
+    "gls_csv_equals_official_rtl_prefix": "no Verilator gate-level simulation result exists (not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists; 14 of 29 generated C++ files were compiled when it was stopped); this is the both-simulators form, the Icarus half is evaluated as gls_icarus_csv_equals_official_rtl_prefix"
   },
   "oracle": "NumPy int32 matmul for the gate-level simulation (plus byte-identity with the RTL run's CSV); for the equivalence proof the RTL itself, compared by an SMT solver, with injected-bug negative controls",
   "criteria": [
@@ -80,7 +111,7 @@
       "threshold": "Icarus AND Verilator: 0 mismatches, identical CSVs",
       "measured": "{\"icarus\": \"pass\", \"verilator\": \"not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists\"}",
       "pass": false,
-      "reason": "TASK2 P1.3 requires Icarus and asks for Verilator only 'if the cell models parse'; see COORDINATION.md Decisions (Part 2) P2-R1"
+      "reason": "not met: no Verilator result exists. The cell models parse in Verilator, but its model build of the routed netlist did not finish within a 10-minute lock hold (two attempts), so the both-simulators criterion measured build time on this machine, not the netlist; replaced by the Icarus-required criterion, COORDINATION.md Decisions (Part 2) P2-R1. The Verilator half of TASK2 P1.3 item 4 remains open"
     }
   ],
   "scope": {

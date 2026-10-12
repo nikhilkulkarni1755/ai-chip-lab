@@ -164,5 +164,16 @@
    "results/.stages/11_eqy_routed.done"
   ],
   "what": "Routed equivalence complete (Decision P2-9): 27 of 27 partitions proven, EQY reports the designs equivalent; marker done"
+ },
+ {
+  "agent": "rtl",
+  "stage": "11_eqy_routed",
+  "files": [
+   "scripts/t1_routed_summary.py",
+   "results/t1_routed_summary.json",
+   "results/p2_11_eqy_routed.json",
+   "results/t1_summary.json"
+  ],
+  "what": "Summary no longer prints FAIL beside pass=True: checks needing a Verilator result are listed as not evaluated with the reason, the both-simulators criterion as superseded (not met), and the verdict definition and gls_routed_status (Icarus only) are written out"
  }
 ]
