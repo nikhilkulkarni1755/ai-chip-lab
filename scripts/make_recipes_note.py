@@ -46,8 +46,15 @@ def main():
     L.append("")
     if missing: L.append("**Not run as a recipe yet:** " + ", ".join("`make %s`" % m for m in missing) + ".")
     if failed: L.append("**Recipes that exited non-zero:** " + ", ".join("`make %s` (exit %d)" % (m, rec[m]["exit_code"]) for m in failed) + " — see the log of each.")
-    notes = ["`make %s`: %s" % (r, rec[r]["note"]) for r in rec if rec[r].get("note")]
-    if notes: L += ["", "Notes: " + "; ".join(notes) + "."]
+    notes = ["`make %s`: %s" % (r, " ".join(rec[r][k] for k in ("note", "executed_note", "annotation_by_infra") if rec[r].get(k))) for r in rec
+             if any(rec[r].get(k) for k in ("note", "executed_note", "annotation_by_infra"))]
+    prev = {}
+    for a_ in d.get("attempts", []):
+        if a_["recipe"] in rec and a_["start_epoch"] != rec[a_["recipe"]]["start_epoch"]:
+            prev.setdefault(a_["recipe"], []).append("attempt started %s: exit %d after %s%s" % (a_["start"][11:19], a_["exit_code"], hm(a_["runtime_s"]),
+                                                    (" — " + a_["annotation_by_infra"]) if a_.get("annotation_by_infra") else ""))
+    if prev: notes += ["earlier attempts of `make %s`: %s" % (r, " | ".join(v)) for r, v in prev.items()]
+    if notes: L += ["", "Notes:", ""] + ["- " + n for n in notes]
     ft = d.get("failsoft_test")
     L.append("")
     if ft:
@@ -68,7 +75,18 @@ def main():
     d["missing_recipes"] = missing; d["failed_recipes"] = failed
     text = "\n".join(L) + "\n"
     d["readme_note"] = text; d["note_generated"] = time.strftime("%F %T %Z")
-    json.dump(d, open(P + ".tmp", "w"), indent=1); os.replace(P + ".tmp", P)
+    # write back only the generated keys, under the recorder's mutex, on a fresh read (recorders may be running)
+    mx = P + ".lock.d"
+    for _ in range(600):
+        try: os.mkdir(mx); break
+        except FileExistsError: time.sleep(0.2)
+    try:
+        cur = json.load(open(P))
+        for k in ("pass", "missing_recipes", "failed_recipes", "readme_note", "note_generated"): cur[k] = d[k]
+        json.dump(cur, open(P + ".tmp", "w"), indent=1); os.replace(P + ".tmp", P)
+    finally:
+        try: os.rmdir(mx)
+        except OSError: pass
     open(os.path.join(ROOT, "results", "make_recipes.md"), "w").write(text)
     print(text)
 
