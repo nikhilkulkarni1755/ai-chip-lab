@@ -105,7 +105,7 @@ def main():
         d["pass"] = all(v for v in d["checks"].values() if v is not None)
         if gate: ok_all &= d["pass"]
         S["designs"][key] = d
-        fl = os.path.join(LAB, "logs", "20_pnr_ref", f"{plat}_{des}_{b}.log")
+        fl = os.path.join(LAB, "logs", "part2", "20_pnr_ref", f"{plat}_{des}_{b}.log")
         if gate and os.path.exists(fl):
             ls = [l for l in open(fl).read().splitlines() if not re.match(r"^\s+\d+[+*]? \|", l)]
             evid(f"20_orfs_flow_{plat}_{des}.txt", "\n".join(ls))
