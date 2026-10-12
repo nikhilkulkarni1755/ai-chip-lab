@@ -372,6 +372,16 @@ def build_rows(L):
                    "Task 2 from its two original runs, systolic_os a single run). The Part 2 report with every design's run count (gcd 4 runs on both PDKs, systolic_os 3, from "
                    "results/t2_reruns.json) replaces it when `make repro` finishes" % (
                        (rrep.get("counts") or {}).get("identical"), len(chk)))
+    if isinstance(rrep, dict):
+        ex = rrep.get("excluded_file_class")
+        if isinstance(ex, dict):
+            dr += "; %s (file class %s, per-layer wall time and memory, not results; the only exclusion)" % (ex.get("label"), ex.get("name"))
+        if rrep.get("task1_rerun_kept"):
+            dr += "; " + str((rrep["task1_rerun_kept"] or {}).get("note"))
+        if rrep.get("pass") is False and os.path.exists(L.p("results/evidence/51_repro_t3_diagnosis.txt")):
+            dr += ("; diagnosis (results/evidence/51_repro_t3_diagnosis.txt): Task 1 and Task 2 identical; the Task 3 differences are scheduler bookkeeping (attempts.json), "
+                   "a summary regenerated on another Python version (1-ulp float differences) plus the probe state, and provenance (Task 3 inputs committed during the rerun); no SCALE-Sim report differs. "
+                   "Still reported as FAIL: a clean Task 3 first pass and rerun on frozen inputs is scheduled right after the gate (Decision P2-10) and replaces this verdict when it exists")
     rows.append(Row("Repeatability rerun (repro)", sr, dr, "results/repro_report.json"))
     if demo_part2.active(L):
         rows.extend(demo_part2.extra_rows(L, Row, t1, t2s, t3s))

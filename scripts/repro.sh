@@ -4,6 +4,7 @@
 # Task 2 is NOT re-run a third time: pnr's t2_summary.json already holds a two-run-from-clean determinism
 # verdict (same image digest and core count); it is reused.
 #   scripts/repro.sh [--dry]
+#   REPRO_PART=t3 scripts/repro.sh : redo only Task 3, keeping the Task 1 rerun in .cache/repro_run/t1 if its inputs are verified unchanged (else the full rerun runs)
 #   env: REPRO_NCASES (default 10000, must equal the first run)
 #        REPRO_T1_AFTER  epoch: the first Task 1 run must have finished after this time (default 0)
 #        REPRO_T1_DEADLINE epoch: give up waiting for the first Task 1 run then (exit 5, nothing started; default none)
@@ -46,7 +47,34 @@ if [ "${1:-}" = "--dry" ]; then
 fi
 { [ -f "$S/30_arch_model.done" ] || [ -f "$S/30_arch_model.failed" ]; } && [ -f results/t3_summary.json ] && [ -d results/t3 ] \
   || { echo "first run of 30_arch_model not finished"; exit 4; }
-rm -rf "$RUN"; mkdir -p "$RUN" logs/part2/51_repro_full; rm -f "$S/51_repro_full.done" "$S/51_repro_full.failed"; : > "$S/51_repro_full.running"
+KEEP_T1=0
+if [ "${REPRO_PART:-all}" = "t3" ]; then
+  # Redo only Task 3 and keep the Task 1 rerun in $RUN/t1, but ONLY if its inputs are unchanged since that rerun: the git object SHAs of the Task 1
+  # input paths now must equal those recorded at its start and end, with no uncommitted edits. Otherwise the full rerun runs.
+  if python3 - "$RUN" $T1_PATHS <<'PY'
+import json, subprocess, sys
+run, paths = sys.argv[1], sys.argv[2:]
+def git(*a): return subprocess.run(["git"] + list(a), capture_output=True, text=True).stdout.strip()
+try:
+    st, en = json.load(open(run + "/inputs_t1_start.json")), json.load(open(run + "/inputs_t1_end.json"))
+    assert json.load(open(run + "/t1/t1_summary.json"))
+except Exception as ex:
+    print("cannot keep the Task 1 rerun:", ex); sys.exit(1)
+for p in paths:
+    now = git("rev-parse", "HEAD:" + p)
+    if not (now and now == st["paths"][p]["git_object_sha"] == en["paths"][p]["git_object_sha"]) or git("status", "--porcelain", "--", p):
+        print("Task 1 input changed since the rerun:", p); sys.exit(1)
+json.dump({"kept": True, "from": st["time"], "to": en["time"], "head_at_rerun": st["head"],
+           "note": "Task 1 rerun kept from %s to %s, inputs unchanged" % (st["time"][11:16], en["time"][11:16])}, open(run + "/t1_kept.json", "w"))
+PY
+  then KEEP_T1=1; else echo "REPRO_PART=t3 requested but the Task 1 rerun cannot be kept: running the full rerun"; fi
+fi
+if [ "$KEEP_T1" = 1 ]; then
+  rm -rf "$RUN/t3" "$RUN/t3_summary.json" "$RUN/inputs_t3_start.json" "$RUN/inputs_t3_end.json"; mkdir -p "$RUN" logs/part2/51_repro_full
+else
+  rm -rf "$RUN"; mkdir -p "$RUN" logs/part2/51_repro_full
+fi
+ rm -f "$S/51_repro_full.done" "$S/51_repro_full.failed"; : > "$S/51_repro_full.running"
 say "started (N=$N)"
 
 # ---- Task 3: cheap set only (Decision P2-7): bundled ws/os/is, fit, the three CALC-mode roofline runs, one fresh pass.
@@ -57,6 +85,9 @@ snap t3_start $T3_PATHS
 nice -n 10 env T3_LOCK=1 T3_JOBS=cheap T3_PASSES=1 T3_PLOTS=0 T3_SUMMARY="$RUN/t3_summary.json" bash scripts/t3_run.sh "$RUN/t3" > logs/part2/51_repro_full/t3.log 2>&1; say "t3 cheap-set rerun rc=$?"
 snap t3_end $T3_PATHS
 
+if [ "$KEEP_T1" = 1 ]; then
+  say "Task 1 rerun kept ($(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['note'])" "$RUN/t1_kept.json")); only Task 3 was redone"
+else
 # ---- wait for the first Task 1 run to be final
 AFTER="${REPRO_T1_AFTER:-0}"; DEADLINE="${REPRO_T1_DEADLINE:-0}"
 t1_final() {
@@ -76,10 +107,23 @@ snap t1_start $T1_PATHS
 nice -n 10 bash scripts/t1_run.sh "$N" "$RUN/t1" > logs/part2/51_repro_full/t1.log 2>&1; say "t1 rerun rc=$?"
 snap t1_end $T1_PATHS
 
+fi
+
 python3 scripts/repro_compare.py --lab "$LAB" --run "$RUN" | tee logs/part2/51_repro_full/compare.log; rc=${PIPESTATUS[0]}
 rm -f "$S/51_repro_full.running"
 if [ -f results/repro_report.json ]; then
-  echo "report written; pass=$(python3 -c "import json;print(json.load(open('results/repro_report.json'))['pass'])")" > "$S/51_repro_full.done"
+  # the marker follows the verdict: .done only when the report says pass=True, otherwise .failed with the differing checks
+  pv=$(python3 -c "import json;print(json.load(open('results/repro_report.json'))['pass'])")
+  if [ "$pv" = "True" ]; then
+    echo "report written; pass=True" > "$S/51_repro_full.done"
+  else
+    { echo "report written; pass=False (the verdict of the comparison, not a crash). Differing checks:"
+      python3 -c "
+import json
+for c in json.load(open('results/repro_report.json'))['checks']:
+    if c['verdict'] in ('different','not_run'): print(' ', c['verdict'], c['check'], '-', str(c.get('note',''))[:200])"
+      echo "see results/repro_report.json and any diagnosis under results/evidence/51_*"; } > "$S/51_repro_full.failed"
+  fi
 else
   { echo "repro_report.json not produced"; tail -50 logs/part2/51_repro_full/compare.log; } > "$S/51_repro_full.failed"
 fi

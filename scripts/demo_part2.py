@@ -576,8 +576,8 @@ NOT_GREEN = [
      "`make sweeps` resumes where it stopped; each unreached point is accounted for in the sweep section of the page."),
     ("Sweep B", "A completion status. The systolic_os frontier at 30 % utilization is bracketed by a failing and a closing period (see the row); 40 and 50 % utilization points are listed with their state in section 12.",
      "`make sweeps` (or `python3 sweeps/phys_sweep.py --plan part2`) runs the remaining planned points."),
-    ("Repeatability", "The Part 2 repro (Task 1 in full, Task 3 cheap set, Task 2 from the extra clean runs) is still running or has not been summarised; the user-bandwidth Task 3 runs are not rerun because of their cost and are reported as such, never as identical.",
-     "`make repro`; results/repro_report.json then shows every check with its run count."),
+    ("Repeatability", "The comparison says FAIL: Task 1 and Task 2 are identical, but three Task 3 checks differ. Diagnosis (results/evidence/51_repro_t3_diagnosis.txt, arch): no SCALE-Sim report differs; the differences are scheduling bookkeeping files, a summary file regenerated on another Python version (1-ulp float differences) plus the probe state, and provenance (Task 3 inputs were committed while the rerun was running). The user-bandwidth Task 3 runs are not rerun (cost) and are reported as such, never as identical. The only excluded file class is the per-layer run-time measurements (timing.timing).",
+     "Right after the gate a clean Task 3 first pass and rerun on frozen inputs is run (Decision P2-10): `REPRO_PART=t3 scripts/repro.sh` keeps the Task 1 rerun if its inputs are verified unchanged, else the full `scripts/repro.sh` runs. Until the new verdict exists this row stays FAIL."),
     ("Make recipes", "Each recipe is executed for real by the recorder in queue order; the ones still running or not run yet are listed in the note on the page.",
      "`make all` (fail-soft, always builds the demo, exits non-zero naming failed stages)."),
 ]

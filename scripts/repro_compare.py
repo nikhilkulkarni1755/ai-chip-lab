@@ -53,7 +53,10 @@ def main():
     d1, d2 = P("results/t3"), P(a.run, "t3")
     files = sorted(os.path.relpath(os.path.join(b, f), d1) for b, _, fs in os.walk(d1) for f in fs if not f.startswith(".")) if os.path.isdir(d1) else []
     if files and os.path.isdir(d2):
-        rerun_files = sorted(os.path.relpath(os.path.join(b, f), d2) for b, _, fs in os.walk(d2) for f in fs if not f.startswith("."))
+        # the ONE excluded file class: timing.timing = per-layer wall-time/RSS measurements of the run itself (cannot be identical in any two runs)
+        excl = sorted(f for f in set(files) | set(os.path.relpath(os.path.join(b, f), d2) for b, _, fs in os.walk(d2) for f in fs) if os.path.basename(f) == "timing.timing")
+        files = [f for f in files if f not in excl]
+        rerun_files = sorted(os.path.relpath(os.path.join(b, f), d2) for b, _, fs in os.walk(d2) for f in fs if not f.startswith(".") and os.path.basename(f) != "timing.timing")
         both = [f for f in files if f in rerun_files]
         h1 = {f: sha(os.path.join(d1, f)) for f in both}
         h2 = {f: sha(os.path.join(d2, f)) for f in both}
@@ -126,7 +129,12 @@ def main():
                        "rerun": {"inputs_unchanged_start_to_end": same, "no_uncommitted_changes": clean, "head": st["head"],
                                  "object_shas": {k: v["git_object_sha"] for k, v in st["paths"].items()}},
                        "note": "git object SHAs of the input paths at HEAD; see provenance block"})
-    rep = {"generated_epoch": int(time.time()), "rerun_dir": a.run,
+    kept = jl(P(a.run, "t1_kept.json"))
+    if kept:
+        checks.append({"check": "t1 rerun kept (not redone with Task 3)", "runs": 2, "verdict": "identical", "first_run": None, "rerun": None, "note": kept.get("note")})
+    rep = {"excluded_file_class": {"name": "timing.timing", "reason": "run-time measurements (wall seconds and peak memory per layer), not results", "files": len(excl) if "excl" in dir() else 0,
+                                   "label": "excluded: run-time measurements (%d files)" % (len(excl) if "excl" in dir() else 0)},
+           "task1_rerun_kept": kept or None, "generated_epoch": int(time.time()), "rerun_dir": a.run,
            "pass": all(c["verdict"] in ("identical", "not_rerun_cost") for c in checks) and any(c["verdict"] == "identical" for c in checks),
            "complete": all(c["verdict"] == "identical" for c in checks), "checks": checks, "provenance": prov,
            "counts": {v: sum(1 for c in checks if c["verdict"] == v) for v in ("identical", "different", "not_run", "not_rerun_cost")}}
