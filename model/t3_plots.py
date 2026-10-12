@@ -51,15 +51,15 @@ def roofline_plot(out):
         ax.plot(xs, [min(peak, bw * x) for x in xs], "k-", lw=1.5, label="roofline")
         for L in run["layers"]:
             c = "#d1495b" if L["obs_bandwidth_bound"] else "#2a9d8f"
-            ax.scatter(L["ai"], L["achieved_flops_per_cycle"], color=c, s=40, zorder=3)
-            ax.annotate(L["name"], (L["ai"], L["achieved_flops_per_cycle"]), fontsize=6, xytext=(3, 3),
+            ax.scatter(L["ai_eff"], L["achieved_flops_per_cycle"], color=c, s=40, zorder=3)
+            ax.annotate(L["name"], (L["ai_eff"], L["achieved_flops_per_cycle"]), fontsize=6, xytext=(3, 3),
                         textcoords="offset points")
         ax.axvline(run["ridge_ai"], color="gray", ls=":", label=f"ridge AI = {run['ridge_ai']:.1f}")
-        ax.scatter([], [], color="#d1495b", label="stalls > threshold (SCALE-Sim)")
-        ax.scatter([], [], color="#2a9d8f", label="no/low stalls")
+        ax.scatter([], [], color="#d1495b", label="stall cycles > 5% (SCALE-Sim)")
+        ax.scatter([], [], color="#2a9d8f", label="stalls <= 5%")
         ax.set_xscale("log"); ax.set_yscale("log")
-        ax.set_xlabel("arithmetic intensity (FLOP / DRAM byte)"); ax.set_ylabel("achieved FLOP / cycle")
-        ax.set_title(f"{name}: agreement {run['agreement']:.0%}, rho(AI, stall) = {run['spearman_ai_stallfrac']:.2f}",
+        ax.set_xlabel("arithmetic intensity (FLOP / DRAM byte actually moved in SCALE-Sim)"); ax.set_ylabel("achieved FLOP / cycle")
+        ax.set_title(f"{name}: effective-roofline agreement {run['agreement']:.0%}, rho = {run['spearman_ai_stallfrac']:.2f}",
                      fontsize=9)
         ax.legend(frameon=False, fontsize=7, loc="lower right")
     fig.tight_layout()

@@ -97,6 +97,10 @@ def do_summary(out, rerun):
         r = json.load(open(rf))
         summ["roofline"] = r["summary"]
         chk.update(r["checks"])
+        chk["roofline_agrees"] = all(r["checks"].values())
+    else:
+        chk["roofline_agrees"] = False
+    summ["bundled_config_zero_stalls"] = all(summ["bundled_summary"][df]["stall_cycles"] == 0 for df in DATAFLOWS)
     summ["checks"] = chk
     summ["pass"] = bool(all(chk.values()))
     return summ
