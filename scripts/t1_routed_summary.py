@@ -338,6 +338,11 @@ def summary(a):
                               "smtbmc yices": "no result within 10 min on one MAC partition",
                               "abc pdr": "stopped after about 4 min without a result (comparison cut short)"},
             "seconds_per_partition": dict(sorted(seconds.items())),
+            "per_partition": {n: {"kind": "per-PE MAC cone" if n in mac else "wrapper",
+                                  "engine": f"sby {engine}, depth 2",
+                                  "solver_seconds": seconds.get(n),
+                                  "result": res.get(n, ("no solver result (not attempted, or its lock hold ended first)",))[0]}
+                              for n in sorted(names)},
             "lock_holds": len(holds),
             "seconds": runtimes.get("eqy_routed"), "chunks": len(chunks),
             "finished": fin.isdigit(),
@@ -371,6 +376,8 @@ def summary(a):
               "$ eqy -f -j 2 -d <work>/eqy_routed <work>/routed.eqy   (from eqy/systolic_os_routed.eqy.in)",
               f"partitions: {len(names)}, proved: {len(proved)}, not proved: {len(not_proved)}; "
               f"per-PE MAC partitions proved: {values['eqy_routed']['mac_partitions_proved']}/{len(mac)}"]
+        ev += [f"{n}: {x['result']}" + (f" ({x['solver_seconds']} s)" if x["solver_seconds"] is not None else "")
+               for n, x in values["eqy_routed"]["per_partition"].items()]
         ev += [re.sub(r"\[.*?\]", "[eqy_routed]", ln, count=1) for ln in log.splitlines()
                if "designs equivalent" in ln or "DONE" in ln or "summary:" in ln
                or "Failed to prove" in ln or "Could not prove" in ln][-14:]
@@ -380,11 +387,31 @@ def summary(a):
             r = nres.get(part)
             detected = (step_rc.get(f"eqy_neg_{tag}") == 0 and r is not None
                         and r[0].startswith("not proved") and nstatus == "FAIL")
+            # how it was rejected: read from the solver log of that partition, not assumed
+            sdir = os.path.join(work, f"neg_{tag}", "eqy", "strategies", part, "smt")
+            slog = read(os.path.join(sdir, part, "logfile.txt"))
+            sstat = (read(os.path.join(sdir, "status")).split() or ["none"])[0]
+            base = re.search(r"returned (\w+) for basecase", slog)
+            ind = re.search(r"returned (\w+) for induction", slog)
+            secs = re.search(r"Elapsed clock time.*\((\d+)\)", slog)
+            timed_out = bool(re.search(r"timeout|TIMEOUT", slog))
+            if sstat == "FAIL":
+                how = "counterexample: the solver found an input sequence on which the two sides differ (partitions not equivalent)"
+            elif sstat == "UNKNOWN" and ind and ind.group(1) == "FAIL" and not timed_out:
+                how = ("not proven equivalent: the depth-2 base case passes and the induction step fails with a "
+                       "counterexample-to-induction trace (solver finished, no timeout)")
+            elif timed_out:
+                how = "not proven equivalent: solver timeout (weak evidence)"
+            else:
+                how = f"not proven equivalent: solver status {sstat}"
             values["eqy_negative_controls"][tag] = {
-                "bug": what, "partition": part, "result": r[0] if r else "no result", "eqy_status": nstatus}
+                "bug": what, "partition": part, "result": r[0] if r else "no result", "eqy_status": nstatus,
+                "solver_status": sstat, "basecase": base.group(1) if base else None,
+                "induction": ind.group(1) if ind else None, "solver_seconds": int(secs.group(1)) if secs else None,
+                "rejected_as": how}
             checks[f"eqy_neg_{tag}_detected"] = detected
             ev.append(f"negative control [{what}]: partition {part}: "
-                      f"{r[0] if r else 'no result'}; EQY {nstatus} (must be FAIL)")
+                      f"{r[0] if r else 'no result'}; EQY {nstatus} (must be FAIL); {how}")
         evidence["11_eqy_routed.txt"] = "\n".join(ev) + "\n"
         eqy_required = ["eqy_routed_all_partitions_proved", "all_netlist_cells_have_models",
                         "all_flops_clocked_by_clk"] + [
@@ -466,7 +493,8 @@ def write_p2(out, r, evidence):
                  f"({e.get('mac_partitions_proved')} of {e.get('mac_partitions')} per-PE cones); "
                  f"open: {', '.join(sorted(e.get('partitions_not_proved', {}))) or 'none'}"),
         ] + [crit(f"eqy_neg_{t}_detected", f"injected bug must not be proven equivalent [{w}]",
-                  f"partition {p}: {v.get('eqy_negative_controls', {}).get(t, {}).get('result')}")
+                  f"partition {p}: {v.get('eqy_negative_controls', {}).get(t, {}).get('result')}; "
+                  f"{v.get('eqy_negative_controls', {}).get(t, {}).get('rejected_as')}")
              for t, p, w in EQY_NEG]
     criteria += [
         crit("all_netlist_cells_have_models", "every cell instance of 6_final.v has a Liberty function (no black box)",
@@ -496,6 +524,8 @@ def write_p2(out, r, evidence):
         "scope": e.get("scope_exact"), "cell_treatment": v.get("cell_treatment"), "not_covered": v.get("not_covered"),
         "eqy_partitions": {"proved": e.get("partitions_proved_list"), "not_proved": e.get("partitions_not_proved"),
                            "seconds_per_partition": e.get("seconds_per_partition"), "engine": e.get("engine"),
+                           "per_partition": e.get("per_partition"), "lock_seconds_eqy_holds": e.get("seconds"),
+                           "negative_controls": v.get("eqy_negative_controls"),
                            "engines_tried": e.get("engines_tried")},
         "inputs": r["inputs"], "orfs_builtin_lec": v.get("orfs_builtin_lec"),
         "commands": ["scripts/t1_routed.sh 200 results",
@@ -529,6 +559,12 @@ def merge_into_t1_summary(out):
         "gls_by_simulator": rs["values"].get("gls_routed_by_simulator"),
         "eqy_scope_exact": rs["values"].get("eqy_routed", {}).get("scope_exact"),
         "eqy_partitions_not_proved": rs["values"].get("eqy_routed", {}).get("partitions_not_proved"),
+        "eqy_partitions_proved_list": rs["values"].get("eqy_routed", {}).get("partitions_proved_list"),
+        "eqy_per_partition": rs["values"].get("eqy_routed", {}).get("per_partition"),
+        "eqy_negative_controls": rs["values"].get("eqy_negative_controls"),
+        "inputs": {k: rs["inputs"].get(k) for k in ("routed_netlist", "routed_netlist_sha256", "liberty_path_in_orfs_image",
+                                                    "liberty_sha256", "orfs_image")},
+        "cell_treatment": rs["values"].get("cell_treatment"), "not_covered": rs["values"].get("not_covered"),
         "checks": rs["checks"],
     }
     with open(p, "w") as f:
