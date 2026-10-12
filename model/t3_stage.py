@@ -64,7 +64,11 @@ def do_job(job, out):
         t3_roofline.run(out)
     elif job.startswith("rl2_"):
         import t3_roofline2
-        if not t3_roofline2.run_job(job, out):
+        r = t3_roofline2.run_job(job, out)
+        if r == "blocked":
+            print(f"job {job}: blocked (see roofline2/{job}/blocked.json); not retried")
+            sys.exit(76)
+        if not r:
             print(f"job {job}: partial (time budget for this lock hold used); call again")
             sys.exit(75)
     else:
@@ -85,31 +89,47 @@ def sha(path):
 
 def deterministic_files(root):
     out = []
-    for dp, _, fs in os.walk(root):
+    for dp, dn, fs in os.walk(root):
+        dn[:] = [x for x in dn if not x.startswith(".rerun")]     # kept pass-2 copy lives in <final>/.rerun
         for f in fs:
             if f.endswith((".csv", ".json", ".cfg")) and "summary" not in f and f != "roofline2.json":
                 out.append(os.path.relpath(os.path.join(dp, f), root))
     return sorted(out)
 
 
-def do_summary(out, rerun):
+def do_summary(out, rerun, prev_summary=None):
+    import t3_roofline2
     missing = [j for j in job_list() if not os.path.exists(os.path.join(out, ".jobs", j + ".done"))
-               and not j.startswith("rl2_user_")]     # criterion-A runs may be unfinished (Decision P2-7): reported as such
+               and not j.startswith("rl2_user_") and not (os.environ.get("T3_JOBS") == "cheap" and j == "roofline_synthetic")]     # criterion-A runs may be unfinished (Decision P2-7): reported as such
     if missing:
         raise SystemExit("jobs not finished: %s" % missing)
-    a, b = deterministic_files(out), deterministic_files(rerun)
+    a = deterministic_files(out)
+    prev_id = None
+    if not os.path.isdir(rerun) and prev_summary and os.path.exists(prev_summary):
+        prev_id = json.load(open(prev_summary)).get("identity", {})      # resumed from a finished run: pass 2 not repeated
+    if prev_id and prev_id.get("compared_in_stage"):
+        b = list(prev_id["compared_in_stage"])
+    else:
+        b = deterministic_files(rerun)
     # Per decision P2-6 the second in-stage pass covers only the cheap jobs; every other file is compared by
     # `make repro` (pending_repro here).
     pending = [x for x in a if x not in b]
     extra = [x for x in b if x not in a]
-    mism = [x for x in b if x in a and sha(os.path.join(out, x)) != sha(os.path.join(rerun, x))]
+    if prev_id and prev_id.get("compared_in_stage"):
+        # carried over: valid only while every compared file still has the hash recorded when pass 2 compared it
+        mism = list(prev_id.get("mismatches", [])) + [x for x in b if x in a and sha(os.path.join(out, x)) != prev_id.get("sha256", {}).get(x)]
+    else:
+        mism = [x for x in b if x in a and sha(os.path.join(out, x)) != sha(os.path.join(rerun, x))]
     ident = bool(b and not extra and not mism)
     hashes = {x: sha(os.path.join(out, x)) for x in a}
     jobs_info = {}
     for j in job_list():
         mk = os.path.join(out, ".jobs", j + ".done")
         if not os.path.exists(mk):
-            jobs_info[j] = dict(completed=None, state="in_progress" if os.path.isdir(os.path.join(out, "roofline2", j, "layers")) else "not_run")
+            jobs_info[j] = dict(completed=None, state=t3_roofline2._status(out, j))
+            bpj = os.path.join(out, "roofline2", j, "blocked.json")
+            if os.path.exists(bpj):
+                jobs_info[j]["blocked"] = json.load(open(bpj))
             continue
         jobs_info[j] = dict(completed=datetime.datetime.fromtimestamp(os.path.getmtime(mk)).isoformat(timespec="seconds"),
                             rerun_in_stage=os.path.exists(os.path.join(rerun, ".jobs", j + ".done")))
@@ -175,6 +195,7 @@ if __name__ == "__main__":
     ap.add_argument("--rerun")
     ap.add_argument("--only", choices=["cheap"])
     ap.add_argument("--summary-json")
+    ap.add_argument("--prev-summary")
     a = ap.parse_args()
     if a.cmd == "list":
         print("\n".join(job_list()))
@@ -184,6 +205,6 @@ if __name__ == "__main__":
     elif a.cmd == "pass":
         do_pass(a.out, a.only)
     else:
-        s = do_summary(a.out, a.rerun)
+        s = do_summary(a.out, a.rerun, a.prev_summary)
         json.dump(s, open(a.summary_json, "w"), indent=1, sort_keys=True)
         print(json.dumps({"pass": s["pass"], "checks": s["checks"]}, indent=1))

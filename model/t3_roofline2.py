@@ -36,7 +36,7 @@ def jobs():
 
 NWORKERS = int(os.environ.get("T3_LAYER_WORKERS", "2"))
 MEM_CAP = int(float(os.environ.get("T3_LAYER_MEM_GB", "2.0")) * 2**30)
-HOLD_BUDGET_S = int(os.environ.get("T3_HOLD_BUDGET_S", "420"))   # stop STARTING new layers after this (lock holds stay ~<= 10 min)
+HOLD_BUDGET_S = int(os.environ.get("T3_HOLD_BUDGET_S", "480"))   # HARD wall limit of the work inside one lock hold (rule: whole hold <= 10 min)
 
 
 def _job_cfg(job, td):
@@ -68,7 +68,7 @@ def _limit_mem():
 
 
 def _layer_task(args):
-    """One layer in its own process. Returns (i, result_dict, report_rows, wall_s, peak_rss_mb)."""
+    """One layer (runs in its own child process). Returns (i, result_dict, report_rows, wall_s, peak_rss_mb)."""
     import time as _t
     import resource
     cfg, i, header, row, cap = args
@@ -84,12 +84,28 @@ def _layer_task(args):
     return i, r[0], rows, _t.time() - t0, resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0
 
 
+def _child_main(cfg, i, outfile, cap):
+    lines = open(TOPO).read().splitlines()
+    rows = [l for l in lines[1:] if l.strip()]
+    i, res, rep, wall, rss = _layer_task((cfg, int(i), lines[0], rows[int(i)], cap == "1"))
+    json.dump(dict(res=res, rows=rep, wall=wall, rss=rss), open(outfile, "w"), sort_keys=True)
+
+
+LARGE_LINES = 12000      # layers above this estimate run alone and uncapped (peak RSS ~1.7 GB each)
+DEFAULT_RATIO = 4e-3     # s per estimated demand line, conservative (cost probe: 58896 lines > 170 s)
+
+
 def run_job(job, out):
-    """Layers of one job run in parallel (<= NWORKERS processes, largest estimated first, per-process address-space cap;
-    a layer whose worker dies or hits the cap is re-run serially without cap). Each finished layer is written to
-    roofline2/<job>/layers/<i>.json immediately, so a killed job resumes at layer level. Results are bit-identical to a
-    serial run (layers are independent; verified against the serial rl2_user_ws_low result)."""
-    import concurrent.futures as cf
+    """One lock hold of one job.  HARD wall-clock limit HOLD_BUDGET_S (default 480 s; the container start and
+    assembly stay well inside the 10-minute rule): every layer runs as its own subprocess, finished layers are
+    written to roofline2/<job>/layers/<i>.json immediately (per-layer resume), a layer is only STARTED if its
+    predicted time fits in what is left of the hold (largest first, because the largest layer decides whether
+    the job can finish at all), and whatever is still running at the limit is killed.  A layer that cannot
+    finish even when it gets a whole hold alone (or that dies uncapped) writes roofline2/<job>/blocked.json:
+    the job is then reported 'blocked' and is not retried (T3_RETRY_BLOCKED=1) -- no endless zero-progress holds.
+    Returns True (job complete), False (partial, progress made, call again) or 'blocked'.
+    Results are bit-identical to a serial run (layers are independent)."""
+    import subprocess
     import time as _t
     layers = an.load_topology(TOPO)
     lines = open(TOPO).read().splitlines()
@@ -97,50 +113,106 @@ def run_job(job, out):
     d = os.path.join(out, "roofline2", job)
     ld = os.path.join(d, "layers")
     os.makedirs(ld, exist_ok=True)
+    bp = os.path.join(d, "blocked.json")
+    if os.path.exists(bp) and os.environ.get("T3_RETRY_BLOCKED") != "1":
+        print(f"job {job}: blocked ({json.load(open(bp))['reason']}); not retried")
+        return "blocked"
 
     def est(i):
         L = layers[i]
         return sum(f * (T + 3 * ARRAY) for f, T in [an.shape_map(df_of(job), L["M"], L["N"], L["K"], ARRAY, ARRAY)])
 
-    todo = [i for i in range(len(rows)) if not os.path.exists(os.path.join(ld, f"{i}.json"))]
-    todo.sort(key=est, reverse=True)
+    def done(i):
+        return os.path.exists(os.path.join(ld, f"{i}.json"))
+
+    todo = [i for i in range(len(rows)) if not done(i)]
+    queue = sorted(todo, key=est, reverse=True)
     t_hold = _time.time()
+    deadline = t_hold + HOLD_BUDGET_S
+    tp = os.path.join(d, "timing.timing")
+    tm = json.load(open(tp)) if os.path.exists(tp) else {}
+    ratios = [v["wall_s"] / max(1, est(i)) for i in range(len(rows)) for v in [tm.get(layers[i]["name"])] if v and v.get("wall_s")]
+    ap = os.path.join(d, "attempts.json")
+    attempts = json.load(open(ap)) if os.path.exists(ap) else {}
+    finished_now, blocked = 0, None
     with tempfile.TemporaryDirectory() as td:
         cfg, mode, df, B = _job_cfg(job, td)
+        force_big = set()
+        run = {}      # i -> dict(p, t0, outf, errf, cap, full)
 
-        def finish(i, res, rep, wall, rss, how):
-            json.dump(dict(res=res, rows=rep), open(os.path.join(ld, f"{i}.json"), "w"), sort_keys=True)
-            tp = os.path.join(d, "timing.timing")
-            tm = json.load(open(tp)) if os.path.exists(tp) else {}
-            tm[layers[i]["name"]] = dict(wall_s=round(wall, 1), peak_rss_mb=round(rss), how=how)
-            json.dump(tm, open(tp, "w"), indent=1, sort_keys=True)
-            print(f"  layer {layers[i]['name']} done {wall:.0f}s rss {rss:.0f} MB ({how}) elapsed {_time.time() - t_hold:.0f}s", flush=True)
+        def pred(i):
+            return (max(ratios) if ratios else DEFAULT_RATIO) * est(i)
 
-        redo = []
-        queue = list(todo)
-        pend = {}
-        with cf.ProcessPoolExecutor(NWORKERS) as ex:
-            while queue or pend:
-                while queue and len(pend) < NWORKERS and _time.time() - t_hold < HOLD_BUDGET_S:
-                    i = queue.pop(0)
-                    pend[ex.submit(_layer_task, (cfg, i, header, rows[i], True))] = i
-                if not pend:
-                    break                      # budget used up: remaining layers are for the next hold
-                done, _ = cf.wait(list(pend), return_when=cf.FIRST_COMPLETED)
-                for f in done:
-                    i = pend.pop(f)
-                    try:
-                        finish(*f.result(), "parallel")
-                    except Exception as e:     # MemoryError / killed worker: serial, uncapped, next
-                        redo.append(i)
-                        print(f"  layer {layers[i]['name']} parallel failed: {type(e).__name__}", flush=True)
-                if any(isinstance(getattr(f, "_exception", None), BaseException) for f in done) and False:
-                    pass
-        for i in sorted(set(redo), key=est, reverse=True):
-            if _time.time() - t_hold < HOLD_BUDGET_S + 240:
-                finish(*_layer_task((cfg, i, header, rows[i], False)), "serial")
+        while queue or run:
+            now = _time.time()
+            # ---- start layers ----
+            for i in list(queue):
+                if len(run) >= NWORKERS or now >= deadline:
+                    break
+                big = est(i) > LARGE_LINES or i in force_big
+                if big and run:
+                    continue                       # large layers run alone
+                if any(r["big"] for r in run.values()):
+                    break
+                first = not run and finished_now == 0 and (deadline - now) >= HOLD_BUDGET_S - 30
+                if not first and pred(i) > deadline - now - 5:
+                    continue                       # would not fit in what is left of this hold
+                queue.remove(i)
+                cap = not big
+                outf = os.path.join(td, f"{i}.out.json")
+                errf = open(os.path.join(td, f"{i}.err"), "w")
+                p = subprocess.Popen([sys.executable, os.path.abspath(__file__), "_layer", cfg, str(i), outf, "1" if cap else "0"],
+                                     stdout=subprocess.DEVNULL, stderr=errf)
+                run[i] = dict(p=p, t0=_time.time(), outf=outf, errf=errf, cap=cap, big=big, full=first)
+            if not run:
+                break
+            _time.sleep(1.0)
+            now = _time.time()
+            for i, r in list(run.items()):
+                rc = r["p"].poll()
+                name = layers[i]["name"]
+                if rc is None and now >= deadline:
+                    r["p"].kill(); r["p"].wait(); rc = "killed"
+                if rc is None:
+                    continue
+                r["errf"].close(); run.pop(i)
+                el = now - r["t0"]
+                if rc == 0:
+                    rec = json.load(open(r["outf"]))
+                    json.dump(dict(res=rec["res"], rows=rec["rows"]), open(os.path.join(ld, f"{i}.json"), "w"), sort_keys=True)
+                    tm[name] = dict(wall_s=round(rec["wall"], 1), peak_rss_mb=round(rec["rss"]), how="subprocess" + ("" if r["cap"] else "-uncapped"))
+                    json.dump(tm, open(tp, "w"), indent=1, sort_keys=True)
+                    ratios.append(rec["wall"] / max(1, est(i)))
+                    finished_now += 1
+                    print(f"  layer {name} done {rec['wall']:.0f}s rss {rec['rss']:.0f} MB elapsed {now - t_hold:.0f}s", flush=True)
+                elif rc == "killed":
+                    attempts.setdefault(name, []).append(dict(killed_after_s=round(el), alone_full_hold=bool(r["full"]), hold_budget_s=HOLD_BUDGET_S))
+                    print(f"  layer {name} killed at the hold limit after {el:.0f}s (full hold: {r['full']})", flush=True)
+                    if r["full"]:
+                        blocked = dict(layer=name, reason=f"layer {name} did not finish in {el:.0f} s although it had a whole {HOLD_BUDGET_S} s lock hold alone (10-minute rule)")
+                else:
+                    err = open(os.path.join(td, f"{i}.err")).read()[-300:]
+                    print(f"  layer {name} failed rc={rc} cap={r['cap']}: {err.strip()[-200:]}", flush=True)
+                    if r["cap"]:
+                        queue.insert(0, i); queue.sort(key=est, reverse=True)   # address-space cap hit: rerun alone, uncapped
+                        force_big.add(i)
+                    else:
+                        blocked = dict(layer=name, reason=f"layer {name} died uncapped, rc={rc} (memory?) after {el:.0f} s: {err.strip()[-120:]}")
+            if blocked:
+                for r in run.values():
+                    r["p"].kill(); r["p"].wait()
+                break
+        json.dump(attempts, open(ap, "w"), indent=1, sort_keys=True)
         shutil.copy(cfg, os.path.join(d, "config.cfg"))
+    if blocked:
+        blocked["finished_layers_this_hold"] = finished_now
+        json.dump(blocked, open(bp, "w"), indent=1, sort_keys=True)
+        print(f"job {job}: BLOCKED: {blocked['reason']}", flush=True)
+        return "blocked"
     if any(not os.path.exists(os.path.join(ld, f"{i}.json")) for i in range(len(rows))):
+        if finished_now == 0:                  # never loop on zero progress
+            json.dump(dict(reason="a whole hold finished no layer", layer=None), open(bp, "w"))
+            return "blocked"
         return False                           # partial: call again (next lock hold)
     # assemble in layer order
     res, merged = [], {n: None for n in sim_reports()}
@@ -188,6 +260,8 @@ def sim_reports():
 def _status(out, job):
     if os.path.exists(os.path.join(out, ".jobs", job + ".done")):
         return "evaluated"
+    if os.path.exists(os.path.join(out, "roofline2", job, "blocked.json")):
+        return "blocked"
     if os.path.isdir(os.path.join(out, "roofline2", job, "layers")):
         return "in_progress"
     return "not_run"
@@ -263,3 +337,7 @@ def table(res):
         L.append(f"{df:3s} USER rho(AI,stall_frac)[layers w/ stalls] {cells} | CALC rho(AI,req_bw) {calc}")
     L.append("roofline2 complete: %s  pass: %s" % (res["complete"], res["passed"]))
     return "\n".join(L)
+
+
+if __name__ == "__main__" and len(sys.argv) == 6 and sys.argv[1] == "_layer":
+    _child_main(*sys.argv[2:])

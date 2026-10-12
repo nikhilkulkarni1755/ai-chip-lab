@@ -4,5 +4,5 @@
 set -e
 LAB="${LAB:-$HOME/ai-chip-lab}"
 source "$LAB/env.sh"; source "$LAB/coord/images.env"
-exec docker run --rm --platform linux/amd64 -e PYTHONHASHSEED=0 -e T3_SUMMARY -e T3_PLOTS -e T3_PASSES -e T3_LOCK -e T3_RESUME -e T3_LAYER_WORKERS -e T3_LAYER_MEM_GB -e OMP_NUM_THREADS=1 -e OPENBLAS_NUM_THREADS=1 -e MKL_NUM_THREADS=1 -e NUMBA_NUM_THREADS=1 \
+exec docker run --rm --platform linux/amd64 -e PYTHONHASHSEED=0 -e T3_SUMMARY -e T3_PLOTS -e T3_PASSES -e T3_LOCK -e T3_RESUME -e T3_LAYER_WORKERS -e T3_LAYER_MEM_GB -e T3_JOBS -e T3_HOLD_BUDGET_S -e T3_RETRY_BLOCKED -e OMP_NUM_THREADS=1 -e OPENBLAS_NUM_THREADS=1 -e MKL_NUM_THREADS=1 -e NUMBA_NUM_THREADS=1 \
   -v "$LAB":/lab -w /lab "$LAB_SIM_IMAGE" "$@"
