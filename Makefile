@@ -25,7 +25,7 @@ smoke:
 
 # ---- rtl: 10_rtl_verify (Task 1) --------------------------------------------------------------
 t1:
-	@echo "t1: recipe owned by the rtl agent (scripts/t1_*)"; exit 1
+	scripts/t1_run.sh $(or $(T1_CASES),10000) $(or $(T1_OUT),results)
 
 # ---- pnr: 20_pnr_ref (Task 2) -----------------------------------------------------------------
 t2:
