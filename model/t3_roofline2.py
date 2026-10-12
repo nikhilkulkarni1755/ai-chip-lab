@@ -51,11 +51,16 @@ def run_job(job, out):
             assert cp["run_presets"]["InterfaceBandwidth"] == "CALC"
         with open(cfg, "w") as f:
             cp.write(f)
-        res, rd = sim.run(cfg, TOPO, os.path.join(td, "out"), gemm=False)
+        # One SCALE-Sim invocation PER LAYER: SCALE-Sim keeps every layer's demand/trace matrices alive until the
+        # run ends (simulator.single_layer_sim_object_list), which OOM-killed the 21-layer run in the 4 GB VM
+        # (exit 137). Layers are independent in SCALE-Sim (no cross-layer state), validated equal in
+        # model/test_perlayer.py.
+        res, per_layer_reports = run_per_layer(cfg, td)
         d = os.path.join(out, "roofline2", job)
         os.makedirs(d, exist_ok=True)
         for r in sim_reports():
-            shutil.copy(os.path.join(rd, r), os.path.join(d, r))
+            with open(os.path.join(d, r), "w") as f:
+                f.write(per_layer_reports[r])
         shutil.copy(cfg, os.path.join(d, "config.cfg"))
     recs = []
     peak = 2 * ARRAY * ARRAY
@@ -73,6 +78,27 @@ def run_job(job, out):
     json.dump(dict(job=job, mode=mode, dataflow=df, B_words_per_cycle=B, array=f"{ARRAY}x{ARRAY}",
                    peak_flops_per_cycle=peak, layers=recs),
               open(os.path.join(out, "roofline2", job + ".json"), "w"), indent=1, sort_keys=True)
+
+
+def run_per_layer(cfg, td, topo=None, gemm=False):
+    """Run each topology row as its own SCALE-Sim invocation; returns (results list, merged report texts)."""
+    topo = topo or TOPO
+    lines = open(topo).read().splitlines()
+    header, rows = lines[0], [l for l in lines[1:] if l.strip()]
+    res, merged = [], {r: None for r in sim_reports()}
+    for i, row in enumerate(rows):
+        t1 = os.path.join(td, f"layer{i}.csv")
+        open(t1, "w").write(header + "\n" + row + "\n")
+        out_i = os.path.join(td, f"out{i}")
+        r, rd = sim.run(cfg, t1, out_i, gemm=gemm)
+        r[0]["LayerID"] = i
+        res.append(r[0])
+        for name in merged:
+            ls = open(os.path.join(rd, name)).read().splitlines()
+            body = ls[1].split(",", 1)[1]            # drop this run's LayerID, renumber to i
+            merged[name] = (ls[0] + "\n" if merged[name] is None else merged[name]) + f"{i},{body}\n"
+        shutil.rmtree(out_i)
+    return res, merged
 
 
 def sim_reports():
