@@ -13,10 +13,12 @@ if ! colima status >/dev/null 2>&1; then
     --runtime docker --ssh-config=false --activate=false
 fi
 colima status
-lab_timeout 300 docker run --rm hello-world
+# container jobs go through the heavy-job lock (Part 2 rule), each under a client-side timeout
+scripts_lock() { "$LAB/scripts/with_lock.sh" infra perl -e 'alarm shift; exec @ARGV' "$@"; }
+scripts_lock 300 docker run --rm hello-world
 # the lab must be writable from inside a container
 t="$LAB/logs/01_runtime/.mount_probe.$$"
-lab_timeout 120 docker run --rm --platform linux/amd64 -v "$LAB:/lab" -w /lab hello-world >/dev/null
+scripts_lock 120 docker run --rm --platform linux/amd64 -v "$LAB:/lab" -w /lab hello-world >/dev/null
 lab_timeout 120 colima ssh -- sh -c "echo ok > '$t' && cat '$t'"
 [ "$(cat "$t")" = ok ] && rm -f "$t" && echo "MOUNT_RW_OK $LAB"
 docker version --format 'client={{.Client.Version}} server={{.Server.Version}} os={{.Server.Os}}/{{.Server.Arch}}'

@@ -7,11 +7,13 @@ source "$HOME/ai-chip-lab/env.sh"
 cd "$LAB"; source coord/images.env
 out="logs/02_images/smoke.txt"; mkdir -p logs/02_images results/evidence
 rc=0
+# every container job goes through the heavy-job lock (Part 2 rule); timeout applies to the docker client
+LOCKED="$LAB/scripts/with_lock.sh infra perl -e alarm(shift);exec(@ARGV) "
 {
   echo "== lab-sim: $LAB_SIM_IMAGE ($(docker image inspect "$LAB_SIM_IMAGE" --format '{{.Id}}'))"
-  lab_timeout 600 docker run --rm --platform linux/amd64 -v "$LAB:/lab" -w /lab "$LAB_SIM_IMAGE" bash docker/smoke_lab_sim.sh || rc=1
+  $LOCKED 600 docker run --rm --platform linux/amd64 -v "$LAB:/lab" -w /lab "$LAB_SIM_IMAGE" bash docker/smoke_lab_sim.sh || rc=1
   echo "== orfs: $ORFS_IMAGE"
-  lab_timeout 600 docker run --rm --platform linux/amd64 -v "$LAB:/lab" "$ORFS_IMAGE" bash /lab/docker/smoke_orfs.sh || rc=1
+  $LOCKED 600 docker run --rm --platform linux/amd64 -v "$LAB:/lab" "$ORFS_IMAGE" bash /lab/docker/smoke_orfs.sh || rc=1
 } 2>&1 | sed "s#$HOME#~#g" | tee "$out.tmp"
 rc=${PIPESTATUS[0]}
 ok=$(grep -c '^OK ' "$out.tmp"); miss=$(grep -c '^MISS ' "$out.tmp")

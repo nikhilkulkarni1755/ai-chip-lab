@@ -19,6 +19,9 @@ LAB="$HOME/ai-chip-lab"; cd "$LAB" || exit 2
 MODE="${1:-ref}"
 PY=python3; [ -x .venv-pnr/bin/python ] && PY=.venv-pnr/bin/python
 run() { echo "+ $*"; [ "${DRY_RUN:-0}" = 1 ] && return 0; "$@"; }
+# helpers that start a container themselves run under the heavy-job lock (it is re-entrant, so this stays
+# correct when the helper also takes it); t2_run.sh takes the lock itself, per ORFS run.
+LK="scripts/with_lock.sh infra"
 W=orfs/work; rc=0
 case "$MODE" in
   ref)
@@ -29,17 +32,17 @@ case "$MODE" in
         run rm -rf "$W/$d/$P/$D/run1"; run mv "$W/$d/$P/$D/base" "$W/$d/$P/$D/run1"
       done
       run scripts/t2_run.sh "$P" "$D" base || { echo "t2: second run of $pd failed"; rc=1; continue; }
-      run scripts/t2_check.sh "$P" "$D" base || { echo "t2: $pd violates shipped thresholds (recorded in the summary)"; rc=1; }
+      run $LK scripts/t2_check.sh "$P" "$D" base || { echo "t2: $pd violates shipped thresholds (recorded in the summary)"; rc=1; }
       if [ "${DRY_RUN:-0}" = 1 ]; then echo "+ $PY scripts/t2_extract.py $P $D base > /dev/null"; else $PY scripts/t2_extract.py "$P" "$D" base > /dev/null || rc=1; fi
-      run scripts/t2_render.sh "$P" "$D" base || rc=1
+      run $LK scripts/t2_render.sh "$P" "$D" base || rc=1
     done ;;
   stretch)
     run scripts/t2_run.sh nangate45 systolic_os base || rc=1
     if [ "${DRY_RUN:-0}" = 1 ]; then echo "+ $PY scripts/t2_extract.py nangate45 systolic_os base > /dev/null"; else $PY scripts/t2_extract.py nangate45 systolic_os base > /dev/null || rc=1; fi
-    run scripts/t2_render.sh nangate45 systolic_os base demo/assets/t2_nangate45_systolic_os.png || rc=1 ;;
+    run $LK scripts/t2_render.sh nangate45 systolic_os base demo/assets/t2_nangate45_systolic_os.png || rc=1 ;;
   *) echo "usage: $0 ref|stretch"; exit 2 ;;
 esac
-run $PY scripts/t2_summary.py || rc=1
+run $LK $PY scripts/t2_summary.py || rc=1
 [ "${DRY_RUN:-0}" = 1 ] && { echo "t2 ($MODE): dry run only, nothing executed"; exit 0; }
 verdict=$(python3 -c 'import json;print(json.load(open("results/t2_summary.json")).get("pass"))' 2>/dev/null)
 echo "t2 ($MODE): results/t2_summary.json pass=$verdict (flow/check exit status: $rc)"
