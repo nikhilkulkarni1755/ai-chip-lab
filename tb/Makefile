@@ -13,8 +13,7 @@ export COCOTB_RANDOM_SEED ?= 1234
 export COCOTB_ANSI_OUTPUT := 0
 
 ifeq ($(SIM),verilator)
-  EXTRA_ARGS += -Wall --x-initial unique
-  BUILD_ARGS += -j 2
+  EXTRA_ARGS += -Wall --x-initial unique $(T1_VERILATOR_EXTRA)
 endif
 ifeq ($(SIM),icarus)
   ifneq ($(T1_VCD),)
