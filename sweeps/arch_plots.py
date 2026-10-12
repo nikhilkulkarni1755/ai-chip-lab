@@ -19,14 +19,14 @@ METRICS = [("cycles", "total_cycles", "total cycles (log colour)", True),
 
 
 def load(path):
-    rows = []
+    cur = {}
     for line in open(path):
         try:
             r = json.loads(line)
         except Exception:
             continue
-        rows.append(r)
-    return rows
+        cur[r["key"]] = r          # later attempts supersede earlier ones
+    return list(cur.values())
 
 
 WORKLOAD = {"alexnet_part": "alexnet_part (AlexNet Conv1 only, 1 layer)",

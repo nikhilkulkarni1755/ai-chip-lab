@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Sweep A: SCALE-Sim architecture sweep.  Resumable JSONL, per-point timeout, <=2 workers,
-stops itself at deadline_sweeps_stop_epoch from budget.json.
+"""Sweep A: SCALE-Sim architecture sweep.  Resumable JSONL, per-point timeout. Part 2: host-side driver,
+one lab-sim container per point under scripts/with_lock.sh at LOW priority; deadline from budget_part2.json.
+Later lines of a key supersede earlier attempts.
 
   python3 sweeps/arch_sweep.py [--out results/sweeps/arch.jsonl] [--workers 2] [--timeout 900]
 
@@ -16,9 +17,7 @@ import os
 import subprocess
 import sys
 import tempfile
-import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LAB = os.path.dirname(HERE)
@@ -127,97 +126,142 @@ def run_one(topo, df, R, C, sram):
     print("RESULT " + json.dumps(rec, sort_keys=True))
 
 
+def latest(path):
+    """key -> last JSONL record (later lines supersede earlier attempts of the same key)."""
+    out = {}
+    if os.path.exists(path):
+        for line in open(path):
+            try:
+                d = json.loads(line)
+                out[d["key"]] = d
+            except Exception:
+                pass
+    return out
+
+
+def exec_point(key_args, tmo, name):
+    """Run one point in a lab-sim container, under the lab lock at LOW priority (waits while any
+    high-priority job is queued).  The per-point timeout starts only once the lock is held (it is
+    enforced by `timeout` inside the container).  Returns (returncode, stdout, stderr, oom_killed|None,
+    lock_wait_s)."""
+    snippet = (
+        'source "$LAB/env.sh"; source "$LAB/coord/images.env"; '
+        'docker rm -f "$NAME" >/dev/null 2>&1; T0=$(date +%s); '
+        'docker run --name "$NAME" --platform linux/amd64 -e PYTHONHASHSEED=0 -v "$LAB":/lab -w /lab "$LAB_SIM_IMAGE" '
+        'timeout "$TMO" python3 sweeps/arch_sweep.py --one "$ARGS"; rc=$?; '
+        'echo "OOMKilled=$(docker inspect -f {{.State.OOMKilled}} "$NAME" 2>/dev/null) ExitCode=$(docker inspect -f {{.State.ExitCode}} "$NAME" 2>/dev/null) ran_s=$(( $(date +%s) - T0 ))" >&2; '
+        'docker rm -f "$NAME" >/dev/null 2>&1; exit $rc')
+    env = dict(os.environ, LAB=LAB, NAME=name, TMO=str(int(tmo)), ARGS=key_args, LOCK_PRIO="low")
+    t0 = time.time()
+    r = subprocess.run([os.path.join(LAB, "scripts/with_lock.sh"), "arch", "bash", "-c", snippet],
+                       capture_output=True, text=True, env=env, cwd=LAB)
+    meta = [l for l in r.stderr.splitlines() if l.startswith("OOMKilled=")]
+    oom = None
+    ran = None
+    if meta:
+        oom = "OOMKilled=true" in meta[-1]
+        try:
+            ran = int(meta[-1].split("ran_s=")[1])
+        except Exception:
+            pass
+    return r.returncode, r.stdout, r.stderr, oom, ran, time.time() - t0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=os.path.join(LAB, "results/sweeps/arch.jsonl"))
-    ap.add_argument("--workers", type=int, default=2)
-    ap.add_argument("--timeout", type=int, default=1800)
-    ap.add_argument("--budget", default=os.path.join(LAB, "budget.json"))
+    ap.add_argument("--timeout", type=int, default=1200, help="per-point run timeout (s), measured after the lock is held")
+    ap.add_argument("--retry-timeout-factor", type=int, default=2, help="timeout multiplier for the retry pass")
+    ap.add_argument("--budget", default=os.path.join(LAB, "budget_part2.json"))
     ap.add_argument("--max-points", type=int, default=0)
-    ap.add_argument("--one", help="internal: topo,df,R,C,sram")
+    ap.add_argument("--one", help="internal (runs inside the container): topo,df,R,C,sram")
     a = ap.parse_args()
     if a.one:
         t, df, R, C, s = a.one.split(",")
         run_one(t, df, int(R), int(C), s)
         return
-    workers = min(a.workers, 2)
     deadline = json.load(open(a.budget))["deadline_sweeps_stop_epoch"]
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
-    done = set()
-    if os.path.exists(a.out):
-        for line in open(a.out):
-            try:
-                done.add(json.loads(line)["key"])
-            except Exception:
-                pass
-    todo = [p for p in grid() if key_of(*p[1:]) not in done]
+    cur = latest(a.out)
+    planned = grid()
+    todo = [p for p in planned if key_of(*p[1:]) not in cur]
     if a.max_points:
         todo = todo[:a.max_points]
-    print(f"[arch_sweep] {len(done)} done, {len(todo)} to do, workers={workers}, "
-          f"{max(0, int(deadline - time.time()))}s until stop deadline", flush=True)
-    lock = threading.Lock()
-    stop = threading.Event()
-    env = dict(os.environ, PYTHONHASHSEED="0", OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1",
-               MKL_NUM_THREADS="1", NUMBA_NUM_THREADS="1")
-    n_done = [0]
-    failed_sizes = {}
-    for line in (open(a.out) if os.path.exists(a.out) else []):
-        try:
-            d = json.loads(line)
-        except Exception:
-            continue
-        if d.get("status") in ("timeout", "error"):
-            failed_sizes[(d["topo"], d["rows"], d["cols"])] = d.get("status") + f" after {d.get('wall_s')}s"
+    print(f"[arch_sweep] {len(cur)} keys recorded, {len(todo)} never attempted, "
+          f"{max(0, int(deadline - time.time()))}s until stop deadline (budget_part2.json)", flush=True)
+    n = [0]
 
-    def work(p):
+    def record(rec):
+        with open(a.out, "a") as f:
+            f.write(json.dumps(rec, sort_keys=True) + "\n")
+        n[0] += 1
+        cur[rec["key"]] = rec
+        print(f"[arch_sweep] +{n[0]} {rec['key']} {rec['status']} {rec.get('wall_s')}s cycles={rec.get('total_cycles')}", flush=True)
+
+    def attempt(p, tmo, attempt_no):
         ph, t, df, R, C, s = p
-        if stop.is_set() or time.time() > deadline - 30:
-            stop.set()
-            return
         key = key_of(t, df, R, C, s)
-        rem = deadline - time.time()
-        if (t, R, C) in failed_sizes:
-            rec = dict(key=key, phase=ph, topo=t, dataflow=df, rows=R, cols=C, sram=s, sram_kb=SRAM_KB[s],
-                       scalesim="3.0.0", status="skipped_after_timeout",
-                       reason=f"{t} at {R}x{C} already hit the per-point time limit ({failed_sizes[(t, R, C)]}); "
-                              "remaining dataflow/SRAM points of this size skipped")
-            with lock:
-                with open(a.out, "a") as f:
-                    f.write(json.dumps(rec, sort_keys=True) + "\n")
-            return
-        tmo = min(a.timeout, rem)
+        tmo = min(tmo, deadline - time.time() - 60)
+        if tmo < 120:
+            return None
         rec = dict(key=key, phase=ph, topo=t, dataflow=df, rows=R, cols=C, sram=s, sram_kb=SRAM_KB[s],
-                   scalesim="3.0.0")
-        t0 = time.time()
-        try:
-            r = subprocess.run([sys.executable, os.path.abspath(__file__), "--one", f"{t},{df},{R},{C},{s}"],
-                               capture_output=True, text=True, timeout=tmo, env=env, cwd=LAB)
-            line = [l for l in r.stdout.splitlines() if l.startswith("RESULT ")]
-            if r.returncode == 0 and line:
-                rec.update(json.loads(line[-1][7:]))
-                rec["status"] = "ok"
-            else:
-                rec["status"] = "error"
-                rec["returncode"] = r.returncode  # -9 / 137 = killed (memory)
-                rec["error"] = (r.stderr or r.stdout)[-300:].replace(os.path.expanduser("~"), "~")
-        except subprocess.TimeoutExpired:
-            if time.time() > deadline - 35:   # killed by the global stop, not a real point timeout
-                return
-            rec["status"] = "timeout"
-            rec["timeout_s"] = int(tmo)
-        rec["wall_s"] = round(time.time() - t0, 1)
-        if rec["status"] in ("timeout", "error"):
-            failed_sizes[(t, R, C)] = f"{rec['status']} after {rec['wall_s']}s"
-        with lock:
-            with open(a.out, "a") as f:
-                f.write(json.dumps(rec, sort_keys=True) + "\n")
-            n_done[0] += 1
-            print(f"[arch_sweep] {len(done) + n_done[0]} {key} {rec['status']} {rec['wall_s']}s "
-                  f"cycles={rec.get('total_cycles')}", flush=True)
+                   scalesim="3.0.0", attempt=attempt_no, timeout_s=int(tmo))
+        rc, out, err, oom, ran, waited = exec_point(f"{t},{df},{R},{C},{s}", tmo, f"arch-pt-{os.getpid()}")
+        line = [l for l in out.splitlines() if l.startswith("RESULT ")]
+        rec["wall_s"] = round(ran if ran is not None else waited, 1)
+        rec["docker_exit_code_incl_timeout"] = rc
+        if rc == 0 and line:
+            rec.update(json.loads(line[-1][7:]))
+            rec["status"] = "ok"
+        else:
+            if time.time() > deadline - 90 and rc not in (124,):
+                return None          # cut by the global stop, not a point failure
+            rec["status"] = "timeout" if rc == 124 else "error"
+            rec["oom_killed"] = oom
+            rec["returncode"] = rc
+            tail = [l for l in err.splitlines() if not l.startswith("OOMKilled=")][-12:]
+            rec["error"] = "\n".join(tail)[-800:].replace(os.path.expanduser("~"), "~")
+            rec["diagnosis"] = ("timeout: `timeout` killed the run after %ds (exit 124)" % tmo if rc == 124 else
+                                "container OOM-killed (docker State.OOMKilled=true)" if oom else
+                                "exit code %s, OOMKilled=%s; see error tail" % (rc, oom))
+        return rec
 
-    with ThreadPoolExecutor(workers) as ex:
-        list(ex.map(work, todo))
-    print(f"[arch_sweep] finished loop: {n_done[0]} new points; stopped_by_deadline={stop.is_set()}", flush=True)
+    failed = {}
+    for p in todo:
+        key = key_of(*p[1:])
+        if time.time() > deadline - 180:
+            print("[arch_sweep] deadline reached", flush=True)
+            break
+        size = (p[1], p[3], p[4])
+        if size in failed:
+            record(dict(key=key, phase=p[0], topo=p[1], dataflow=p[2], rows=p[3], cols=p[4], sram=p[5], sram_kb=SRAM_KB[p[5]],
+                        scalesim="3.0.0", status="skipped_after_timeout",
+                        reason=f"{p[1]} at {p[3]}x{p[4]} already failed ({failed[size]}); retried in the retry pass"))
+            continue
+        rec = attempt(p, a.timeout, 1)
+        if rec is None:
+            break
+        record(rec)
+        if rec["status"] != "ok":
+            failed[size] = f"{rec['status']} on {rec['key']}"
+    # ---- retry pass: failed / skipped points, doubled timeout, failing points first ----
+    bad = [p for p in planned if cur.get(key_of(*p[1:]), {}).get("status") in ("error", "timeout", "skipped_after_timeout")]
+    bad.sort(key=lambda p: (cur[key_of(*p[1:])]["status"] == "skipped_after_timeout", est_cost(p[1], p[2], p[3], p[4])))
+    resolved_sizes, dead_sizes = set(), set()
+    for p in bad:
+        if time.time() > deadline - 180:
+            print("[arch_sweep] deadline reached in retry pass", flush=True)
+            break
+        size = (p[1], p[3], p[4])
+        key = key_of(*p[1:])
+        if cur[key]["status"] == "skipped_after_timeout" and size in dead_sizes:
+            continue
+        rec = attempt(p, a.timeout * a.retry_timeout_factor, cur[key].get("attempt", 1) + 1)
+        if rec is None:
+            break
+        record(rec)
+        (dead_sizes if rec["status"] != "ok" else resolved_sizes).add(size)
+    print(f"[arch_sweep] finished: {n[0]} new records", flush=True)
 
 
 if __name__ == "__main__":

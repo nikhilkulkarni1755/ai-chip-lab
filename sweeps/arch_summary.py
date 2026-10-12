@@ -10,7 +10,14 @@ LAB = os.path.dirname(HERE)
 sys.path.insert(0, HERE); sys.path.insert(0, os.path.join(LAB, "model"))
 import arch_sweep as S  # noqa: E402
 
-rows = [json.loads(l) for l in open(os.path.join(LAB, "results/sweeps/arch.jsonl"))]
+_all = [json.loads(l) for l in open(os.path.join(LAB, "results/sweeps/arch.jsonl"))]
+_cur = {}
+for _r in _all:
+    _cur[_r["key"]] = _r
+rows = list(_cur.values())
+history = {}
+for _r in _all:
+    history.setdefault(_r["key"], []).append({k: _r.get(k) for k in ("status", "attempt", "wall_s", "timeout_s", "oom_killed", "returncode", "diagnosis")})
 planned = {S.key_of(*p[1:]): p for p in S.grid()}
 by_key = {r["key"]: r for r in rows}
 st = Counter(r["status"] for r in rows)
@@ -28,7 +35,7 @@ for r in ok:
         tab[(r["topo"], f"{r['rows']}x{r['cols']}")][r["dataflow"]] = r["total_cycles"]
 for (t, a), v in sorted(tab.items()):
     best[f"{t}|{a}"] = dict(best=min(v, key=v.get), cycles=v, complete=len(v) == 3)
-err = [{k: r.get(k) for k in ("key", "status", "wall_s", "error", "returncode")} for r in rows if r["status"] in ("error", "timeout")]
+err = [dict({k: r.get(k) for k in ("key", "status", "wall_s", "error", "returncode", "oom_killed", "diagnosis", "attempt")}, history=history[r["key"]]) for r in rows if r["status"] in ("error", "timeout", "skipped_after_timeout")]
 nr = [k for k in planned if k not in by_key]
 out = dict(
     sweep="A (SCALE-Sim 3.0.0 architecture sweep)", rows_total=len(rows), status_counts=dict(st),
@@ -40,8 +47,7 @@ out = dict(
            "Workloads are NOT interchangeable: alexnet_part = AlexNet Conv1 only (1 layer); gemm_test = one 256x128x256 GEMM, "
            "used as the separate small-array (8x8/16x16) workload; vit_s, ncf, alexnet as named.",
            "Points were ordered cheapest-estimated-first; points never reached before the deadline are in not_run_points.",
-           "alexnet_part|ws|8x8|default: process ended without a result after the logged wall time, empty error text; "
-           "the cause is unverified (not shown to be a timeout; likely out-of-memory kill but not confirmed)."])
+           "Failed points keep every attempt in `errored_points[*].history`; Part 2 retries record docker exit code, OOMKilled flag and a diagnosis."])
 json.dump(out, open(os.path.join(LAB, "results/sweeps/arch_summary.json"), "w"), indent=1, sort_keys=True)
 print(f"rows {len(rows)} status {dict(st)} planned {len(planned)} not_run {len(nr)}")
 for t, c in sorted(cov.items()):
