@@ -111,6 +111,9 @@ def do_summary(out, rerun, prev_summary=None):
         b = [x for x in prev_id["compared_in_stage"] if not x.endswith("attempts.json")]
     else:
         b = deterministic_files(rerun)
+    single = os.environ.get("T3_PASSES") == "1" and not (prev_id and prev_id.get("compared_in_stage"))
+    if single:      # quick mode: the "rerun" is a copy of the first pass, nothing was compared in this stage
+        b = []
     # Per decision P2-6 the second in-stage pass covers only the cheap jobs; every other file is compared by
     # `make repro` (pending_repro here).
     pending = [x for x in a if x not in b]
@@ -121,6 +124,7 @@ def do_summary(out, rerun, prev_summary=None):
     else:
         mism = [x for x in b if x in a and sha(os.path.join(out, x)) != sha(os.path.join(rerun, x))]
     ident = bool(b and not extra and not mism)
+    id_state = "single_pass_pending_repro" if single else ("in_stage_ok_pending_repro" if ident and pending else ("complete" if ident else "mismatch"))
     hashes = {x: sha(os.path.join(out, x)) for x in a}
     jobs_info = {}
     for j in job_list():
@@ -138,13 +142,15 @@ def do_summary(out, rerun, prev_summary=None):
     chk = {}
     chk["bundled_runs_ok"] = all(len(runs[df]) > 0 and all(r["total_cycles"] > 0 for r in runs[df]) for df in DATAFLOWS)
     chk["reports_saved"] = all(os.path.exists(os.path.join(out, "scalesim", df, r)) for df in DATAFLOWS for r in REPORTS)
-    chk["reruns_byte_identical"] = ident   # scope: in-stage files only; see identity.pending_repro
+    if not single:
+        chk["reruns_byte_identical"] = ident   # single pass: no in-stage comparison; the repro rerun is the identity test
+    # scope: in-stage files only; see identity.pending_repro
     chk["analytic_constants_match_derivation"] = all(v["constants_match_derivation"] for v in fit["dataflows"].values())
     chk["analytic_residuals_stable"] = all(v["residuals_ok"] for v in fit["dataflows"].values())
     summ = dict(
         stage="30_arch_model", scalesim_version="3.0.0",
         bundled=dict(config=BUNDLED_CFG, topology=BUNDLED_TOPO, array="256x256", dataflows=DATAFLOWS),
-        identity=dict(state="in_stage_ok_pending_repro" if ident and pending else ("complete" if ident else "mismatch"),
+        identity=dict(state=id_state,
                       scope_in_stage="bundled ws/os/is runs + analytic fit + 3 CALC-mode roofline runs, pass 2 in the same stage; user-bandwidth runs: not rerun in-stage (cost)",
                       files_compared_in_stage=len(b), compared_in_stage=sorted(b), mismatches=mism,
                       pending_repro=pending, pending_repro_note="compared by make repro (51_repro_full), not yet in this summary",
@@ -186,7 +192,7 @@ def do_summary(out, rerun, prev_summary=None):
     evaluated_fail = [k for k, v in r2["checks"].items() if not v and (
         (k.startswith("calc_required_bw") and r2["cell_status"].get("rl2_calc_" + k.rsplit("_", 1)[1]) == "evaluated") or
         (k.startswith(("user_bw_stalls_vs_ai_", "stall_cycles_monotone_in_B_")) and r2["per_dataflow"][k.rsplit("_", 1)[1]]["user_all_levels_evaluated"]))]
-    other_fail = [k for k in ("bundled_runs_ok", "reports_saved", "reruns_byte_identical", "analytic_constants_match_derivation", "analytic_residuals_stable") if not chk[k]]
+    other_fail = [k for k in ("bundled_runs_ok", "reports_saved", "reruns_byte_identical", "analytic_constants_match_derivation", "analytic_residuals_stable") if not chk.get(k, True)]
     summ["verdict"] = "PASS" if summ["pass"] else ("FAIL" if evaluated_fail or other_fail else "INCOMPLETE")
     summ["verdict_failed_criteria"] = evaluated_fail + other_fail
     summ["pending"] = ["repro byte-identity of %d result files" % len(pending)] if pending else []
