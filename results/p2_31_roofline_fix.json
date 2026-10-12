@@ -3,7 +3,7 @@
  "pass": false,
  "verdict": "FAIL",
  "complete": false,
- "state": "A_incomplete(ws_mid=not_run,ws_high=in_progress,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run)",
+ "state": "A_incomplete(ws_mid=not_run,ws_high=blocked,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run)",
  "oracle": "SCALE-Sim's own reports (COMPUTE_REPORT stall cycles, BANDWIDTH_REPORT required DRAM bandwidth) against arithmetic intensity computed from the layer shapes alone (2MNK / compulsory bytes); the two sides share no code.",
  "criteria": [
   {
@@ -59,7 +59,7 @@
    "name": "A_user_bw_stall_frac_vs_AI_ws_B256",
    "threshold": "rho(AI, stall fraction) <= -0.6 and < +0.3, >= 5 layers with stalls",
    "written_before_run": "69183b1",
-   "measured": "not evaluated (cost): in_progress",
+   "measured": "not evaluated (cost): blocked",
    "pass": null
   },
   {
@@ -80,7 +80,7 @@
    "name": "reruns_byte_identical_in_stage",
    "threshold": "bundled + fit + CALC reruns identical",
    "written_before_run": "Part 1",
-   "measured": "in_stage_ok_pending_repro; pending repro: 2",
+   "measured": "in_stage_ok_pending_repro; pending repro: 3",
    "pass": true
   }
  ],

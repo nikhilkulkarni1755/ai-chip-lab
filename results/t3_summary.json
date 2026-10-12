@@ -136,6 +136,7 @@
   "mismatches": [],
   "pending_repro": [
    "roofline.json",
+   "roofline2/rl2_user_ws_high/blocked.json",
    "roofline2/rl2_user_ws_high/config.cfg"
   ],
   "pending_repro_note": "compared by make repro (51_repro_full), not yet in this summary",
@@ -158,6 +159,7 @@
    "roofline2/rl2_calc_ws/COMPUTE_REPORT.csv": "3325f9bd92c1409b39e5b47f72c0262e6df2a8fe275f46fc0119d7c2b4d178a7",
    "roofline2/rl2_calc_ws/DETAILED_ACCESS_REPORT.csv": "597202c0c868302eed0ad877a3fe5c08e9c76dfa9895565d0065ba414f035646",
    "roofline2/rl2_calc_ws/config.cfg": "0bb6abd22cbeda288bfeed23aa64ae4b175c6486ab1ae47b5314542d629ef792",
+   "roofline2/rl2_user_ws_high/blocked.json": "ad2ff60a3bc0700d5d24d90ae930bc73878e98bbadc491c195c2697ae97fe0ba",
    "roofline2/rl2_user_ws_high/config.cfg": "0f9dc1f09ccfe30712f4866807d7efc8cabcf3f11e596aa1249e7f02e645ee71",
    "scalesim/is/BANDWIDTH_REPORT.csv": "5c1b5303fc1a9ca68be34e2013ff7718e76d2591e77fa92902b5e39463c75965",
    "scalesim/is/COMPUTE_REPORT.csv": "6c9e45b1b151c12c3e79360a0d466d10063bf59afc81c4209902bdf0f80107d7",
@@ -223,8 +225,13 @@
    "state": "not_run"
   },
   "rl2_user_ws_high": {
+   "blocked": {
+    "finished_layers_this_hold": 0,
+    "layer": "Conv5_1b",
+    "reason": "layer Conv5_1b did not finish in 481 s although it had a whole 480 s lock hold alone (10-minute rule)"
+   },
    "completed": null,
-   "state": "in_progress"
+   "state": "blocked"
   },
   "rl2_user_ws_mid": {
    "completed": null,
@@ -237,7 +244,7 @@
  },
  "pass": false,
  "pending": [
-  "repro byte-identity of 2 result files"
+  "repro byte-identity of 3 result files"
  ],
  "roofline": {
   "cell_status": {
@@ -248,7 +255,7 @@
    "rl2_user_is_mid": "not_run",
    "rl2_user_os_high": "not_run",
    "rl2_user_os_mid": "not_run",
-   "rl2_user_ws_high": "in_progress",
+   "rl2_user_ws_high": "blocked",
    "rl2_user_ws_mid": "not_run"
   },
   "checks": {
@@ -370,7 +377,7 @@
      "high": {
       "B": 256,
       "satisfies": false,
-      "status": "in_progress"
+      "status": "blocked"
      },
      "mid": {
       "B": 64,
@@ -385,7 +392,7 @@
  },
  "scalesim_version": "3.0.0",
  "stage": "30_arch_model",
- "state": "A_incomplete(ws_mid=not_run,ws_high=in_progress,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run)",
+ "state": "A_incomplete(ws_mid=not_run,ws_high=blocked,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run)",
  "superseded": {
   "roofline_part1": {
    "checks": {

@@ -93,5 +93,65 @@
    "docs/next.md"
   ],
   "what": "Roadmap for the next round with a one-line why and a cost on this machine per item"
+ },
+ {
+  "agent": "pnr",
+  "stage": "41_sweeps_finish",
+  "files": [
+   "sweeps/phys_sweep.py",
+   "sweeps/phys_gate.py",
+   "sweeps/phys_plots.py",
+   "scripts/t2_summary.py"
+  ],
+  "what": "Sweep B driver records lock wait/hold per point and classifies timeouts on hold time; gate tooling (backfill, plan accounting, evidence, marker)"
+ },
+ {
+  "agent": "pnr",
+  "stage": "60_power_activity",
+  "files": [
+   "scripts/p2_power_activity.sh",
+   "scripts/p2_power_modes.sh",
+   "scripts/p2_power.tcl",
+   "scripts/p2_power_summary.py",
+   "results/p2_60_power_activity.json"
+  ],
+  "what": "OpenROAD read_vcd/report_power stage authored with pass criteria registered before any run (not run)"
+ },
+ {
+  "agent": "rtl",
+  "stage": "11_eqy_routed",
+  "files": [
+   "scripts/t1_routed.sh",
+   "scripts/t1_routed_summary.py",
+   "scripts/t1_run.sh"
+  ],
+  "what": "Routed proof continued in single-partition lock holds (24 of 27 partitions proven); resume keeps finished steps without taking the lock and writes per-step/per-partition done files; summary lists every partition and how each negative control was rejected; fixes: lock prefix under LAB_LOCK_HELD=1 on the host shell, quick mode in a fresh output directory"
+ },
+ {
+  "agent": "rtl",
+  "stage": "61_pe_bf16",
+  "files": [
+   "scripts/t61_run.sh",
+   "scripts/t1_power_vcd.sh",
+   "rtl/mac_bf16.sv"
+  ],
+  "what": "Authoring only, nothing run: bf16 runner split into one lock hold per step; power-VCD script defaults to Icarus for the routed netlist; comment fix"
+ },
+ {
+  "agent": "arch",
+  "stage": "31_roofline_fix",
+  "files": [
+   "model/t3_roofline2.py",
+   "model/t3_stage.py",
+   "scripts/t3_run.sh",
+   "scripts/t3_dk.sh",
+   "scripts/t3_probe.sh",
+   "scripts/t3_p2_json.py",
+   "docs/t3_roofline_explained.md",
+   "results/t3_summary.json",
+   "results/p2_31_roofline_fix.json",
+   "demo/assets/t3_roofline.png"
+  ],
+  "what": "hard-limited lock holds + blocked state for criterion A, resume from finished run; criterion B evaluated (FAIL on all three dataflows), A not evaluated (cost); result section and p2 json"
  }
 ]

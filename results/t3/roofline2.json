@@ -9,7 +9,7 @@
   "rl2_user_is_mid": "not_run",
   "rl2_user_os_high": "not_run",
   "rl2_user_os_mid": "not_run",
-  "rl2_user_ws_high": "in_progress",
+  "rl2_user_ws_high": "blocked",
   "rl2_user_ws_mid": "not_run"
  },
  "checks": {
@@ -132,7 +132,7 @@
     "high": {
      "B": 256,
      "satisfies": false,
-     "status": "in_progress"
+     "status": "blocked"
     },
     "mid": {
      "B": 64,

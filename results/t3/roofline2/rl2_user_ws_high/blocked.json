@@ -1,0 +1,5 @@
+{
+ "finished_layers_this_hold": 0,
+ "layer": "Conv5_1b",
+ "reason": "layer Conv5_1b did not finish in 481 s although it had a whole 480 s lock hold alone (10-minute rule)"
+}

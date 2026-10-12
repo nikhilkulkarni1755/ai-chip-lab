@@ -1,0 +1,11 @@
+Decision P2-8: one probe hold for criterion A, rl2_user_ws_high (USER bandwidth B=256, ws, 128x128, ResNet-18, 21 layers).
+Command: scripts/with_lock.sh arch scripts/t3_dk.sh python3 model/t3_stage.py job rl2_user_ws_high --out results/t3   (T3_HOLD_BUDGET_S=480)
+Lock hold: 14:08:40 -> 14:16:46 = 486 s (logs/part2/lock.log, "FREE arch rc=76 ran=486s"); exit 76 = blocked.
+Result: the largest layer of the job, Conv5_1b (M=25, N=512, K=4608), ran ALONE with the whole 480 s hold and was killed at 481 s
+without finishing. 0 of 21 layers finished in the hold. results/t3/roofline2/rl2_user_ws_high/blocked.json, attempts.json.
+Reading: a single layer of one criterion-A cell does not fit in a 10-minute hold (> 481 s, true time unknown), and layers cannot be
+checkpointed inside SCALE-Sim, so criterion A cannot be evaluated under the lock rule on this machine. Cost of the remaining five A jobs: each would end the same way if its largest layer is as expensive (cost-probe demand-line totals over all layers at 128x128: os 297k, ws 419k, is 598k),
+i.e. 5 x ~8.1 min = ~41 min of lock only to confirm "blocked"; a full evaluation of the 6 cells would need an unbounded hold per large layer
+(more than 8 min for every large layer, 6 cells) -> several hours at least, not executable before the gate.
+Status per cell: ws B=256 blocked (probe); the other five cells not run (cost). Criterion A is reported "not evaluated (cost)", never pass or fail.
+Log: logs/part2/31_roofline_fix/probe_rl2_user_ws_high.log
