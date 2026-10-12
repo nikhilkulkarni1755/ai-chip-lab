@@ -48,4 +48,5 @@ sys.exit(bad)
 PY
 # functional self-test: cocotb on both simulators, lint, synthesis
 bash "$(dirname "$0")/lab-sim/selftest/run.sh" || fail=1
+bash "$(dirname "$0")/lab-sim/selftest/scalesim_probe.sh" || fail=1
 exit $fail

@@ -4,7 +4,10 @@
 cocotb==2.1.0
 cocotb-coverage==2.0
 pytest
-numpy
+# numpy < 2.4: scalesim 3.0.0 does int(max(arr)) on a size-1 array (read_buffer.py:423), a TypeError from numpy 2.4 on.
+# numpy/numba pinned to the versions the arch agent validated SCALE-Sim against (arch/requirements.lock).
+numpy==2.3.5
+numba==0.62.1
 ml_dtypes
 pandas
 matplotlib
