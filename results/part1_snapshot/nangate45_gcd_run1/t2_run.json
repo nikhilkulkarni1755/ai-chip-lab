@@ -1,0 +1,1 @@
+{"platform":"nangate45","design":"gcd","variant":"base","rc":0,"wall_s":259,"start_epoch":1791799773,"config":"/OpenROAD-flow-scripts/flow/designs/nangate45/gcd/config.mk","extra":"","image":"openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6","num_cores":3}

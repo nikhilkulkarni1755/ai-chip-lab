@@ -1,0 +1,47 @@
+{
+  "nangate45/gcd/run1": {
+    "source_variant": "run1",
+    "part1_run": "run1",
+    "gds_bytes": 609862,
+    "gds_sha256_raw": "619476af08c123ffe22f9246fb436366c1b6b253d055ce410eca0683cb98dd2b",
+    "gds_sha256_timestamps_zeroed": "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d",
+    "netlist_6_final_v_sha256": "0d95240b149d075713b919c9bc3d059e296272da95331dc25635ff17016eed9a",
+    "netlist_bytes": 54716
+  },
+  "nangate45/gcd/run2": {
+    "source_variant": "base",
+    "part1_run": "run2",
+    "gds_bytes": 609862,
+    "gds_sha256_raw": "a012aeff187bf8f2ec9ba562f17755b2d964d5736a687b6529c87d324d2b6bd5",
+    "gds_sha256_timestamps_zeroed": "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d",
+    "netlist_6_final_v_sha256": "0d95240b149d075713b919c9bc3d059e296272da95331dc25635ff17016eed9a",
+    "netlist_bytes": 54716
+  },
+  "sky130hd/gcd/run1": {
+    "source_variant": "run1",
+    "part1_run": "run1",
+    "gds_bytes": 974128,
+    "gds_sha256_raw": "14064c05e756f4801ed90f12e989565f60fce8e500758ca2ec2e7ebbd1b102c7",
+    "gds_sha256_timestamps_zeroed": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809",
+    "netlist_6_final_v_sha256": "898f5ce2cbcd9b1204c809470df3e85a4018d3c4102400055e0d0277e6e698c4",
+    "netlist_bytes": 46493
+  },
+  "sky130hd/gcd/run2": {
+    "source_variant": "base",
+    "part1_run": "run2",
+    "gds_bytes": 974128,
+    "gds_sha256_raw": "ebc1e0bff33fb35838d0b673877e37d14d2a96e7a0668495a62a1cfbd9ea2524",
+    "gds_sha256_timestamps_zeroed": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809",
+    "netlist_6_final_v_sha256": "898f5ce2cbcd9b1204c809470df3e85a4018d3c4102400055e0d0277e6e698c4",
+    "netlist_bytes": 46493
+  },
+  "nangate45/systolic_os/final_rtl_cebd174": {
+    "source_variant": "base",
+    "part1_run": "final_rtl_cebd174",
+    "gds_bytes": 9286662,
+    "gds_sha256_raw": "4b645f462584331d5d288dbf722b4fbfae76a77c659c61fa1174dab3e6572960",
+    "gds_sha256_timestamps_zeroed": "1d676f34b49e776753de3d8b905700f1ef26de9f63f6f0f8830b30603b14a68c",
+    "netlist_6_final_v_sha256": "f4976d1a6b34a19700dfb0e6246cb8221cf9792255f28f48e41a69dcbd06e293",
+    "netlist_bytes": 1160879
+  }
+}

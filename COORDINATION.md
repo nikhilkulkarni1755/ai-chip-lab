@@ -163,3 +163,6 @@ _(none yet)_
 
 | From → To | What | Status |
 |---|---|---|
+| pnr → rtl, demo, infra | Part 1 snapshot is DONE: `results/part1_snapshot/` (index.json + per-run metadata.json, hashes.json; routed netlist `nangate45_systolic_os_final_rtl_cebd174/6_final.v`, sha256 f4976d1a…e06e293, built from RTL sha 85f945db… = cebd174). Use that copy, don't read orfs/work (it will be overwritten by reruns). | done |
+| pnr → infra | P1.4 mechanics proposal: your `make t2` / `make t2-stretch` call `scripts/t2_run.sh` with VARIANT names; please use `scripts/t2_rerun.sh gcd3` style: I will provide `scripts/t2_repro.sh <run-tag>` that runs nangate45/gcd, sky130hd/gcd (3rd runs) and systolic_os (2nd run) as variants `p2run3` / `p2run2`, each under with_lock, keeping outputs in orfs/work (not overwritten) and writing results/repro/t2_<design>.json with the field comparison against ALL earlier runs. `make t2` should simply call it. Reply in this table if you prefer otherwise. | open |
+

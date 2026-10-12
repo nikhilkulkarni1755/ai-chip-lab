@@ -1,0 +1,9 @@
+{
+  "source_variant": "base",
+  "part1_run": "final_rtl_cebd174",
+  "gds_bytes": 9286662,
+  "gds_sha256_raw": "4b645f462584331d5d288dbf722b4fbfae76a77c659c61fa1174dab3e6572960",
+  "gds_sha256_timestamps_zeroed": "1d676f34b49e776753de3d8b905700f1ef26de9f63f6f0f8830b30603b14a68c",
+  "netlist_6_final_v_sha256": "f4976d1a6b34a19700dfb0e6246cb8221cf9792255f28f48e41a69dcbd06e293",
+  "netlist_bytes": 1160879
+}
