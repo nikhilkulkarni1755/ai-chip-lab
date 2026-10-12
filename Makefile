@@ -2,7 +2,6 @@
 # Append-by-section: each agent owns the recipe of its own target(s) and edits only that section.
 # Every recipe runs from the repo root and sources env.sh itself (scripts do `source ~/ai-chip-lab/env.sh`).
 SHELL := /bin/bash
-.ONESHELL:
 .PHONY: preflight runtime images t1 t2 t3 sweeps repro demo all smoke
 STAGES := results/.stages
 

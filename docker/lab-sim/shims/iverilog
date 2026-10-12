@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# lab-sim shim: cocotb's Makefile.icarus locates vvp as $(dirname $(which iverilog))/vvp, so iverilog
+# must resolve to this directory for the lab's vvp override (see ./vvp) to be picked up.
+exec /opt/oss-cad-suite/bin/iverilog "$@"

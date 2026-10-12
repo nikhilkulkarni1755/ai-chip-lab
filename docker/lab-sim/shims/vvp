@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# lab-sim override of OSS CAD Suite's bin/vvp wrapper.
+# The suite's wrapper exports PYTHONHOME/PYTHONEXECUTABLE pointing at its private Python 3.11, which
+# breaks cocotb's embedded interpreter (our uv-managed Python 3.12 venv): "failed to get the Python
+# codec of the filesystem encoding". This wrapper is identical except that it leaves Python alone.
+T=/opt/oss-cad-suite
+export PATH="$T/bin:$PATH"
+unset PYTHONHOME PYTHONEXECUTABLE
+exec "$T"/lib/ld-linux-x86-64.so.2 --inhibit-cache --inhibit-rpath "" --library-path "$T"/lib "$T"/libexec/vvp "$@"

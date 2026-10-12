@@ -45,8 +45,8 @@ RUN uv python install ${PYTHON_VER} && uv venv /opt/venv --python ${PYTHON_VER}
 COPY requirements.lock /opt/requirements.lock
 RUN VIRTUAL_ENV=/opt/venv uv pip install --require-hashes --no-deps -r /opt/requirements.lock
 
-# Shims that must precede the suite on PATH (see docker/lab-sim/bin/vvp for why)
-COPY lab-sim/bin/ /opt/lab-bin/
+# Shims that must precede the suite on PATH (see docker/lab-sim/shims/vvp for why)
+COPY lab-sim/shims/ /opt/lab-bin/
 # venv first so `python3` is the lab's 3.12 (the suite bundles its own private python for sby/eqy)
 ENV VIRTUAL_ENV=/opt/venv \
     PATH=/opt/venv/bin:/opt/lab-bin:/opt/oss-cad-suite/bin:/opt/verible/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
