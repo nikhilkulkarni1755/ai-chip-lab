@@ -6,7 +6,7 @@
 # Runs the whole stage inside the pinned lab-sim container (image ref read from
 # coord/images.env at run time): lint, cocotb regression on Icarus and
 # Verilator, waveform, SymbiYosys proof of the MAC, Yosys synthesis and EQY
-# RTL == netlist, then writes <OUTDIR>/t1_summary.json.  Exit code 0 = pass.
+# RTL == netlist (per-PE MAC proof + full-array proof with the MAC black-boxed), then writes <OUTDIR>/t1_summary.json.  Exit code 0 = pass.
 #
 # * Idempotent and deterministic: every output is rebuilt from scratch, seed
 #   1234, PYTHONHASHSEED=0, the CSVs contain no timestamps or paths.
@@ -170,13 +170,16 @@ want formal && step formal 2400 formal
 synth() {
   tmo "$TMO" yosys -q -l "$WORK/synth.log" -p "script eqy/synth.ys; tee -q -o $WORK/synth_stat.json stat -json; write_verilog -noattr $WORK/systolic_os_netlist.v"
 }
-equiv() {
+equiv() {  # equiv <mac_int8|systolic_os>
   sed -e "s#@RTL@#$LAB_DIR/rtl#g" -e "s#@NETLIST@#$WORK_ABS/systolic_os_netlist.v#g" \
-    eqy/systolic_os.eqy.in > "$WORK/systolic_os.eqy"
-  tmo "$TMO" eqy -f -j 2 -d "$WORK/eqy" "$WORK/systolic_os.eqy"
+    "eqy/$1.eqy.in" > "$WORK/$1.eqy"
+  tmo "$TMO" eqy -f -j 2 -d "$WORK/eqy_$1" "$WORK/$1.eqy"
 }
 if want eqy; then
-  step synth 900 synth && step eqy 3000 equiv
+  if step synth 900 synth; then
+    step eqy_mac 1800 equiv mac_int8
+    step eqy_array 1800 equiv systolic_os
+  fi
 fi
 
 # ---------------------------------------------------------------- 6. summary

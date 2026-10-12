@@ -1,0 +1,23 @@
+# EQY proof 1 of 2 -- per PE:  RTL mac_int8 == mac_int8 in the gate netlist.
+# (The netlist keeps the hierarchy, so this one module is the MAC of all
+# 16 PEs.)  Two partitions: `prod` (the INT8 x INT8 multiplier, SMT solver)
+# and `acc` (32-bit adder + accumulator register, SAT).
+# Template: scripts/t1_run.sh substitutes @RTL@ and @NETLIST@.
+[gold]
+read_verilog -sv @RTL@/mac_int8.sv
+prep -top mac_int8
+
+[gate]
+read_verilog -icells @NETLIST@
+prep -top mac_int8
+
+[strategy sat]
+use sat
+depth 2
+noapply mac_int8.prod
+
+[strategy smt]
+use sby
+depth 2
+engine smtbmc yices
+apply mac_int8.prod

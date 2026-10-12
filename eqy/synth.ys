@@ -1,0 +1,12 @@
+# Gate-level netlist of the array, as specified in the task:
+#   synth -top systolic_os; abc; opt
+# plus one hint: the 16-bit product net inside mac_int8 is marked `keep`, so
+# it survives synthesis under its RTL name and EQY can use it as a match
+# point (multiplier and accumulator are then proven as two separate cones).
+# Run from the repo root (scripts/t1_run.sh appends stat + write_verilog).
+read_verilog -sv rtl/mac_int8.sv rtl/systolic_os.sv
+hierarchy -top systolic_os
+setattr -set keep 1 mac_int8/w:prod
+synth -top systolic_os
+abc
+opt

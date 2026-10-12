@@ -226,7 +226,7 @@ def main():
             if task != "cover":
                 checks[f"formal_{task}_pass"] = st == "PASS"
             tl = read(os.path.join(d, "logfile.txt"))
-            ev += [re.sub(r"\[.*?\]", f"[mac_{task}]", ln) for ln in tl.splitlines()
+            ev += [re.sub(r"\[.*?\]", f"[mac_{task}]", ln, count=1) for ln in tl.splitlines()
                    if "summary:" in ln or "DONE" in ln]
         m = re.search(r"^bmc:\s*depth\s+(\d+)", read("formal/mac.sby"), re.M)
         values["formal_bmc_depth"] = int(m.group(1)) if m else None
@@ -245,17 +245,35 @@ def main():
 
     # ----------------------------------------------------------------- eqy
     if "eqy" in steps_run:
-        elog = read(os.path.join(work, "eqy", "logfile.txt"))
-        proved = len(re.findall(r"Proved equivalence of partition", elog))
-        failed = len(re.findall(r"(Failed to prove|Could not prove) equivalence of partition", elog))
-        m = re.search(r"Successfully proved equivalence of (\d+) partitions", elog)
-        values["eqy_scope"] = "full systolic_os 4x4 (flattened), RTL vs Yosys synth;abc;opt netlist"
-        values["eqy_partitions_proved"] = proved
-        values["eqy_partitions_failed"] = failed
-        values["eqy_status"] = "PASS" if os.path.exists(os.path.join(work, "eqy", "PASS")) else (
-            "FAIL" if os.path.exists(os.path.join(work, "eqy", "FAIL")) else "UNKNOWN")
-        checks["eqy_pass"] = (step_rc.get("eqy") == 0 and values["eqy_status"] == "PASS"
-                              and failed == 0 and proved > 0 and m is not None)
+        ev = ["$ yosys -p 'script eqy/synth.ys; stat; write_verilog -noattr <work>/systolic_os_netlist.v'"]
+        for key, name, scope in (
+                ("mac", "mac_int8", "per PE: RTL mac_int8 vs netlist mac_int8 (multiplier + accumulator)"),
+                ("array", "systolic_os", "full 4x4 systolic_os vs netlist, mac_int8 black-boxed on both sides")):
+            d = os.path.join(work, f"eqy_{name}")
+            elog = read(os.path.join(d, "logfile.txt"))
+            proved = len(re.findall(r"Proved equivalence of partition", elog))
+            failed = len(re.findall(r"Could not prove equivalence of partition", elog))
+            total = len([ln for ln in read(os.path.join(d, "partition.list")).splitlines() if ln.strip()])
+            done = re.search(r"DONE \((\w+), rc=(\d+)\)", elog)
+            values[f"eqy_{key}_scope"] = scope
+            values[f"eqy_{key}_partitions"] = total
+            values[f"eqy_{key}_partitions_proved"] = proved
+            values[f"eqy_{key}_partitions_failed"] = failed
+            values[f"eqy_{key}_status"] = done.group(1) if done else "UNKNOWN"
+            checks[f"eqy_{key}_pass"] = (
+                step_rc.get(f"eqy_{key}") == 0 and values[f"eqy_{key}_status"] == "PASS"
+                and failed == 0 and total > 0 and proved == total
+                and "Successfully proved designs equivalent" in elog)
+            tail = [re.sub(r"\[.*?\]", f"[eqy_{name}]", ln, count=1) for ln in elog.splitlines()
+                    if "designs equivalent" in ln or "DONE" in ln or "summary:" in ln
+                    or "Failed to prove" in ln or "Could not prove" in ln]
+            ev += [f"$ eqy -f -j 2 -d <work>/eqy_{name} <work>/{name}.eqy   (from eqy/{name}.eqy.in)",
+                   f"# {scope}", f"partitions: {total}, proved: {proved}, failed: {failed}"] + tail[-12:]
+        values["eqy_scope"] = ("per-PE fallback: (1) mac_int8 RTL == netlist incl. the multiplier, "
+                               "(2) full 4x4 array RTL == netlist with mac_int8 black-boxed; "
+                               "together they cover the whole design")
+        checks["eqy_pass"] = checks["eqy_mac_pass"] and checks["eqy_array_pass"]
+        values["eqy_status"] = "PASS" if checks["eqy_pass"] else "FAIL"
         try:
             st = json.load(open(os.path.join(work, "synth_stat.json")))
             top = st.get("design", st)
@@ -263,18 +281,13 @@ def main():
             values["netlist_cells_by_type"] = top.get("num_cells_by_type")
         except Exception:
             values["netlist_cells"] = None
-        tail = [re.sub(r"\[.*?\]", "[eqy]", ln) for ln in elog.splitlines()
-                if "Proved equivalence of partition" not in ln and "Running strategy" not in ln
-                and "Warning: Partition" not in ln and "starting process" not in ln]
-        evidence["10_eqy.txt"] = ("$ yosys -p 'script eqy/synth.ys; write_verilog -noattr <work>/systolic_os_netlist.v'\n"
-                                  "$ eqy -f -j 2 -d <work>/eqy <work>/systolic_os.eqy   (from eqy/systolic_os.eqy.in)\n"
-                                  f"partitions proved: {proved}, failed: {failed}\n"
-                                  + "\n".join(tail[-25:]) + "\n")
+        evidence["10_eqy.txt"] = "\n".join(ev) + "\n"
 
     complete = all(s in steps_run for s in ALL_STEPS)
     required = ["zero_mismatches_verilator", "zero_mismatches_icarus", "csv_sha256_identical",
                 "random_case_count_as_requested", "lint_clean", "formal_bmc_pass",
-                "formal_bmc_depth_ge_20", "formal_prove_pass", "eqy_pass", "waveform_rendered"]
+                "formal_bmc_depth_ge_20", "formal_prove_pass", "eqy_mac_pass", "eqy_array_pass",
+                "eqy_pass", "waveform_rendered"]
     present = [c for c in required if c in checks]
     ok = bool(present) and all(checks[c] for c in present) and all(v == 0 for v in step_rc.values())
     summary = {
@@ -318,7 +331,7 @@ def main():
         print(f"[t1]   {'PASS' if checks[c] else 'FAIL'}  {c}")
     for k in ("cases_total", "mismatching_elements_verilator", "mismatching_elements_icarus",
               "csv_sha256_verilator", "csv_sha256_icarus", "coverage_percent",
-              "formal_bmc_status", "formal_prove_status", "eqy_status", "eqy_partitions_proved"):
+              "formal_bmc_status", "formal_prove_status", "eqy_mac_status", "eqy_array_status"):
         if k in values:
             print(f"[t1]   {k} = {values[k]}")
     return 0 if (ok and (complete or True)) else 1

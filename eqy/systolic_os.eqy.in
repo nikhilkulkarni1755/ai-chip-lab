@@ -1,0 +1,21 @@
+# EQY proof 2 of 2 -- full R x C array:  RTL systolic_os == gate netlist,
+# with mac_int8 treated as a black box on both sides (its equivalence is
+# proof 1).  This covers everything outside the MACs: skew registers, operand
+# registers of every PE, the valid delay line, busy, and all the wiring
+# between ports, PEs and acc_o.
+# Template: scripts/t1_run.sh substitutes @RTL@ and @NETLIST@.
+[gold]
+read_verilog -sv @RTL@/mac_int8.sv @RTL@/systolic_os.sv
+hierarchy -top systolic_os
+blackbox mac_int8
+prep -top systolic_os
+
+[gate]
+read_verilog -icells @NETLIST@
+hierarchy -top systolic_os
+blackbox mac_int8
+prep -top systolic_os
+
+[strategy sat]
+use sat
+depth 2
