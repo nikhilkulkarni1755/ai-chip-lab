@@ -6,20 +6,20 @@ Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, t
 
 ## Status
 
-Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 2h 58m since start (2026-10-12 02:48:36 PDT), budget 6h).
+Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 4h 11m since start (2026-10-12 02:48:36 PDT), budget 6h).
 
 | Check | Status | Detail |
 |---|---|---|
 | Container runtime install | **PASS** | route A (Colima + Lima, macOS Virtualization.framework) |
 | Lab images (lab-sim, ORFS) | **PASS** | both images referenced in coord/images.env |
-| Task 1: INT8 systolic array vs NumPy | **RUNNING** | stage in progress |
-| Task 1: formal MAC proof (SBY) | **RUNNING** | waits for Task 1 summary |
-| Task 1: RTL = netlist equivalence (EQY) | **RUNNING** | waits for Task 1 summary |
-| Task 2: OpenROAD reference flow vs shipped thresholds | **PASS** | t2_summary.json: pass=true |
+| Task 1: INT8 systolic array vs NumPy | **PASS** | t1_summary.json: pass=true |
+| Task 1: formal MAC proof (SBY) | **PASS** | checks: formal_bmc_pass=true, formal_prove_pass=true |
+| Task 1: RTL = netlist equivalence (EQY) | **PASS** | checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true; scope: split proof (1) mac_int8 incl. multiplier, (2) full 4x4 array with mac_int8 black-boxed; compared against the generic-gate Yosys netlist (synth; abc; opt), NOT the placed-and-routed nangate45 netlist (the ORFS logic-equivalence step is disabled, see caveats) |
+| Task 2: OpenROAD gcd flows within ORFS's shipped regression thresholds | **PASS** | t2_summary.json: pass=true; NOT timing-closed: nangate45/gcd misses timing at its 0.25 ns reference clock (WNS -0.161583 ns, TNS -7.08646 ns, 51 violating endpoints); sky130hd/gcd misses timing at its 1.1 ns reference clock (WNS -1.45954 ns, TNS -64.9417 ns, 63 violating endpoints) |
 | Task 3: SCALE-Sim vs analytical model | **FAIL** | marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes). |
-| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 87 point(s) in results/sweeps/arch.jsonl |
-| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 19 point(s) in results/sweeps/phys.jsonl |
-| Repeatability rerun (repro) | **RUNNING** | stage in progress |
+| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 140 point(s) in results/sweeps/arch.jsonl |
+| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 38 point(s) in results/sweeps/phys.jsonl |
+| Repeatability rerun (repro) | **PASS** | repro_report.json: pass=true; 10 of 10 checks identical. Scope: Tasks 1 and 3 were re-run from clean directories; Task 2 reuses the two original clean runs (nangate45/gcd and sky130hd/gcd, not a third run); systolic_os has a single run, so it has no determinism verdict |
 
 PASS means the stage's `.done` marker exists and its summary JSON says `"pass": true`. Anything unfinished is shown as PENDING/RUNNING/BLOCKED/UNKNOWN and not assumed.
 
@@ -115,6 +115,38 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 ![30_sweepA_progress](demo/assets/evidence/30_sweepA_progress.png)
 
 ## Results
+
+![sweepA best dataflow](demo/assets/sweepA_best_dataflow.png)
+
+![sweepA cycles alexnet](demo/assets/sweepA_cycles_alexnet.png)
+
+![sweepA cycles alexnet part](demo/assets/sweepA_cycles_alexnet_part.png)
+
+![sweepA cycles gemm test](demo/assets/sweepA_cycles_gemm_test.png)
+
+![sweepA cycles vit s](demo/assets/sweepA_cycles_vit_s.png)
+
+![sweepA dram bw alexnet](demo/assets/sweepA_dram_bw_alexnet.png)
+
+![sweepA dram bw alexnet part](demo/assets/sweepA_dram_bw_alexnet_part.png)
+
+![sweepA dram bw gemm test](demo/assets/sweepA_dram_bw_gemm_test.png)
+
+![sweepA dram bw vit s](demo/assets/sweepA_dram_bw_vit_s.png)
+
+![sweepA sram alexnet part](demo/assets/sweepA_sram_alexnet_part.png)
+
+![sweepA sram gemm test](demo/assets/sweepA_sram_gemm_test.png)
+
+![sweepA sram vit s](demo/assets/sweepA_sram_vit_s.png)
+
+![sweepA util alexnet](demo/assets/sweepA_util_alexnet.png)
+
+![sweepA util alexnet part](demo/assets/sweepA_util_alexnet_part.png)
+
+![sweepA util gemm test](demo/assets/sweepA_util_gemm_test.png)
+
+![sweepA util vit s](demo/assets/sweepA_util_vit_s.png)
 
 ![sweepB frontier gcd](demo/assets/sweepB_frontier_gcd.png)
 
