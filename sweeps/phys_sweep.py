@@ -79,6 +79,26 @@ def make_sdc(plat, des, period):
     return "/lab/orfs/sdc_gen/" + fn
 
 
+def lock_accounting(t0, t1, tag):
+    """Lock wait and lock hold of THIS point, from logs/part2/lock.log (written by with_lock.sh):
+    `LOCK pnr low waited=<n>s <cmd>` then `FREE pnr rc=<n> ran=<n>s`. Returns (waited_s, held_s) or (None, None)."""
+    try:
+        lines = open(os.path.join(LAB, "logs", "part2", "lock.log")).read().splitlines()
+    except OSError:
+        return None, None
+    waited = held = None
+    for i, l in enumerate(lines):
+        m = re.match(r"(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d) LOCK pnr low waited=(\d+)s .*t2_run\.sh \S+ \S+ " + re.escape(tag) + r"( |$)", l)
+        if not m or time.mktime(time.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")) < t0 - 5:
+            continue
+        waited = int(m.group(2))
+        for l2 in lines[i + 1:]:
+            m2 = re.match(r"\S+ \S+ FREE pnr rc=\S+ ran=(\d+)s", l2)
+            if m2:
+                held = int(m2.group(1)); break
+    return waited, held
+
+
 def run_point(plat, des, period, util, timeout):
     var = f"sw_{int(round(period*1000))}ps_u{util}"
     sdc = make_sdc(plat, des, period)
@@ -87,8 +107,12 @@ def run_point(plat, des, period, util, timeout):
     rc = subprocess.call([os.path.join(LAB, "scripts", "with_lock.sh"), "pnr", os.path.join(LAB, "scripts", "t2_run.sh"), plat, des, var,
                           f"CORE_UTILIZATION={util}", f"SDC_FILE={sdc}"], env=env,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    wall = round(now() - t0)
+    waited, held = lock_accounting(t0, now(), var)
+    # wall_s = queue wait + lock hold + wrapper overhead (kept for continuity); lock_hold_s is the machine time the
+    # point really used and is what runtimes should be read from; lock_wait_s is queue time.
     rec = {"platform": plat, "design": des, "clock_period_ns": round(period, 4), "core_utilization": util,
-           "variant": var, "rc": rc, "wall_s": round(now() - t0), "finished_epoch": int(now())}
+           "variant": var, "rc": rc, "wall_s": wall, "lock_wait_s": waited, "lock_hold_s": held, "finished_epoch": int(now())}
     try:
         e = t2_extract.extract(plat, des, var)
         rec.update(e["metrics"])
@@ -98,7 +122,8 @@ def run_point(plat, des, period, util, timeout):
         # crude closure flag from the flow's own number
         rec["closed"] = (e["metrics"].get("wns_setup_ns") is not None and e["metrics"]["wns_setup_ns"] >= 0)
     except Exception as ex:  # no metadata => failed/timeout
-        rec["status"] = "timeout" if rc in (137, 124) or rec["wall_s"] >= timeout - 5 else "failed"
+        run_s = held if held is not None else rec["wall_s"]   # never classify on queue wait
+        rec["status"] = "timeout" if rc in (137, 124) or run_s >= timeout - 5 else "failed"
         rec["error"] = repr(ex)[:200]
     # keep disk small: drop the heavy intermediate dirs, keep reports + logs
     for d in ("objects", "results"):
