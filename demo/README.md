@@ -5,17 +5,17 @@ Open demo/index.html in a browser (double-click; no server needed).
 
 STATUS
   PASS     Container runtime install - route A (Colima + Lima, macOS Virtualization.framework)
-  RUNNING  Lab images (lab-sim, ORFS) - stage in progress
+  PASS     Lab images (lab-sim, ORFS) - both images referenced in coord/images.env
   RUNNING  Task 1: INT8 systolic array vs NumPy - stage in progress
   PENDING  Task 1: formal MAC proof (SBY) - waits for Task 1 summary
   PENDING  Task 1: RTL = netlist equivalence (EQY) - waits for Task 1 summary
-  RUNNING  Task 2: OpenROAD reference flow vs shipped thresholds - stage in progress: 2026-10-12 02:59:49 started
-  PENDING  Task 3: SCALE-Sim vs analytical model - no marker and no results/t3_summary.json yet
-  PENDING  Sweep A: architecture (SCALE-Sim) - no points yet
-  PENDING  Sweep B: physical (ORFS) - no points yet
+  PASS     Task 2: OpenROAD reference flow vs shipped thresholds - t2_summary.json: pass=true
+  RUNNING  Task 3: SCALE-Sim vs analytical model - stage in progress
+  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 3 point(s) in results/sweeps/arch.jsonl
+  RUNNING  Sweep B: physical (ORFS) - sweep in progress
   PENDING  Repeatability rerun (repro) - no marker and no results/repro_report.json yet
 
-Elapsed: 0h 25m since start (2026-10-12 02:48:36 PDT), budget 6h
+Elapsed: 1h 16m since start (2026-10-12 02:48:36 PDT), budget 6h
 Machine: Intel(R) Core(TM) i7-7660U CPU @ 2.50GHz, 2 physical / 4 logical cores, 8 GB RAM, macOS 13.7.8 (x86_64)
 
 START / STOP THE VM

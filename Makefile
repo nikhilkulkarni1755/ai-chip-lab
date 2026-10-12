@@ -41,7 +41,10 @@ sweeps:
 
 # ---- demo: 50_repro / 60_demo -----------------------------------------------------------------
 repro:
-	@echo "repro: recipe owned by the demo agent (scripts/repro*)"; exit 1
+	scripts/repro.sh
 
 demo:
-	@echo "demo: recipe owned by the demo agent"; exit 1
+	python3 scripts/demo_build.py
+	@if [ -x .venv-demo/bin/python ]; then .venv-demo/bin/python scripts/evidence_render.py && python3 scripts/demo_build.py; else echo "evidence PNGs not re-rendered: no .venv-demo (uv venv .venv-demo && uv pip install pillow)"; fi
+	python3 scripts/demo_check.py
+	@echo "demo: open demo/index.html ; 5-minute cut: bash demo/run_demo.sh"

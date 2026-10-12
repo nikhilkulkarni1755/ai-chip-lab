@@ -6,19 +6,19 @@ Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, t
 
 ## Status
 
-Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 0h 25m since start (2026-10-12 02:48:36 PDT), budget 6h).
+Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 1h 16m since start (2026-10-12 02:48:36 PDT), budget 6h).
 
 | Check | Status | Detail |
 |---|---|---|
 | Container runtime install | **PASS** | route A (Colima + Lima, macOS Virtualization.framework) |
-| Lab images (lab-sim, ORFS) | **RUNNING** | stage in progress |
+| Lab images (lab-sim, ORFS) | **PASS** | both images referenced in coord/images.env |
 | Task 1: INT8 systolic array vs NumPy | **RUNNING** | stage in progress |
 | Task 1: formal MAC proof (SBY) | **PENDING** | waits for Task 1 summary |
 | Task 1: RTL = netlist equivalence (EQY) | **PENDING** | waits for Task 1 summary |
-| Task 2: OpenROAD reference flow vs shipped thresholds | **RUNNING** | stage in progress: 2026-10-12 02:59:49 started |
-| Task 3: SCALE-Sim vs analytical model | **PENDING** | no marker and no results/t3_summary.json yet |
-| Sweep A: architecture (SCALE-Sim) | **PENDING** | no points yet |
-| Sweep B: physical (ORFS) | **PENDING** | no points yet |
+| Task 2: OpenROAD reference flow vs shipped thresholds | **PASS** | t2_summary.json: pass=true |
+| Task 3: SCALE-Sim vs analytical model | **RUNNING** | stage in progress |
+| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 3 point(s) in results/sweeps/arch.jsonl |
+| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress |
 | Repeatability rerun (repro) | **PENDING** | no marker and no results/repro_report.json yet |
 
 PASS means the stage's `.done` marker exists and its summary JSON says `"pass": true`. Anything unfinished is shown as PENDING/RUNNING/BLOCKED/UNKNOWN and not assumed.
@@ -76,9 +76,29 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 
 ![01_runtime_docker](demo/assets/evidence/01_runtime_docker.png)
 
+![02_images_scalesim_numpy_fix](demo/assets/evidence/02_images_scalesim_numpy_fix.png)
+
+![02_images_smoke](demo/assets/evidence/02_images_smoke.png)
+
+![20_determinism_nangate45_gcd](demo/assets/evidence/20_determinism_nangate45_gcd.png)
+
+![20_determinism_sky130hd_gcd](demo/assets/evidence/20_determinism_sky130hd_gcd.png)
+
+![20_orfs_flow_nangate45_gcd](demo/assets/evidence/20_orfs_flow_nangate45_gcd.png)
+
+![20_systolic_os_ppa](demo/assets/evidence/20_systolic_os_ppa.png)
+
+![20_threshold_check_nangate45_gcd](demo/assets/evidence/20_threshold_check_nangate45_gcd.png)
+
+![20_threshold_check_sky130hd_gcd](demo/assets/evidence/20_threshold_check_sky130hd_gcd.png)
+
 ## Results
 
-_No result plots on disk yet._
+![t2 nangate45 gcd](demo/assets/t2_nangate45_gcd.png)
+
+![t2 nangate45 systolic os](demo/assets/t2_nangate45_systolic_os.png)
+
+![t2 sky130hd gcd](demo/assets/t2_sky130hd_gcd.png)
 
 ## Notes
 

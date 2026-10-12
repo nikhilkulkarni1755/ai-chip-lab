@@ -198,12 +198,14 @@ def build_rows(L):
 
     s1, d1, t1 = task_state(L, "10_rtl_verify", "results/t1_summary.json")
     rows.append(Row("Task 1: INT8 systolic array vs NumPy", s1, d1, "results/t1_summary.json"))
-    for label, rx in (("Task 1: formal MAC proof (SBY)", r"formal|sby"),
-                      ("Task 1: RTL = netlist equivalence (EQY)", r"eqy|equiv")):
-        r = find_key(t1, rx) if isinstance(t1, dict) else None
-        if r:
-            rows.append(Row(label, "PASS" if r[1] else "FAIL", "%s = %s in t1_summary.json" % (r[0], fmt_val(r[1])),
-                            "results/t1_summary.json"))
+    chk = (t1 or {}).get("checks") if isinstance(t1, dict) else None
+    for label, rx in (("Task 1: formal MAC proof (SBY)", r"^formal_.*(pass)$"),
+                      ("Task 1: RTL = netlist equivalence (EQY)", r"^eqy_.*pass$")):
+        hits = [(k, v) for k, v in (chk or {}).items() if isinstance(v, bool) and re.search(rx, k)]
+        if hits:
+            okk = all(v for _, v in hits)
+            rows.append(Row(label, "PASS" if okk else "FAIL",
+                            "checks: " + ", ".join("%s=%s" % (k, fmt_val(v)) for k, v in hits), "results/t1_summary.json"))
         else:
             rows.append(Row(label, "PENDING" if s1 in ("PENDING", "RUNNING") else ("BLOCKED" if s1 == "BLOCKED" else "UNKNOWN"),
                             "not reported in t1_summary.json yet" if t1 else "waits for Task 1 summary", None))
@@ -517,6 +519,36 @@ def evidence_blocks(L, h):
     h.append("</div>")
 
 
+
+PPA_COLS = [("area_um2", "area (um2)"), ("utilization_pct", "utilization (value as written)"), ("wns_setup_ns", "WNS setup (ns)"),
+            ("tns_setup_ns", "TNS setup (ns)"), ("power_total_w", "power total (W)"), ("power_leakage_w", "leakage (W)"),
+            ("cell_count", "cells"), ("drc_errors", "DRC errors"), ("wall_s", "wall (s)")]
+
+
+def t2_table(s2):
+    h = ["<div class='tw'><table><thead><tr><th>design</th><th>status</th>%s</tr></thead><tbody>" % "".join(
+        "<th>%s</th>" % e(c[1]) for c in PPA_COLS)]
+    for name, d in (s2.get("designs") or {}).items():
+        ppa = d.get("ppa") or {}
+        st = d.get("status", "?")
+        extra = ""
+        if isinstance(d.get("checks"), dict):
+            extra = " (" + ", ".join("%s=%s" % (k, fmt_val(v)) for k, v in d["checks"].items()) + ")"
+        if st != "run":
+            extra = " - " + str(d.get("reason", ""))
+        cells = "".join("<td>%s</td>" % e(fmt_val(ppa.get(k, d.get(k)))) if (k in ppa or k in d) else "<td>-</td>" for k, _ in PPA_COLS)
+        h.append("<tr><td>%s</td><td>%s%s</td>%s</tr>" % (e(name), e(st), e(extra), cells))
+    h.append("</tbody></table></div>")
+    tv = s2.get("tool_versions") or []
+    h.append("<p class='sub'>Tool versions as reported by the image: %s. A version of &quot;unknown&quot; is what this OpenROAD build prints; "
+             "the build is identified by the image digest %s. "
+             "The utilization column is shown exactly as stored in <code>t2_summary.json</code> (field name ends in <code>_pct</code> "
+             "but values below 1 are ratios; treat it as a fraction until the field is clarified). Negative setup WNS can still be "
+             "within the shipped thresholds because those rules allow a margin.</p>" % (
+                 e("; ".join(t.strip() for t in tv)), e(str(s2.get("image", "?")))))
+    return "".join(h)
+
+
 def build_html(L, rows, vm):
     el_s, _ = elapsed_str(L)
     h = ["<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
@@ -619,7 +651,7 @@ def build_html(L, rows, vm):
     h.append("<h3>PPA (power, performance, area) table</h3>")
     s2 = L.jload("results/t2_summary.json")
     if isinstance(s2, dict):
-        h.append(kv_table(s2, 80))
+        h.append(t2_table(s2))
     else:
         h.append("<p class='sub'><span class='b dim'>PENDING</span> results/t2_summary.json not written yet.</p>")
     for name in ("phys", "arch"):
@@ -664,6 +696,15 @@ def build_html(L, rows, vm):
             for k, v in flatten(s):
                 if v is False:
                     items.append("<li>%s: <code>%s</code> is false</li>" % (e(tname), e(k)))
+    t1v = ((L.jload("results/t1_summary.json") or {}).get("values") or {})
+    if t1v.get("eqy_scope"):
+        items.append("<li>Equivalence scope as recorded by Task 1: <code>%s</code>. If this says per-PE or partial, the full 4x4 multiplier "
+                     "cones did not close in the time available and the claim is limited to what is stated.</li>" % e(str(t1v["eqy_scope"])))
+    items.append("<li>ORFS is pinned to image tag 26Q3-600 because newer tags removed the shipped threshold files (<code>rules-base.json</code>, "
+                 "<code>checkMetadata.py</code>) that Task 2 compares against (COORDINATION.md Decision 6).</li>")
+    items.append("<li>The optional Kepler logic-equivalence step inside the ORFS flow is disabled (<code>LEC_CHECK=0</code>) because it "
+                 "crashes with an illegal instruction on this CPU; it does not affect PPA numbers.</li>")
+    items.append("<li>Numbers come from a 2-core machine shared by several jobs; wall-clock figures are indicative only.</li>")
     b = L.jload("budget.json") or {}
     items.append("<li>The owner capped the run at %s h (the original task text says 14 h), so all stage budgets were scaled down; "
                  "anything cut for time is listed above.</li>" % e(str(b.get("total_budget_h", "?"))))
