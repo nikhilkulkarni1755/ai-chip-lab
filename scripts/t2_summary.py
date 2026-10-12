@@ -38,6 +38,28 @@ def tool_versions():
     vers.insert(0, "ORFS image tag " + (tag.group(1) if tag else "?") + " (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)")
     return env["ORFS_IMAGE"], vers
 
+def detail(plat, des, var):
+    """Unambiguous extra fields straight from metadata.json (no arithmetic except the clock-period string parse)."""
+    md = X.rd(X.paths(plat, des, var)["meta"])
+    per = None
+    for c in md.get("constraints__clocks__details", []):
+        m = re.match(r"(\w+): ([\d.]+)", c)
+        if m and not m.group(1).startswith("vclk"): per = float(m.group(2))
+    g = lambda k: md.get(k)
+    return {"reference_clock_period_ns": per,
+            "setup_violating_endpoints": g("finish__timing__drv__setup_violation_count"),
+            "hold_violating_endpoints": g("finish__timing__drv__hold_violation_count"),
+            "die_area_um2": g("finish__design__die__area"), "core_area_um2": g("finish__design__core__area"),
+            "instance_area_um2_incl_fill_and_tap": g("finish__design__instance__area"),
+            "fill_cell_area_um2": g("finish__design__instance__area__class__fill_cell"),
+            "tap_cell_area_um2": g("finish__design__instance__area__class__tap_cell"),
+            "instance_count_total": g("finish__design__instance__count"),
+            "instance_count_stdcell": g("finish__design__instance__count__stdcell"),
+            "fill_cell_count": g("finish__design__instance__count__class__fill_cell"),
+            "tap_cell_count": g("finish__design__instance__count__class__tap_cell"),
+            "timing_closed": (g("finish__timing__setup__ws") or 0) >= 0,
+            "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"}
+
 def ppa(e):
     m = e["metrics"]
     return {k: m.get(k) for k in ("area_um2", "utilization_frac", "wns_setup_ns", "tns_setup_ns", "wns_hold_ns",
@@ -55,7 +77,7 @@ def main():
             ok_all &= not gate
             continue
         e = X.extract(plat, des, b)
-        d = {"status": "run", "ppa": ppa(e), "stage_runtime_s": e["stage_runtime_s"], "wall_s": e.get("run", {}).get("wall_s"),
+        d = {"status": "run", "ppa": ppa(e), "detail": detail(plat, des, b), "stage_runtime_s": e["stage_runtime_s"], "wall_s": e.get("run", {}).get("wall_s"),
              "gds": e.get("gds"), "checks": {}}
         chk = check_log(plat, des, b)
         d["threshold_check"] = chk   # None for custom designs: ORFS ships no rules file for them
