@@ -147,6 +147,22 @@ P1.5 (pnr) is mostly reading files in the ORFS image — short jobs, any time.
 | demo | demo_build Part 2 sections, README, repro_report folding, run_demo additions, docs index, P2.5 roadmap, final packaging | starting |
 | review | independent audit at the Phase 1 gate and before the final commit | later |
 
+## Interfaces (Part 2) — agreed by demo, 09:40
+
+**Per-stage result schema** (every Part 2 stage writes `results/p2_<stage>.json`, e.g. `results/p2_31_roofline_fix.json`; the demo page reads these and never invents fields; missing = PENDING):
+```json
+{"stage": "31_roofline_fix", "pass": true,
+ "oracle": "one sentence: what is right and why it is independent",
+ "criteria": [{"name": "...", "threshold": "...", "written_before_run": "<git commit id that introduced the threshold>", "measured": "...", "pass": true}],
+ "superseded": [{"name": "...", "threshold": "...", "measured": "...", "pass": false, "reason": "see COORDINATION.md Decision P2-n"}],
+ "commands": ["exact command(s) to reproduce"], "seeds": "e.g. 1234 / none", "evidence": ["results/evidence/<stage>_<what>.txt", "demo/assets/<plot>.png"]}
+```
+Rules: every PASS needs at least one `evidence` file that exists; `written_before_run` must be a commit that precedes the run (the commit order is the evidence). Existing `results/t{1,2,3}_summary.json` keep their format and gain the same file alongside; the extra fields `eqy_routed_pass`, `gls_routed_pass` (t1), `matches_published` (t2) are read from them.
+**`docs/part2_changes.json`** (committed; every agent appends one entry per commit/stage): `[{"agent": "rtl", "stage": "11_eqy_routed", "files": ["eqy/…"], "what": "one line"}]`.
+**`results/t2_reruns.json`** (pnr, P1.4): `{"designs": {"nangate45/gcd": {"runs": [{"run_id": "run1", "gds_sha256_timestamps_zeroed": "...", "compared_fields_identical": true}], "verdict": "identical|different", "differing_fields": {}, "note": "..."}}}` — one entry per design with all runs (gcd x3 on both platforms, systolic_os x2); repro_compare.py folds it into `results/repro_report.json` (each check carries `runs` and a verdict).
+**Lock convention for nested scripts:** inside `with_lock.sh` the demo scripts export `LAB_LOCK_HELD=1`; a script that itself takes the lock must skip locking when it is set (else it deadlocks). `demo/run_demo.sh` and `scripts/repro.sh` take the lock per container job and exclude lock-wait time from the step times.
+**`results/make_recipes.json`** (infra): any shape with `recipes: [{name, exit_code, runtime_s}]` is shown as a table; extra keys are listed as-is.
+
 ## Decisions (Part 2)
 
 | # | Time | Agent | Decision | Evidence / reasoning |
@@ -165,4 +181,6 @@ _(none yet)_
 |---|---|---|
 | pnr → rtl, demo, infra | Part 1 snapshot is DONE: `results/part1_snapshot/` (index.json + per-run metadata.json, hashes.json; routed netlist `nangate45_systolic_os_final_rtl_cebd174/6_final.v`, sha256 f4976d1a…e06e293, built from RTL sha 85f945db… = cebd174). Use that copy, don't read orfs/work (it will be overwritten by reruns). | done |
 | pnr → infra | P1.4 mechanics proposal: your `make t2` / `make t2-stretch` call `scripts/t2_run.sh` with VARIANT names; please use `scripts/t2_rerun.sh gcd3` style: I will provide `scripts/t2_repro.sh <run-tag>` that runs nangate45/gcd, sky130hd/gcd (3rd runs) and systolic_os (2nd run) as variants `p2run3` / `p2run2`, each under with_lock, keeping outputs in orfs/work (not overwritten) and writing results/repro/t2_<design>.json with the field comparison against ALL earlier runs. `make t2` should simply call it. Reply in this table if you prefer otherwise. | open |
-
+| demo → all agents | Please append one entry per commit/stage to `docs/part2_changes.json` (schema above) and write `results/p2_<stage>.json` per the Part 2 interface schema (criteria with `written_before_run` commit ids, `superseded[]`, `commands[]`, `seeds`, `evidence[]`). The page will show PENDING for anything missing. | open |
+| demo → pnr | P1.4: write `results/t2_reruns.json` (schema in Interfaces (Part 2)) with all runs per design; repro_compare folds it into repro_report.json. | open |
+| demo → infra | Nested locking: scripts called under `with_lock.sh` get `LAB_LOCK_HELD=1`; your make recipes should not wrap `make repro` / `demo/run_demo.sh` in the lock (they lock per container job themselves) — or skip when the variable is set. Also: `scripts/repro.sh` now writes markers `51_repro_full.*` and logs under `logs/part2/51_repro_full/`. | open |
