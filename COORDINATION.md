@@ -108,3 +108,58 @@ _(none yet)_
 | pnr → demo | t2 metric key renamed `utilization_pct` -> `utilization_frac` (value is a fraction, 0.876 = 87.6 %); results/t2_summary.json + results/t2/*.json will carry the new name after my next regeneration; phys.jsonl rows before ~04:15 still use the old name. scripts/demo_build.py PPA_COLS reads the old key: please accept both. | **done (demo):** t2_table accepts both keys |
 
 | demo → pnr | `demo/run_demo.sh` step 4 reads `orfs/work/reports/nangate45/gcd/base/metadata.json`, which is gitignored: on a fresh clone the demo FAILs Task 2. Please commit a copy of the metadata (and the rules file path it needs) under `results/t2/` and make `scripts/t2_check.sh` fall back to it; tell me the path and I will point run_demo.sh at it. | open |
+
+---
+
+# PART 2 — Get everything green, then extend
+
+Spec: `coord/TASK2.md` (read it fully). Part 1 rules above still apply **except where this section says otherwise**.
+
+## Part 2 rule changes
+
+- **Branch:** all work lands on **`part2-green`**. **Never push. Never touch `main`.** Worktrees: `.worktrees/<agent>` on branch `p2/<agent>` (already created from `part2-green`); rebase on `part2-green`, then `git -C ~/ai-chip-lab merge --ff-only p2/<agent>`. Logical commits, one per stage where possible. Commit identity is set repo-wide (owner's address) — don't change it.
+- **Lock is now mandatory for EVERY container job** (`docker run`, `docker build`), including sims, SCALE-Sim, plotters in containers, `run_demo.sh`, repro. `scripts/with_lock.sh <agent> <cmd>`; nothing runs in the VM outside it. Sweep points must take it **per point** with `LOCK_PRIO=low` so stage work is never starved (a low-priority job waits while any high-priority job is queued). Don't hold the lock across idle time. Native work on the host must be light (single process, short): authoring, small unit tests, plotting.
+- **Budget:** `budget_part2.json` (start 09:03 PDT). Phase 1 ends 17:03; sweeps stop at 17:03; Phase 2 stops starting new items at 22:03; final at 23:03. `budget.json` is Part 1's and is frozen — never modify it (the page's "Total runtime" reads it). Sweep drivers must take their deadline from `budget_part2.json`.
+- **Logs:** `logs/part2/<stage>/`. Stage markers: the names in TASK2.md (`31_roofline_fix`, `32_make_recipes`, `11_eqy_routed`, `51_repro_full`, `21_orfs_crosscheck`, `41_sweeps_finish`, `60_…`–`64_…`). Part 1 markers stay as history; a Part 1 `.failed` is replaced only by the stage that legitimately fixes it.
+- **Never weaken a check to make it pass** (TASK2.md). Any changed criterion: old one kept as `superseded` in the JSON, thresholds for the new one written down *before* the new run (commit the thresholds first — the commit order is the evidence), reasoning in "Decisions (Part 2)" below.
+- **No stub data, privacy, evidence files (`results/evidence/<stage>_<what>.txt`), fail-soft, resumable:** unchanged.
+- The Part 1 results that later stages compare against (first-run metadata, GDS hashes, CSVs) must be **snapshotted before anything reruns over them** (`results/part1_snapshot/` or committed copies) — several Part 2 steps regenerate `orfs/work` and `results/`.
+
+## Heavy-job queue order (Phase 1)
+
+One job at a time, so order matters. Highest first; take the lock in this order when several are ready:
+1. P1.1 roofline runs (arch) — short SCALE-Sim runs
+2. P1.3 routed-netlist EQY + gate-level sim (rtl) — needs only the existing routed outputs in `orfs/work/results/nangate45/systolic_os/base/` (snapshot them first)
+3. P1.4 determinism reruns (pnr): gcd ×2 platforms third run, systolic_os second run
+4. P1.2 real `make` recipes (infra) — see Decision P2-1 on combining with P1.4/P1.7
+5. P1.6 sweeps (pnr: sweep B refinements; arch: sweep A remainder) — `LOCK_PRIO=low`, fill all gaps
+P1.5 (pnr) is mostly reading files in the ORFS image — short jobs, any time.
+
+## Board (Part 2)
+
+| Agent | Owns in Part 2 | State |
+|---|---|---|
+| main | coordination, queue order, HITL, final report | setup done 09:10 |
+| arch | P1.1 `31_roofline_fix`; P1.6 sweep A; later P2.4 CACTI modelling | starting |
+| rtl | P1.3 `11_eqy_routed` (EQY + GLS); later P2.2 bf16 PE; VCD generation for P2.1 | starting |
+| pnr | P1.5 `21_orfs_crosscheck`; P1.4 `51_repro_full` runs; P1.6 sweep B; later P2.1 power, P2.3 sky130 systolic_os | starting |
+| infra | P1.2 `32_make_recipes`, Makefile, lock/queue tooling, images (CACTI image for P2.4), final `colima stop` | starting |
+| demo | demo_build Part 2 sections, README, repro_report folding, run_demo additions, docs index, P2.5 roadmap, final packaging | starting |
+| review | independent audit at the Phase 1 gate and before the final commit | later |
+
+## Decisions (Part 2)
+
+| # | Time | Agent | Decision | Evidence / reasoning |
+|---|---|---|---|---|
+| P2-0 | 09:05 | main | Budget is the task's 14 h (not Part 1's 6 h); team, heartbeat, coordination doc and model routing as in Part 1 | Owner: "keep going with the same settings with this prompt"; the prompt states its own 14 h budget and Part 1's "6 hours" was explicitly for that run |
+| P2-1 | 09:05 | main | `make all` real-run accounting: one full, real, in-order execution of every recipe (P1.2) is done **as** the P1.7 `make all` run where possible, with per-recipe exit code and runtime recorded; its `t2`/`t2-stretch` runs double as P1.4's third gcd run and second systolic_os run (originals snapshotted first). The Final-steps `make all` runs in resume mode: a stage whose inputs (git-tracked files it depends on) are unchanged since its `.done` is skipped and logged as skipped; everything else reruns | Arithmetic on this machine with one heavy job at a time: t1 ≈ 25 min, t2 ≈ 35, t2-stretch ≈ 30, t3 ≈ 35, repro ≈ 60 → one full pass ≈ 3 h. Three full passes (P1.2, P1.7, final) = 9 h of a 14 h budget, and the final reserve is 1 h. TASK2 itself requires resumability ("skip completed work on restart") |
+| P2-2 | 09:05 | main | No pushes in Part 2; `origin/main` stays at Part 1's final state | TASK2 Git rule |
+
+## Needs owner (Part 2)
+
+_(none yet)_
+
+## Requests (Part 2)
+
+| From → To | What | Status |
+|---|---|---|

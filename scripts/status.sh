@@ -4,7 +4,7 @@
 LAB="$HOME/ai-chip-lab"; cd "$LAB" || exit 1
 python3 - <<'PY'
 import json,os,time,glob
-b=json.load(open("budget.json")); now=int(time.time())
+b=json.load(open("budget_part2.json" if os.path.exists("budget_part2.json") else "budget.json")); now=int(time.time())
 def hm(s): s=max(int(s),0); return "%dh%02dm"%(s//3600,(s%3600)//60)
 st={}
 for f in sorted(glob.glob("results/.stages/*.*")):
@@ -14,7 +14,8 @@ done={n for n,_ in st.get("done",[])}
 running=[n for n,_ in st.get("running",[]) if n not in done]
 sw=sum(sum(1 for _ in open(f)) for f in glob.glob("results/sweeps/*.jsonl"))
 nxt=open("coord/next_action.txt").read().strip() if os.path.exists("coord/next_action.txt") else "-"
-o=(["**DONE** — see demo/index.html",""] if os.path.exists("results/.stages/60_demo.done") else [])+["# STATUS","",f"_updated {time.strftime('%F %T %Z')}_","",
+P2=os.path.exists("budget_part2.json")
+o=(["**DONE** — branch part2-green — see demo/index.html",""] if os.path.exists("results/.stages/99_part2.done" if P2 else "results/.stages/60_demo.done") else (["**Part 2 in progress** (branch part2-green)",""] if P2 else []))+["# STATUS","",f"_updated {time.strftime('%F %T %Z')}_","",
 f"- **Current stage(s):** {', '.join(running) or '-'}",f"- **Done:** {lst('done')}",
 f"- **Failed:** {lst('failed')}",f"- **BLOCKED:** {lst('blocked')}",
 f"- **Elapsed:** {hm(now-b['start_epoch'])} of {b['total_budget_h']}h",

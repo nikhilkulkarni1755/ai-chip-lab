@@ -1,1 +1,1 @@
-DONE — open demo/index.html (run demo/run_demo.sh to re-verify in ~2 min)
+Part 2 setup: agents starting P1.1 (roofline), P1.3 (routed EQY/GLS), P1.5 (ORFS cross-check), P1.2 (make recipes)

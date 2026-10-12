@@ -1,0 +1,10 @@
+{
+  "start_epoch": 1791821014,
+  "start": "2026-10-12 09:03:34 PDT",
+  "total_budget_h": 14,
+  "deadline_phase1_epoch": 1791849814,
+  "deadline_phase2_stop_epoch": 1791867814,
+  "deadline_final_epoch": 1791871414,
+  "deadline_sweeps_stop_epoch": 1791849814,
+  "note": "Part 2 budget. budget.json (Part 1) is frozen and must not be modified. Sweeps stop at the Phase 1 deadline."
+}
