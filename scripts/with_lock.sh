@@ -5,7 +5,9 @@
 # Priority: default "high". Sweep points must use LOCK_PRIO=low: a low-priority job does not take the
 # lock while any live high-priority job is waiting, so stage work is never starved by sweeps.
 LAB="$HOME/ai-chip-lab"; D="$LAB/coord/heavy.lock.d"; W="$LAB/coord/heavy.waiting.d"
-owner="$1"; shift; prio="${LOCK_PRIO:-high}"; mkdir -p "$W"
+owner="$1"; shift; prio="${LOCK_PRIO:-high}"; mkdir -p "$W" "$LAB/logs/part2"
+# Re-entrant: a job already running under the lock (LAB_LOCK_HELD=1) runs nested commands directly.
+if [ "${LAB_LOCK_HELD:-0}" = 1 ]; then exec "$@"; fi
 me="$W/$$.$owner"; [ "$prio" = high ] && echo "$(date '+%F %T') $*" > "$me"
 cleanup() { rm -f "$me"; [ "$(cat "$D/pid" 2>/dev/null)" = "$$" ] && rm -rf "$D"; }
 trap cleanup EXIT INT TERM
@@ -19,6 +21,6 @@ while :; do
 done
 echo $$ > "$D/pid"; echo "$owner $prio $(date '+%F %T') $*" > "$D/owner"; rm -f "$me"
 echo "$(date '+%F %T') LOCK $owner $prio $(echo "$*" | cut -c1-120)" >> "$LAB/logs/part2/lock.log"
-"$@"; rc=$?
+LAB_LOCK_HELD=1 "$@"; rc=$?
 echo "$(date '+%F %T') FREE $owner rc=$rc" >> "$LAB/logs/part2/lock.log"
 exit $rc
