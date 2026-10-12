@@ -50,7 +50,7 @@ If a stage is late, cut scope (documented), never the demo.
 | main | coord/, scripts/status.sh, COORDINATION.md structure, HITL | 00_preflight | – | preflight done |
 | infra | bin/, opt/, docker/, env.sh, versions.lock (runtime+images), Makefile skeleton | 01_runtime, 02_images | – | **01_runtime DONE 02:55, 02_images DONE 03:22** — `source coord/images.env`; smoke 55/55 PASS (`results/evidence/02_images_smoke.txt`). Timeloop skipped (Decision 11). Idle: watching Requests |
 | rtl | rtl/, tb/, formal/, eqy/, scripts/t1_* | 10_rtl_verify | lab-sim image (for official run) | **RTL merged to main (pnr can start):** `rtl/mac_int8.sv` + `rtl/systolic_os.sv`, top `systolic_os` (params R=4,C=4), single clock `clk`, sync `clear` (no async reset), ports `in_valid, a_i[R*8], b_i[C*8], busy, acc_o[R*C*32]` (580 port bits → wrap/serialize in orfs if pins are a problem); Yosys `synth;abc;opt` ≈ 14.5k generic cells, 815 flops. Native Icarus+Verilator sims pass (identical CSV); authoring formal/EQY/run script |
-| arch | model/, arch/, sweeps/arch_*, scripts/t3_* | 30_arch_model, 40_sweeps A | lab-sim image (for official run) | starting (authoring) |
+| arch | model/, arch/, sweeps/arch_*, scripts/t3_* | 30_arch_model, 40_sweeps A | lab-sim image (for official run) | wrapper+analytic fit working (exact fit); official container run + sweep A driver in progress |
 | pnr | orfs/, sweeps/phys_*, scripts/t2_* | 20_pnr_ref, 40_sweeps B | ORFS image; rtl (for stretch) | starting (authoring) |
 | demo | demo/, scripts/repro*, | 50_repro, 60_demo | all results | not started (spawned when first results land) |
 
