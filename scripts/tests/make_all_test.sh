@@ -82,7 +82,11 @@ ok "I fail-soft self-test passes" "$rc" "0"
 ok "I forced stage's recipe not run; rest skipped; demo ran twice (test + restore)" "$(ran)" "demo demo "
 ok "I marker restored with its original mtime" "$(stat -f %m results/.stages/00_preflight.done)" "$m0"
 ok "I no .failed marker left" "$(ls results/.stages | grep -c 'failed\|failsoft_saved')" "0"
-ok "I result json pass" "$(python3 -c 'import json;d=json.load(open("results/make_all_failsoft.json"));print(d["pass"], d["make_all_exit_code"], d["not_run_forced_failure"])')" "True 2 ['preflight']"
+ok "I result json pass" "$(python3 -c 'import json;d=json.load(open("results/make_all_failsoft.json"));print(d["pass"], d["make_all_exit_code"], d["not_run_forced_failure"], d["other_stages_that_failed_for_their_own_reasons"])')" "True 2 ['preflight'] []"
+echo "x=3" > model/m.py
+RESUME=markers make all > out.K 2>&1
+ok "K marker-only mode ignores the changed input (t3 not rerun)" "$(ran)" "demo "
+ok "K reason says what the input-aware rule would do" "$(grep -c 'would say: RUN' out.K)" "2"
 
 FAIL_demo=0 FAIL_t2=1 FAIL_repro=1 make all > out.J 2>&1
 ok "J two failures listed in order" "$(grep -c 'stages that failed: t2 repro$' out.J)" "1"; ran > /dev/null

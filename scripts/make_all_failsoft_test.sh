@@ -1,9 +1,10 @@
 #!/bin/bash
 # Fail-soft self-test of `make all` (TASK2 P1.2 item 3), designed not to cost another full 3-hour pass:
-#   1. `MAKE_ALL_FAIL=<stage> RESUME=1 make all` — the chosen stage (default: preflight, the cheapest) is forced
-#      to fail: its recipe is not run and its marker is switched from .done to .failed. Every other stage goes
-#      through the normal RESUME logic (runs for real if its inputs changed since it last succeeded, otherwise
-#      it is skipped and the reason is logged). `demo` always runs.
+#   1. `MAKE_ALL_FAIL=<stage> RESUME=markers make all` — the chosen stage (default: preflight, the cheapest) is
+#      forced to fail: its recipe is not run and its marker is switched from .done to .failed. Every other stage
+#      goes through the marker-only resume: a stage that has succeeded before is skipped (its reason line also
+#      says what the input-aware rule of `RESUME=1` would have decided); a stage without a success, or with a
+#      .failed marker, runs for real. `demo` always runs. Stages that fail for their own reasons are listed too.
 #   2. Assertions: exit status non-zero; the failed stage is listed; every stage has a recorded outcome; the
 #      demo recipe ran and succeeded after the failure; no stage after the failed one was dropped.
 #   3. Restore: marker back to the original .done (same mtime), then `make demo` again so the page no longer
@@ -15,7 +16,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"; cd "$ROOT" || exit 2
 STAGE="${1:-preflight}"; ST=results/.stages
 LOGD=logs/part2/32_make_recipes; mkdir -p "$LOGD"; LOG="$LOGD/failsoft_test_$(date +%H%M%S).log"
 T0=$(date +%s)
-MAKE_ALL_FAIL="$STAGE" RESUME=1 make all > "$LOG" 2>&1; RC=$?
+# marker-only resume (stages that succeeded before are skipped without the input check), sweeps drivers are not
+# waited for, and Task 3's criterion-A jobs are not started: this test is about the control flow of `make all`.
+MAKE_ALL_FAIL="$STAGE" RESUME=markers SWEEPS_DETACH=1 T3_USER_DEADLINE=1 make all > "$LOG" 2>&1; RC=$?
 cp results/make_all_last.json "$LOGD/failsoft_make_all_last.json" 2>/dev/null
 # restore the marker(s) no matter what
 restored=1
@@ -42,13 +45,14 @@ checks = {
     "every_stage_has_an_outcome": all(s in st for s in order),
     "later_stages_not_dropped": all(st[s]["action"] in ("ran", "skipped") for s in after if s in st),
     "demo_ran_after_the_failure_and_succeeded": st.get("demo", {}).get("action") == "ran" and st["demo"]["exit_code"] == 0,
-    "only_the_forced_stage_failed": last["failed_stages"] == [stage],
+    "forced_stage_is_first_in_failed_list": last["failed_stages"][:1] == [stage],
     "marker_restored": restored and all(os.path.exists("results/.stages/%s.done" % m) and not os.path.exists("results/.stages/%s.failed" % m) for m in markers),
     "demo_rebuilt_after_restore": rc_demo2 == 0,
 }
 doc = {
     "generated": time.strftime("%F %T %Z"), "pass": all(checks.values()), "checks": checks,
-    "command": "MAKE_ALL_FAIL=%s RESUME=1 make all   (then marker restored and `make demo` rerun)" % stage,
+    "command": "MAKE_ALL_FAIL=%s RESUME=markers SWEEPS_DETACH=1 T3_USER_DEADLINE=1 make all   (then marker restored and `make demo` rerun)" % stage,
+    "other_stages_that_failed_for_their_own_reasons": [s for s in last["failed_stages"] if s != stage],
     "forced_stage": stage, "make_all_exit_code": rc, "runtime_s": t1 - t0, "log": log,
     "executed_for_real": [s for s in order if st.get(s, {}).get("action") == "ran"],
     "skipped_with_reason": {s: st[s]["reason"] for s in order if st.get(s, {}).get("action") == "skipped"},

@@ -25,6 +25,11 @@ def sh(cmd):
     return subprocess.run(cmd, shell=True, cwd=LAB, capture_output=True, text=True).stdout.strip()
 
 
+def mvars_change_scope(mvars):
+    """make variables that make the run a partial/special one must not produce a 'stage succeeded' record"""
+    return any(v.split("=")[0] in ("T1_CASES", "T1_OUT", "T3_OUT", "T3_PASSES", "T3_USER_DEADLINE", "T2_DESIGNS", "DRY_RUN", "T1R_STEPS", "ALL_STAGES") for v in mvars)
+
+
 def update(fn):
     """read-modify-write of results/make_recipes.json under a small mkdir mutex (several recorders may run at once)"""
     mx = OUT + ".lock.d"
@@ -62,6 +67,14 @@ def main():
     expanded = subprocess.run(["make", "-n", recipe] + mvars, cwd=LAB, capture_output=True, text=True).stdout
     expanded = [l.replace(HOME, "~") for l in expanded.splitlines() if l.strip()]
     env = dict(os.environ, LAB_LOCK_TAG=tag)
+    # input hash of the stage (scripts/stage_inputs.json) before the run; on success with unchanged inputs a record
+    # is written that `RESUME=1 make all` accepts as "this stage succeeded with exactly these inputs"
+    sys.path.insert(0, os.path.join(LAB, "scripts"))
+    try:
+        import make_all as MA
+        h0 = MA.input_hash(MA.input_files(recipe)) if recipe in MA.CFG["stages"] and not mvars_change_scope(mvars) else None
+    except Exception:
+        MA, h0 = None, None
     t0 = time.time()
     update(lambda doc: doc.setdefault("running", {}).__setitem__(recipe, {"command": " ".join(cmd), "start_epoch": int(t0), "start": time.strftime("%F %T %Z", time.localtime(t0)), "log": os.path.relpath(log, LAB), "pid": os.getpid()}))
     with open(log, "w") as f:
@@ -90,6 +103,15 @@ def main():
         "log_tail": tail,
     }
     if note: rec["note"] = note
+    if MA and h0 and rc == 0:
+        files = MA.input_files(recipe)
+        if MA.input_hash(files) == h0:
+            os.makedirs(MA.REC, exist_ok=True)
+            json.dump({"stage": recipe, "end_epoch": int(t1), "inputs_sha256": h0, "n_inputs": len(files), "source": "scripts/make_record.py"},
+                      open(os.path.join(MA.REC, recipe + ".json"), "w"))
+            rec["resume_record"] = "written (inputs unchanged during the run)"
+        else:
+            rec["resume_record"] = "not written: stage inputs changed while the recipe ran"
     if watch:
         after = {f: os.path.getmtime(f) for f in glob.glob(os.path.join(LAB, watch))}
         rel = lambda f: os.path.relpath(f, LAB)

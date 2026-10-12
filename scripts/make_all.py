@@ -4,6 +4,7 @@
   make all                 real run of every stage (default: nothing is skipped)
   RESUME=1 make all        skip a stage that already succeeded and whose git-tracked inputs are unchanged
                            since then (table: scripts/stage_inputs.json); every skip is logged with its reason
+  RESUME=markers make all  test mode: skip every stage that has succeeded before, WITHOUT the input check (logged)
   FORCE=1 make all         run everything even with RESUME=1
   DRY_RUN=1 make all       stages with a dry mode print their commands; the others are skipped (logged)
   MAKE_ALL_FAIL=<stage>    TEST HOOK (scripts/make_all_failsoft_test.sh): do not run that stage's recipe, set its
@@ -45,11 +46,23 @@ def input_hash(files):
     return h.hexdigest()
 
 
-def skip_reason(stage):
-    """(skip?, reason) for RESUME mode."""
+def skip_reason(stage, markers_only=False):
+    """(skip?, reason) for RESUME mode. markers_only (RESUME=markers, used by the fail-soft self-test): a stage
+    that has succeeded before is skipped WITHOUT checking whether its inputs changed since; the reason says so."""
     c = CFG["stages"][stage]
     if c.get("always"): return False, "always runs"
     files = input_files(stage)
+    if markers_only:
+        for m in c.get("markers", []):
+            for ext in ("failed", "running", "blocked"):
+                if os.path.exists(os.path.join(ST, m + "." + ext)):
+                    return False, "stage marker %s.%s present" % (m, ext)
+        rp = os.path.join(REC, stage + ".json"); ms = c.get("markers", [])
+        have_rec = os.path.exists(rp); have_done = bool(ms) and all(os.path.exists(os.path.join(ST, m + ".done")) for m in ms)
+        if not (have_rec or have_done): return False, "no .done marker and no record of a successful run"
+        full_skip, full_why = skip_reason(stage)
+        return True, "marker-only test mode: succeeded before (%s); input changes since then are NOT checked in this mode — the input-aware rule would say: %s" % (
+            (ms[0] + ".done") if have_done else "recorded successful make run", ("skip, " if full_skip else "RUN, ") + full_why)
     for m in c.get("markers", []):
         for ext in ("failed", "running", "blocked"):
             if os.path.exists(os.path.join(ST, m + "." + ext)):
@@ -85,7 +98,8 @@ def lock_wait(tag):
 
 def main():
     env = os.environ
-    resume = env.get("RESUME", "0") == "1" and env.get("FORCE", "0") != "1"
+    resume = env.get("RESUME", "0") in ("1", "markers") and env.get("FORCE", "0") != "1"
+    markers_only = env.get("RESUME") == "markers"
     dry = env.get("DRY_RUN", "0") == "1"
     # `make -n all`: make still runs this script (the recipe mentions $(MAKE)) and the sub-makes only print.
     # Nothing was executed then, so nothing may be recorded.
@@ -93,7 +107,7 @@ def main():
     forced = env.get("MAKE_ALL_FAIL", "")
     order = env.get("ALL_STAGES", "").split() or CFG["order"]
     make = env.get("MAKE", "make")
-    mode = "resume" if resume else ("dry-run" if dry else "full")
+    mode = ("resume (marker-only test mode)" if markers_only else "resume") if resume else ("dry-run" if dry else "full")
     if forced: mode += " + forced failure of '%s' (test hook)" % forced
     print("make all: mode = %s; stages: %s" % (mode, " ".join(order)), flush=True)
     os.makedirs(REC, exist_ok=True)
@@ -111,7 +125,7 @@ def main():
         elif dry and not c.get("dry"):
             e.update(action="dry_skipped", reason="DRY_RUN=1 and the recipe has no dry mode", exit_code=None, runtime_s=0)
         else:
-            skip, why = skip_reason(s) if resume else (False, "full run" if not dry else "dry run")
+            skip, why = skip_reason(s, markers_only) if resume else (False, "full run" if not dry else "dry run")
             if skip:
                 e.update(action="skipped", reason=why, exit_code=None, runtime_s=0)
             else:
