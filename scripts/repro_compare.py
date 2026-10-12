@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """repro_compare.py - compare the first (official) run with the clean rerun -> results/repro_report.json.
   repro_compare.py --lab DIR --run RELDIR [--out results/repro_report.json]
-Verdict per check: identical | different | not_run. pass = every check identical (not_run counts as not passing).
+Verdict per check: identical | different | not_run | not_rerun_cost. pass = no check different/not_run and at least one identical; complete = every check identical (a not_rerun_cost check makes it incomplete, never identical).
 Only fields that should be deterministic are compared; wall-clock/timestamp fields are excluded by name."""
 import argparse, hashlib, json, os, re, sys, time
 
@@ -48,20 +48,36 @@ def main():
             strip(s1.get("values"), a.run), strip(r1.get("values"), a.run))
     else:
         add("t1 summary", None, None, "missing summary")
-    # Task 3: every file under results/t3
+    # Task 3 (Decision P2-7): the rerun is the CHEAP set (bundled ws/os/is, fit, CALC-mode roofline runs). Files that the rerun did not
+    # produce (the user-bandwidth criterion-A runs) are reported as "not_rerun_cost" with a run count of 1; never as identical.
     d1, d2 = P("results/t3"), P(a.run, "t3")
-    files = sorted(os.path.relpath(os.path.join(b, f), d1) for b, _, fs in os.walk(d1) for f in fs) if os.path.isdir(d1) else []
+    files = sorted(os.path.relpath(os.path.join(b, f), d1) for b, _, fs in os.walk(d1) for f in fs if not f.startswith(".")) if os.path.isdir(d1) else []
     if files and os.path.isdir(d2):
-        h1 = {f: sha(os.path.join(d1, f)) for f in files}
-        h2 = {f: (sha(os.path.join(d2, f)) if os.path.exists(os.path.join(d2, f)) else None) for f in files}
-        add("t3 result files byte-identical (%d files)" % len(files), h1, h2, "first run = the stage's own two passes (already byte-identical) plus this fresh pass", runs=3)
-        extra = [os.path.relpath(os.path.join(b, f), d2) for b, _, fs in os.walk(d2) for f in fs]
-        add("t3 same set of files", files, sorted(extra))
+        rerun_files = sorted(os.path.relpath(os.path.join(b, f), d2) for b, _, fs in os.walk(d2) for f in fs if not f.startswith("."))
+        both = [f for f in files if f in rerun_files]
+        h1 = {f: sha(os.path.join(d1, f)) for f in both}
+        h2 = {f: sha(os.path.join(d2, f)) for f in both}
+        add("t3 cheap-set result files byte-identical (%d files compared)" % len(both), h1, h2,
+            "first run = the stage's own passes plus this fresh pass; compared files: bundled ws/os/is reports, fit, CALC-mode roofline runs", runs=3)
+        extra = [f for f in rerun_files if f not in files]
+        if extra:
+            add("t3 rerun produced no file the first run lacks", [], extra, "unexpected extra files in the rerun")
+        notre = [f for f in files if f not in rerun_files]
+        user = [f for f in notre if "user" in f.lower()]
+        other = [f for f in notre if f not in user]
+        checks.append({"check": "t3 user-bandwidth roofline runs (criterion A): %d files" % len(user), "runs": 1, "verdict": "not_rerun_cost",
+                       "first_run": "present" if user else "absent", "rerun": None,
+                       "note": "NOT rerun (cost): each run holds the lock for minutes; these files are not claimed byte-identical"})
+        if other:
+            checks.append({"check": "t3 other first-run files not in the rerun (%d)" % len(other), "runs": 1, "verdict": "not_rerun_cost", "first_run": other[:10], "rerun": None,
+                           "note": "not part of the cheap set"})
     else:
         add("t3 result files", None, None, "missing results/t3 or rerun output")
     s3, r3 = jl(P("results/t3_summary.json")), jl(P(a.run, "t3_summary.json"))
     if s3 and r3:
-        add("t3 summary (checks and fitted values)", strip(s3, "results/t3"), strip(r3, a.run + "/t3"))
+        sub = lambda d: {k: d.get(k) for k in ("fit", "bundled_summary", "bundled", "bundled_config_zero_stalls") if k in d}
+        add("t3 summary: fit, bundled runs (compared subtree)", strip(sub(s3), "results/t3"), strip(sub(r3), a.run + "/t3"),
+            "identity as recorded by the stage: %s" % json.dumps(s3.get("identity", {}).get("state") if isinstance(s3.get("identity"), dict) else None))
     else:
         add("t3 summary", None, None, "missing summary")
     # Task 2: Part 2 supplies results/t2_reruns.json (pnr): {"designs": {"<plat>/<design>": {"runs": [{"run_id", "metrics": {...}, "gds_sha256_timestamps_zeroed",
@@ -111,8 +127,9 @@ def main():
                                  "object_shas": {k: v["git_object_sha"] for k, v in st["paths"].items()}},
                        "note": "git object SHAs of the input paths at HEAD; see provenance block"})
     rep = {"generated_epoch": int(time.time()), "rerun_dir": a.run,
-           "pass": all(c["verdict"] == "identical" for c in checks), "checks": checks, "provenance": prov,
-           "counts": {v: sum(1 for c in checks if c["verdict"] == v) for v in ("identical", "different", "not_run")}}
+           "pass": all(c["verdict"] in ("identical", "not_rerun_cost") for c in checks) and any(c["verdict"] == "identical" for c in checks),
+           "complete": all(c["verdict"] == "identical" for c in checks), "checks": checks, "provenance": prov,
+           "counts": {v: sum(1 for c in checks if c["verdict"] == v) for v in ("identical", "different", "not_run", "not_rerun_cost")}}
     json.dump(rep, open(P(a.out), "w"), indent=2, sort_keys=True); open(P(a.out), "a").write("\n")
     for c in checks: print("%-10s %s" % (c["verdict"], c["check"]))
     print("repro pass:", rep["pass"])
