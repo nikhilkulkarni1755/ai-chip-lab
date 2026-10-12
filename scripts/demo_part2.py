@@ -138,11 +138,17 @@ def extra_rows(L, Row, t1, t2, t3):
             if isinstance(rt, dict):
                 ck = rt.get("checks") or {}
                 if key == "eqy_routed_pass" and isinstance(rt.get("eqy_partitions_proved"), list) and len(rt["eqy_partitions_proved"]) == 2:
-                    more = "; EQY partitions proved: %s of %s (the rest were not proved; see the diagnosis in the not-green list)" % tuple(rt["eqy_partitions_proved"])
+                    pr = rt["eqy_partitions_proved"]
+                    more = "; EQY partitions proved: %s of %s%s" % (pr[0], pr[1], "" if pr[0] == pr[1] else " (the rest were not proved; see the diagnosis in the not-green list)")
                 if key == "gls_routed_pass":
-                    more = "; per simulator (0 mismatches against NumPy): Icarus %s, Verilator %s; negative control detected: %s" % (
-                        ck.get("gls_icarus_zero_mismatches"), ck.get("gls_verilator_zero_mismatches"), ck.get("gls_negative_control_detected"))
-            rows.append(Row(label, "PASS" if v else "FAIL", "%s = %s in t1_summary.json%s" % (key, str(v).lower(), more), "results/t1_summary.json"))
+                    gb = rt.get("gls_by_simulator") or {}
+                    more = "; %s; Icarus 0 mismatches against NumPy: %s; negative control detected: %s; Verilator: %s" % (
+                        rt.get("gls_routed_status") or "see the per-simulator status", ck.get("gls_icarus_zero_mismatches"), ck.get("gls_negative_control_detected"),
+                        str(gb.get("verilator", "no result"))[:160])
+            lead = (str(rt.get("gls_routed_status")).upper()[:1] + str(rt.get("gls_routed_status"))[1:] + "; ") if (key == "gls_routed_pass" and isinstance(rt, dict) and rt.get("gls_routed_status")) else ""
+            if lead:
+                more = more.replace("; %s; " % rt.get("gls_routed_status"), "; ", 1)
+            rows.append(Row(label, "PASS" if v else "FAIL", "%s%s = %s in t1_summary.json%s" % (lead, key, str(v).lower(), more), "results/t1_summary.json"))
     v = find_bool(t2, "matches_published")
     mst, _ = marker(L, "21_orfs_crosscheck")
     rows.append(Row("Task 2: matches ORFS's published reference results", ("PASS" if v else "FAIL") if v is not None else {"failed": "FAIL", "blocked": "BLOCKED", "running": "RUNNING"}.get(mst, "PENDING"),
@@ -416,8 +422,9 @@ def t3_roofline2_block(L, t3s):
              "uses B = 64 and 256 words per cycle on a 128x128 array over all 21 ResNet-18 layers.</p>")
     h.append("<p>Amendment P2-A2 (cost only, written before any criterion-A result existed): the registered low level (B = 16) is dropped and both remaining levels are required (stricter than 2 of 3), because the registered design needs at least 4.5 h of the single-job lock per pass "
              "(model/t3_roofline2_amendment_A2_rule.md, Decisions P2-A1, P2-A2-rule and P2-7 in COORDINATION.md). A row is PASS only when every pre-registered criterion has been evaluated and passes.</p>")
-    cs = (t3s or {}).get("cell_status") if isinstance(t3s, dict) else None
-    per = (t3s or {}).get("per_dataflow") if isinstance(t3s, dict) else None
+    roof = ((t3s or {}).get("roofline") if isinstance(t3s, dict) and isinstance((t3s or {}).get("roofline"), dict) and "cell_status" in t3s["roofline"] else t3s) if isinstance(t3s, dict) else None
+    cs = (roof or {}).get("cell_status") if isinstance(roof, dict) else None
+    per = (roof or {}).get("per_dataflow") if isinstance(roof, dict) else None
     base = None
     for cand in ("results/t3", "results/t3.partial"):
         if os.path.isdir(L.p(cand + "/roofline2")):
@@ -428,6 +435,8 @@ def t3_roofline2_block(L, t3s):
         cells = []
         for job in ("rl2_calc_%s" % df, "rl2_user_%s_mid" % df, "rl2_user_%s_high" % df):
             stt = (cs or {}).get(job)
+            if stt is not None and stt != "evaluated" and "_user_" in job:
+                stt = "NOT EVALUATED (cost): %s" % ("blocked, the largest layer alone needs more than 481 s, over the lock-hold rule (results/evidence/31_a_probe.txt)" if stt == "blocked" else "not run, cost")
             if stt is None:
                 if base and os.path.exists(L.p("%s/.jobs/%s.done" % (base, job))):
                     stt = "evaluated"
@@ -482,7 +491,7 @@ def how_tested(L):
                     e(str(c.get("name", ""))), e(str(c.get("threshold", ""))), e(cid[:12]), "" if known else " <b class='badt'>(commit not found)</b>",
                     e(str(c.get("measured", ""))), "okt" if c.get("pass") else "badt", "pass" if c.get("pass") else "FAIL"))
             h.append("</tbody></table></div>")
-        sup = j.get("superseded") or []
+        sup = sup_items(j)
         if sup:
             h.append("<p><b>Superseded criteria (kept, not hidden)</b></p><div class='tw'><table><thead><tr><th>criterion</th><th>threshold</th><th>measured</th><th>result</th><th>why superseded</th></tr></thead><tbody>")
             for c in sup:
@@ -490,6 +499,19 @@ def how_tested(L):
                                                                                           "pass" if c.get("pass") else "FAIL", e(str(c.get("reason", "")))))
             h.append("</tbody></table></div>")
     return "".join(h)
+
+
+def sup_items(j):
+    """Normalise a 'superseded' field (list of dicts, dict name -> dict, or anything else) to a list of dicts with a name."""
+    v = (j or {}).get("superseded") if isinstance(j, dict) else None
+    out = []
+    if isinstance(v, dict):
+        for k, c in v.items():
+            out.append(dict(c, name=k) if isinstance(c, dict) else {"name": k, "reason": str(c)})
+    elif isinstance(v, list):
+        for c in v:
+            out.append(c if isinstance(c, dict) else {"name": str(c)})
+    return out
 
 
 def decisions(L):
@@ -511,11 +533,11 @@ def decisions(L):
     sup = []
     for f in sorted(glob.glob(L.p("results/p2_*.json"))):
         j = L.jload(os.path.relpath(f, L.lab)) or {}
-        for c in j.get("superseded") or []:
+        for c in sup_items(j):
             sup.append((j.get("stage"), c))
     for nm in ("t1", "t2", "t3"):
         j = L.jload("results/%s_summary.json" % nm) or {}
-        for c in j.get("superseded") or []:
+        for c in sup_items(j):
             sup.append((nm, c))
     h.append("<p><b>Superseded criteria across all summaries:</b> %s</p>" % (", ".join("<code>%s</code> (%s)" % (e(str(c.get("name"))), e(str(s))) for s, c in sup) if sup else "none recorded"))
     return "".join(h)
@@ -545,12 +567,11 @@ NOT_GREEN = [
      "The real `make t1` recipe (infra) re-runs the stage and rewrites results/t1_summary.json; the row turns PASS or FAIL from that file. Nothing to do by hand."),
     ("Task 1: formal", "Same as the Task 1 row.", "Same as the Task 1 row (`make t1`)."),
     ("Task 1: RTL = netlist", "Same as the Task 1 row.", "Same as the Task 1 row (`make t1`)."),
-    ("Task 1: RTL = ROUTED", "The routed netlist is flat, so the Part 1 split is applied by name: 16 per-PE partitions plus wrapper partitions. The partitions proved are counted in the row; the stage marker text on the page says which were not proved and why. The per-PE multiplier/accumulator partitions are the hard ones for the solver on 8 GB.",
-     "The rtl agent re-runs the missing wrapper partitions (`T1R_STEPS=eqy scripts/t1_routed.sh`, under the lock). The row stays FAIL until every partition is proved; the scope is stated exactly, never widened."),
-    ("Task 1: routed gate-level", "The gate-level result is per simulator: the row detail shows Icarus and Verilator separately. Icarus having 0 mismatches against NumPy and the negative control being caught are shown as true/false in the row; a false Verilator value means that step did not pass or did not complete (see the evidence text on the page).",
-     "The rtl agent re-runs the Verilator gate-level step (`T1R_STEPS=gls scripts/t1_routed.sh`). The combined criterion needs both simulators and an identical CSV; a Verilator-only gap is reported as exactly that."),
-    ("Task 3", "Criterion B (CALC mode) and criterion A (stalls at a fixed user bandwidth) were pre-registered; the cells that have not been evaluated keep the row open, and criterion B's measured correlations are shown in the row and in section 6. The hypothesis that the default bandwidth mode hid the stalls was wrong: the bundled config uses user bandwidth and its stalls are all zero.",
-     "The arch agent makes the fixed-bandwidth jobs resumable and bounded per lock hold, then infra re-runs `make t3`. Whatever the pre-registered thresholds say is final: if criterion B or A fails the row becomes FAIL with the diagnosis, it is not retuned."),
+    ("Task 1: RTL = ROUTED", "Complete when the file says so: every partition proved, EQY PASS, all negative controls rejected.", "Nothing further; re-checked by `make t1-routed`."),
+    ("Task 1: routed gate-level", "PASS on Icarus only: the task also asks for Verilator if the cell models parse (they do). The Verilator model build of the routed netlist did not finish within the 10-minute lock hold, so no Verilator gate-level result exists; every check that needs one is listed as NOT EVALUATED, neither pass nor fail. This is partial against the task, not a pass of the full item.",
+     "Build the Verilator gate-level model in a bounded way (a smaller or pre-built model, or a longer hold approved by the owner), then `T1R_STEPS=gls scripts/t1_routed.sh`. Until then the page keeps saying Icarus only."),
+    ("Task 3", "FAIL on the pre-registered criterion B: in CALC mode the intensity versus required-bandwidth rank correlation does not reach -0.6 for ws, os or is (values in the row and section 6). Criterion A (stalls at a fixed user bandwidth) is NOT EVALUATED, neither pass nor fail: a probe showed the largest ResNet-18 layer alone needs more than 481 s, over the 10-minute lock-hold rule, and SCALE-Sim cannot checkpoint inside a layer. The original hypothesis (default bandwidth mode hides stalls) was wrong: the bundled config uses user bandwidth and its stalls are all zero.",
+     "Thresholds are final and were not retuned. To finish criterion A the owner can approve long holds (several hours of exclusive machine time) or a smaller layer set registered as a new amendment before running; criterion B's failure needs a diagnosis of the analytic intensity (see docs/t3_roofline_explained.md)."),
     ("Sweep A", "A completion status: points never reached before the sweep deadline (cut because sweeps run at low priority behind stage jobs in the one-job-at-a-time queue; cheapest points ran first).",
      "`make sweeps` resumes where it stopped; each unreached point is accounted for in the sweep section of the page."),
     ("Sweep B", "A completion status. The systolic_os frontier at 30 % utilization is bracketed by a failing and a closing period (see the row); 40 and 50 % utilization points are listed with their state in section 12.",
@@ -565,7 +586,7 @@ NOT_GREEN = [
 def not_green_items(L, rows):
     out = []
     for r in rows:
-        if r.state in ("PASS", "DONE") and not r.label.startswith("Sweep"):
+        if r.state in ("PASS", "DONE") and not r.label.startswith("Sweep") and not (r.label.startswith("Task 1: routed gate-level") and " only" in r.detail):
             continue
         for pfx, diag, act in NOT_GREEN:
             if r.label.startswith(pfx):

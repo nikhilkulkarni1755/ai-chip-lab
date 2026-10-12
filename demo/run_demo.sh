@@ -6,7 +6,7 @@
 #        (3) one SCALE-Sim run (bundled TPU-like config, 6 GEMM layers) vs the analytic model,
 #        (4) ORFS's own threshold checker on the existing nangate45/gcd metadata,
 #        (5) Part 2: the Task 3 roofline criterion B verdict recomputed from the saved reports (seconds, no container).
-# Not included on purpose: the routed-netlist gate-level simulation (67 s for 229 cases, over the 1-minute rule per step).
+# The routed-netlist gate-level step uses 20 random cases (+29 directed), Icarus only; the 229-case run takes 67 s and is not used here.
 # Part 2: every container job takes the lab-wide lock (scripts/with_lock.sh), so it may wait behind other jobs; the wait is
 # reported separately and excluded from the per-step times. LAB_LOCK_HELD=1 (set inside the lock) prevents a nested re-lock.
 # Prints a PASS/FAIL table; exit 0 only if every step passed.
@@ -77,6 +77,16 @@ echo "== Task 2: ORFS shipped-threshold check on existing nangate45/gcd metadata
 lk env T2_USE_COMMITTED="${T2_USE_COMMITTED:-1}" bash scripts/t2_check.sh nangate45 gcd > "$SCR/t2_check.log" 2>&1
 if grep -q "All metadata rules passed" "$SCR/t2_check.log"; then r=PASS; else r=FAIL; fi
 record "Task 2: nangate45/gcd metadata within ORFS shipped thresholds (checkMetadata.py)" "$r" "$(step_secs)"
+
+# ---- 4b (Part 2): routed-netlist gate-level simulation, Icarus only, 20 random + 29 directed cases (rtl measured about 40 s; the 229-case run is 67 s and is NOT used here).
+#      Zero-delay logical check against the routed nangate45 netlist, not a timing check. PASS = the cocotb run reports no failure and the CSV equals the first rows of the official RTL CSV.
+echo "== Task 1: routed-netlist gate-level simulation (Icarus, 20 random + 29 directed cases)"
+mkdir -p "$SCR/t1_routed"
+lk env T1R_STEPS=gls_icarus bash scripts/t1_routed.sh 20 "$SCR/t1_routed" > "$SCR/t1_routed.log" 2>&1
+rg=$?
+gcsv="$SCR/t1_routed/t1_routed_gls_icarus.csv"
+if [ $rg -eq 0 ] && [ -s "$gcsv" ] && [ "$(head -n "$(wc -l < "$gcsv")" results/t1_icarus.csv | shasum -a 256 | cut -d' ' -f1)" = "$(shasum -a 256 < "$gcsv" | cut -d' ' -f1)" ]; then r=PASS; else r=FAIL; fi
+record "Task 1: routed-netlist gate-level sim, Icarus, 49 cases vs NumPy (CSV = first rows of the official CSV; Verilator not run)" "$r" "$(step_secs)"
 
 # ---- 5 (Part 2): the fixed roofline check, criterion B - recompute the verdict from the saved CALC-mode SCALE-Sim reports (native python, no simulation, seconds).
 #      PASS = the recomputed verdict equals the one recorded in results/t3_summary.json (or none is recorded yet); the verdict itself (met / NOT met) is printed, never hidden.
