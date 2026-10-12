@@ -9,10 +9,10 @@ STAGES := results/.stages
 # `make all` runs every stage in order. A stage that fails (including an honest scientific FAIL verdict)
 # does not stop the later independent stages, and the demo is always built; exit status is non-zero if
 # any stage failed. Heavy stages wait for the heavy-job lock. DRY_RUN=1 make all prints the t2/sweeps
-# commands instead of running them (t1, t3, repro have no dry-run mode and are skipped then).
+# commands instead of running them (runtime, images, t1, t3, repro, demo have no dry-run mode and are skipped then).
 all:
 	@failed=""; for t in preflight runtime images t1 t2 t3 sweeps repro demo; do \
-	  if [ "$${DRY_RUN:-0}" = 1 ] && case $$t in t1|t3|repro|runtime|images) true;; *) false;; esac; then echo "== make $$t: skipped in DRY_RUN (no dry-run mode)"; continue; fi; \
+	  if [ "$${DRY_RUN:-0}" = 1 ] && case $$t in t1|t3|repro|runtime|images|demo) true;; *) false;; esac; then echo "== make $$t: skipped in DRY_RUN (no dry-run mode)"; continue; fi; \
 	  echo "== make $$t"; $(MAKE) --no-print-directory $$t || failed="$$failed $$t"; \
 	done; \
 	if [ -n "$$failed" ]; then echo "make all: stages that failed:$$failed"; exit 1; else echo "make all: every stage passed"; fi
