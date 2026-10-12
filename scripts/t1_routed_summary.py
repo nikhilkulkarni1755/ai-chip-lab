@@ -195,8 +195,8 @@ def summary(a):
         "timing of any kind (setup/hold, clock skew, glitches): all checks are zero-delay",
         "physical correctness (DRC, LVS, the GDS itself): only the Verilog netlist 6_final.v is checked",
         "power/ground connectivity (the netlist has no supply pins)",
-        "cells of the library that the netlist does not instantiate (17 library cells have no Liberty function and are "
-        "black boxes; the run fails if the netlist uses one)",
+        "library cells the netlist does not instantiate (cells without a Liberty function are black boxes; the run "
+        "fails if the netlist uses one)",
         "behaviour before the first clear: registers start undefined in both designs (x-propagating proof; "
         "the simulation starts with clear)",
     ]
