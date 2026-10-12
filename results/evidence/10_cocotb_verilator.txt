@@ -2,10 +2,10 @@ $ make -C tb SIM=verilator   (T1_NCASES=10000, seed 1234; via scripts/t1_run.sh)
 ********************************************************************************************
 ** TEST                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
 ********************************************************************************************
-** test_systolic.test_directed          PASS       11565.00           0.35      32693.62  **
-** test_systolic.test_clear_midstream   PASS        3025.00           0.07      44981.41  **
-** test_systolic.test_random            PASS     9606065.00         178.01      53962.20  **
-** test_systolic.test_zz_report         PASS           0.00           0.70          0.00  **
+** test_systolic.test_directed          PASS       11565.00           0.27      42957.75  **
+** test_systolic.test_clear_midstream   PASS        3025.00           0.03      89441.12  **
+** test_systolic.test_random            PASS     9606065.00         105.75      90835.85  **
+** test_systolic.test_zz_report         PASS           0.00           0.46          0.00  **
 ********************************************************************************************
-** TESTS=4 PASS=4 FAIL=0 SKIP=0                  9620655.00         179.15      53701.80  **
+** TESTS=4 PASS=4 FAIL=0 SKIP=0                  9620655.00         106.52      90319.84  **
 ********************************************************************************************
