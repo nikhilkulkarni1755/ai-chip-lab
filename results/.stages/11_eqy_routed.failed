@@ -1,7 +1,0 @@
-pass False eqy_routed_pass False gls_routed_pass True
-gls by simulator: {"icarus": "pass", "verilator": "not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists"}
-eqy partitions proven: 24 of 27
-failed checks: eqy_routed_all_partitions_proved, gls_both_simulators_as_first_scripted, gls_csv_equals_official_rtl_prefix, gls_csv_identical_across_simulators, gls_verilator_zero_mismatches
-open partitions: systolic_os.acc_o.416, systolic_os.acc_o.448, systolic_os.acc_o.480
-diagnosis: a partition without a solver result was not attempted or its lock hold ended first; no partition has a counterexample unless listed as 'solver status FAIL' in results/t1_routed_summary.json
-continue with: T1R_RESUME=1 T1R_SKIP=gls_verilator scripts/t1_routed.sh 200 results

@@ -5,7 +5,7 @@
     "eqy_neg_netlist_detected": true,
     "eqy_neg_rtl_mac_detected": true,
     "eqy_neg_rtl_reg_detected": true,
-    "eqy_routed_all_partitions_proved": false,
+    "eqy_routed_all_partitions_proved": true,
     "gls_both_simulators_as_first_scripted": false,
     "gls_csv_equals_official_rtl_prefix": false,
     "gls_csv_identical_across_simulators": false,
@@ -19,7 +19,7 @@
     "ncases": 200,
     "seed": 1234
   },
-  "eqy_routed_pass": false,
+  "eqy_routed_pass": true,
   "gls_routed_pass": true,
   "image": {
     "id": "sha256:c17110ff83f92b2b8da336ef44264f999d23a5fdedd4fc6f2c37588998fdcc3b",
@@ -48,30 +48,33 @@
     "verilog_cell_models_sha256": "92e45ce72944545d0f18227f11d2b2c6940ae3c3d2c1884e68779afd3bfa9486"
   },
   "note": "logical check (zero-delay cell functions), not a timing check",
-  "pass": false,
-  "pass_of_steps_run": false,
+  "pass": true,
+  "pass_of_steps_run": true,
   "runtimes_seconds": {
     "cells": 3,
-    "clock_check": 5,
+    "clock_check": 4,
     "eqy_neg_netlist": 71,
     "eqy_neg_rtl_mac": 87,
     "eqy_neg_rtl_reg": 70,
-    "eqy_routed": 4072,
+    "eqy_routed": 5065,
     "eqy_routed_chunk1": 540,
     "eqy_routed_chunk2": 540,
     "eqy_routed_chunk3": 540,
     "eqy_routed_hold10": 345,
+    "eqy_routed_hold11": 250,
+    "eqy_routed_hold12": 367,
+    "eqy_routed_hold13": 376,
     "eqy_routed_hold4": 539,
     "eqy_routed_hold5": 541,
     "eqy_routed_hold6": 22,
     "eqy_routed_hold7": 333,
     "eqy_routed_hold8": 330,
     "eqy_routed_hold9": 342,
-    "eqy_routed_verdict": 0,
+    "eqy_routed_verdict": 44,
     "gls_icarus": 67,
     "gls_neg": 18,
     "gls_verilator": 544,
-    "total_wall": 16432
+    "total_wall": 19053
   },
   "stage": "11_eqy_routed",
   "step_exit_codes": {
@@ -80,18 +83,21 @@
     "eqy_neg_netlist": 0,
     "eqy_neg_rtl_mac": 0,
     "eqy_neg_rtl_reg": 0,
-    "eqy_routed": 3,
+    "eqy_routed": 0,
     "eqy_routed_chunk1": 0,
     "eqy_routed_chunk2": 0,
     "eqy_routed_chunk3": 0,
     "eqy_routed_hold10": 0,
+    "eqy_routed_hold11": 0,
+    "eqy_routed_hold12": 0,
+    "eqy_routed_hold13": 0,
     "eqy_routed_hold4": 0,
     "eqy_routed_hold5": 0,
     "eqy_routed_hold6": 0,
     "eqy_routed_hold7": 0,
     "eqy_routed_hold8": 0,
     "eqy_routed_hold9": 0,
-    "eqy_routed_verdict": 3,
+    "eqy_routed_verdict": 0,
     "gls_icarus": 0,
     "gls_neg": 0,
     "gls_verilator": 124
@@ -145,7 +151,7 @@
       }
     },
     "eqy_routed": {
-      "chunks": 10,
+      "chunks": 13,
       "engine": "EQY strategy 'use sby', depth 2, smtbmc bitwuzla (x-propagating miter per partition)",
       "engines_tried": {
         "abc pdr": "stopped after about 4 min without a result (comparison cut short)",
@@ -153,17 +159,13 @@
         "smtbmc bitwuzla": "proves a per-PE MAC partition in 4-5 min (used)",
         "smtbmc yices": "no result within 10 min on one MAC partition"
       },
-      "finished": false,
-      "lock_holds": 10,
+      "finished": true,
+      "lock_holds": 13,
       "mac_partitions": 16,
-      "mac_partitions_proved": 13,
+      "mac_partitions_proved": 16,
       "partitions": 27,
-      "partitions_not_proved": {
-        "systolic_os.acc_o.416": "not attempted or stopped by the lock-time budget (no solver result)",
-        "systolic_os.acc_o.448": "not attempted or stopped by the lock-time budget (no solver result)",
-        "systolic_os.acc_o.480": "not attempted or stopped by the lock-time budget (no solver result)"
-      },
-      "partitions_proved": 24,
+      "partitions_not_proved": {},
+      "partitions_proved": 27,
       "partitions_proved_list": [
         "systolic_os.acc_o.0",
         "systolic_os.acc_o.100",
@@ -177,6 +179,9 @@
         "systolic_os.acc_o.320",
         "systolic_os.acc_o.352",
         "systolic_os.acc_o.384",
+        "systolic_os.acc_o.416",
+        "systolic_os.acc_o.448",
+        "systolic_os.acc_o.480",
         "systolic_os.acc_o.64",
         "systolic_os.busy",
         "systolic_os.g_a_skew.2.g_dly.a_sr.0",
@@ -266,20 +271,20 @@
         "systolic_os.acc_o.416": {
           "engine": "sby smtbmc bitwuzla, depth 2",
           "kind": "per-PE MAC cone",
-          "result": "no solver result (not attempted, or its lock hold ended first)",
-          "solver_seconds": null
+          "result": "proved",
+          "solver_seconds": 247
         },
         "systolic_os.acc_o.448": {
           "engine": "sby smtbmc bitwuzla, depth 2",
           "kind": "per-PE MAC cone",
-          "result": "no solver result (not attempted, or its lock hold ended first)",
-          "solver_seconds": null
+          "result": "proved",
+          "solver_seconds": 362
         },
         "systolic_os.acc_o.480": {
           "engine": "sby smtbmc bitwuzla, depth 2",
           "kind": "per-PE MAC cone",
-          "result": "no solver result (not attempted, or its lock hold ended first)",
-          "solver_seconds": null
+          "result": "proved",
+          "solver_seconds": 372
         },
         "systolic_os.acc_o.64": {
           "engine": "sby smtbmc bitwuzla, depth 2",
@@ -364,7 +369,7 @@
         "partitions": "27 = 16 per-PE cones (accumulator register + 8x8 signed multiplier + 32-bit adder + clear/valid gating, i.e. mac_int8 including the multiplier, once per PE) + 11 wrapper partitions (a_sr, b_sr, a_q, b_q register banks, 6 valid taps, busy)",
         "register_correspondence": "806 flops matched by name: operand, skew and valid registers by the RTL name on their Q net; the 512 accumulator bits by the output port bit they drive (acc_o[32*(4*i+j)+b]), since the router renamed their Q nets"
       },
-      "seconds": 4072,
+      "seconds": 5065,
       "seconds_per_partition": {
         "systolic_os.acc_o.0": 300,
         "systolic_os.acc_o.100": 312,
@@ -378,6 +383,9 @@
         "systolic_os.acc_o.320": 327,
         "systolic_os.acc_o.352": 339,
         "systolic_os.acc_o.384": 341,
+        "systolic_os.acc_o.416": 247,
+        "systolic_os.acc_o.448": 362,
+        "systolic_os.acc_o.480": 372,
         "systolic_os.acc_o.64": 530,
         "systolic_os.busy": 2,
         "systolic_os.g_a_skew.2.g_dly.a_sr.0": 2,
@@ -391,7 +399,7 @@
         "systolic_os.g_row.2.g_col.3.u_mac.valid": 1,
         "systolic_os.g_row.3.g_col.3.u_mac.valid": 1
       },
-      "status": "UNKNOWN"
+      "status": "PASS"
     },
     "gls_icarus": {
       "cases_random": 200,

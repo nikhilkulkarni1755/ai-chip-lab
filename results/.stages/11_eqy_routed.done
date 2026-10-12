@@ -1,0 +1,3 @@
+pass True eqy_routed_pass True gls_routed_pass True
+gls by simulator: {"icarus": "pass", "verilator": "not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists"}
+eqy partitions proven: 27 of 27

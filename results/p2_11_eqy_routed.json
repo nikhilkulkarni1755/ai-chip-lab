@@ -1,8 +1,8 @@
 {
   "stage": "11_eqy_routed",
-  "pass": false,
+  "pass": true,
   "note": "logical check (zero-delay cell functions), not a timing check",
-  "eqy_routed_pass": false,
+  "eqy_routed_pass": true,
   "gls_routed_pass": true,
   "gls_routed_by_simulator": {
     "icarus": "pass",
@@ -35,8 +35,8 @@
       "name": "eqy_routed_all_partitions_proved",
       "threshold": "all partitions proven (16 per-PE cones + wrapper) and EQY reports the designs equivalent",
       "written_before_run": "6f82732",
-      "measured": "24 of 27 partitions proven (13 of 16 per-PE cones); open: systolic_os.acc_o.416, systolic_os.acc_o.448, systolic_os.acc_o.480",
-      "pass": false
+      "measured": "27 of 27 partitions proven (16 of 16 per-PE cones); open: none",
+      "pass": true
     },
     {
       "name": "eqy_neg_rtl_mac_detected",
@@ -121,6 +121,9 @@
       "systolic_os.acc_o.320",
       "systolic_os.acc_o.352",
       "systolic_os.acc_o.384",
+      "systolic_os.acc_o.416",
+      "systolic_os.acc_o.448",
+      "systolic_os.acc_o.480",
       "systolic_os.acc_o.64",
       "systolic_os.busy",
       "systolic_os.g_a_skew.2.g_dly.a_sr.0",
@@ -134,11 +137,7 @@
       "systolic_os.g_row.2.g_col.3.u_mac.valid",
       "systolic_os.g_row.3.g_col.3.u_mac.valid"
     ],
-    "not_proved": {
-      "systolic_os.acc_o.480": "not attempted or stopped by the lock-time budget (no solver result)",
-      "systolic_os.acc_o.448": "not attempted or stopped by the lock-time budget (no solver result)",
-      "systolic_os.acc_o.416": "not attempted or stopped by the lock-time budget (no solver result)"
-    },
+    "not_proved": {},
     "seconds_per_partition": {
       "systolic_os.acc_o.0": 300,
       "systolic_os.acc_o.100": 312,
@@ -152,6 +151,9 @@
       "systolic_os.acc_o.320": 327,
       "systolic_os.acc_o.352": 339,
       "systolic_os.acc_o.384": 341,
+      "systolic_os.acc_o.416": 247,
+      "systolic_os.acc_o.448": 362,
+      "systolic_os.acc_o.480": 372,
       "systolic_os.acc_o.64": 530,
       "systolic_os.busy": 2,
       "systolic_os.g_a_skew.2.g_dly.a_sr.0": 2,
@@ -242,20 +244,20 @@
       "systolic_os.acc_o.416": {
         "kind": "per-PE MAC cone",
         "engine": "sby smtbmc bitwuzla, depth 2",
-        "solver_seconds": null,
-        "result": "no solver result (not attempted, or its lock hold ended first)"
+        "solver_seconds": 247,
+        "result": "proved"
       },
       "systolic_os.acc_o.448": {
         "kind": "per-PE MAC cone",
         "engine": "sby smtbmc bitwuzla, depth 2",
-        "solver_seconds": null,
-        "result": "no solver result (not attempted, or its lock hold ended first)"
+        "solver_seconds": 362,
+        "result": "proved"
       },
       "systolic_os.acc_o.480": {
         "kind": "per-PE MAC cone",
         "engine": "sby smtbmc bitwuzla, depth 2",
-        "solver_seconds": null,
-        "result": "no solver result (not attempted, or its lock hold ended first)"
+        "solver_seconds": 372,
+        "result": "proved"
       },
       "systolic_os.acc_o.64": {
         "kind": "per-PE MAC cone",
@@ -330,7 +332,7 @@
         "result": "proved"
       }
     },
-    "lock_seconds_eqy_holds": 4072,
+    "lock_seconds_eqy_holds": 5065,
     "negative_controls": {
       "rtl_mac": {
         "bug": "RTL: acc <= acc + prod + 1 in mac_int8 (checked on PE(0,0))",

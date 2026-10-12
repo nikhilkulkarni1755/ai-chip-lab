@@ -153,5 +153,16 @@
    "demo/assets/t3_roofline.png"
   ],
   "what": "hard-limited lock holds + blocked state for criterion A, resume from finished run; criterion B evaluated (FAIL on all three dataflows), A not evaluated (cost); result section and p2 json"
+ },
+ {
+  "agent": "rtl",
+  "stage": "11_eqy_routed",
+  "files": [
+   "results/t1_routed_summary.json",
+   "results/p2_11_eqy_routed.json",
+   "results/evidence/11_eqy_routed.txt",
+   "results/.stages/11_eqy_routed.done"
+  ],
+  "what": "Routed equivalence complete (Decision P2-9): 27 of 27 partitions proven, EQY reports the designs equivalent; marker done"
  }
 ]
