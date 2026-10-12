@@ -6,16 +6,16 @@ Open demo/index.html in a browser (double-click; no server needed).
 STATUS
   PASS     Container runtime install - route A (Colima + Lima, macOS Virtualization.framework)
   PASS     Lab images (lab-sim, ORFS) - both images referenced in coord/images.env
-  PASS     Task 1: INT8 systolic array vs NumPy - t1_summary.json: pass=true
-  PASS     Task 1: formal MAC proof (SBY) - checks: formal_bmc_pass=true, formal_prove_pass=true
-  PASS     Task 1: RTL = netlist equivalence (EQY) - checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true
+  RUNNING  Task 1: INT8 systolic array vs NumPy - stage in progress
+  RUNNING  Task 1: formal MAC proof (SBY) - waits for Task 1 summary
+  RUNNING  Task 1: RTL = netlist equivalence (EQY) - waits for Task 1 summary
   PASS     Task 2: OpenROAD reference flow vs shipped thresholds - t2_summary.json: pass=true
   FAIL     Task 3: SCALE-Sim vs analytical model - marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes).
-  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 53 point(s) in results/sweeps/arch.jsonl
-  RUNNING  Sweep B: physical (ORFS) - sweep in progress; 16 point(s) in results/sweeps/phys.jsonl
+  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 87 point(s) in results/sweeps/arch.jsonl
+  RUNNING  Sweep B: physical (ORFS) - sweep in progress; 19 point(s) in results/sweeps/phys.jsonl
   RUNNING  Repeatability rerun (repro) - stage in progress
 
-Elapsed: 2h 44m since start (2026-10-12 02:48:36 PDT), budget 6h
+Elapsed: 2h 58m since start (2026-10-12 02:48:36 PDT), budget 6h
 Machine: Intel(R) Core(TM) i7-7660U CPU @ 2.50GHz, 2 physical / 4 logical cores, 8 GB RAM, macOS 13.7.8 (x86_64)
 
 START / STOP THE VM

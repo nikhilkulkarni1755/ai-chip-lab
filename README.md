@@ -6,19 +6,19 @@ Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, t
 
 ## Status
 
-Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 2h 44m since start (2026-10-12 02:48:36 PDT), budget 6h).
+Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 2h 58m since start (2026-10-12 02:48:36 PDT), budget 6h).
 
 | Check | Status | Detail |
 |---|---|---|
 | Container runtime install | **PASS** | route A (Colima + Lima, macOS Virtualization.framework) |
 | Lab images (lab-sim, ORFS) | **PASS** | both images referenced in coord/images.env |
-| Task 1: INT8 systolic array vs NumPy | **PASS** | t1_summary.json: pass=true |
-| Task 1: formal MAC proof (SBY) | **PASS** | checks: formal_bmc_pass=true, formal_prove_pass=true |
-| Task 1: RTL = netlist equivalence (EQY) | **PASS** | checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true |
+| Task 1: INT8 systolic array vs NumPy | **RUNNING** | stage in progress |
+| Task 1: formal MAC proof (SBY) | **RUNNING** | waits for Task 1 summary |
+| Task 1: RTL = netlist equivalence (EQY) | **RUNNING** | waits for Task 1 summary |
 | Task 2: OpenROAD reference flow vs shipped thresholds | **PASS** | t2_summary.json: pass=true |
 | Task 3: SCALE-Sim vs analytical model | **FAIL** | marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes). |
-| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 53 point(s) in results/sweeps/arch.jsonl |
-| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 16 point(s) in results/sweeps/phys.jsonl |
+| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 87 point(s) in results/sweeps/arch.jsonl |
+| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 19 point(s) in results/sweeps/phys.jsonl |
 | Repeatability rerun (repro) | **RUNNING** | stage in progress |
 
 PASS means the stage's `.done` marker exists and its summary JSON says `"pass": true`. Anything unfinished is shown as PENDING/RUNNING/BLOCKED/UNKNOWN and not assumed.

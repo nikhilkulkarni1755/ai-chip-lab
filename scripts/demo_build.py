@@ -136,8 +136,41 @@ class Row:
         self.label, self.state, self.detail, self.link = label, state, detail, link
 
 
+STALE_INPUTS = {"10_rtl_verify": ["rtl", "tb", "formal", "eqy"]}
+
+
+def stale_inputs(L, stage, summary_rel):
+    """Input files (relative paths) that are newer than the summary: the recorded result predates them."""
+    sm = L.mtime(summary_rel)
+    if sm is None:
+        return []
+    newer = []
+    for d in STALE_INPUTS.get(stage, []):
+        for base, _, fs in os.walk(L.p(d)):
+            if "work" in base.split(os.sep) or "sim_build" in base:
+                continue
+            for f in fs:
+                fp = os.path.join(base, f)
+                try:
+                    if os.path.getmtime(fp) > sm + 1 and not f.endswith((".pyc", ".vcd")):
+                        newer.append(os.path.relpath(fp, L.lab))
+                except OSError:
+                    pass
+    return newer
+
+
 def task_state(L, stage, summary_rel):
     """PASS only with a .done marker AND summary pass==true. Returns (state, detail, summary_dict)."""
+    r = _task_state(L, stage, summary_rel)
+    if r[0] in ("PASS", "FAIL") and stage_marker(L, stage)[0] != "failed":
+        nw = stale_inputs(L, stage, summary_rel)
+        if nw:
+            return ("RUNNING", "re-verification in progress: inputs changed after the recorded result (%s%s); the previous result "
+                    "(pass=%s) is not shown as current" % (", ".join(nw[:3]), ", ..." if len(nw) > 3 else "", (r[2] or {}).get("pass")), r[2])
+    return r
+
+
+def _task_state(L, stage, summary_rel):
     st, body, _ = stage_marker(L, stage)
     s = L.jload(summary_rel)
     first = (body.splitlines() or [""])[0][:200]
@@ -202,12 +235,14 @@ def build_rows(L):
     for label, rx in (("Task 1: formal MAC proof (SBY)", r"^formal_.*(pass)$"),
                       ("Task 1: RTL = netlist equivalence (EQY)", r"^eqy_.*pass$")):
         hits = [(k, v) for k, v in (chk or {}).items() if isinstance(v, bool) and re.search(rx, k)]
-        if hits:
+        if hits and s1 == "RUNNING":
+            rows.append(Row(label, "RUNNING", "re-verification in progress (see Task 1 row); the earlier values are withheld", "results/t1_summary.json"))
+        elif hits:
             okk = all(v for _, v in hits)
             rows.append(Row(label, "PASS" if okk else "FAIL",
                             "checks: " + ", ".join("%s=%s" % (k, fmt_val(v)) for k, v in hits), "results/t1_summary.json"))
         else:
-            rows.append(Row(label, "PENDING" if s1 in ("PENDING", "RUNNING") else ("BLOCKED" if s1 == "BLOCKED" else "UNKNOWN"),
+            rows.append(Row(label, s1 if s1 in ("PENDING", "RUNNING") else ("BLOCKED" if s1 == "BLOCKED" else "UNKNOWN"),
                             "not reported in t1_summary.json yet" if t1 else "waits for Task 1 summary", None))
     s2, d2, _ = task_state(L, "20_pnr_ref", "results/t2_summary.json")
     rows.append(Row("Task 2: OpenROAD reference flow vs shipped thresholds", s2, d2, "results/t2_summary.json"))

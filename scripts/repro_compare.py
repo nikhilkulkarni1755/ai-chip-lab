@@ -75,8 +75,29 @@ def main():
                        "note": a.t2_note or "reused from pnr's two-run determinism check (no third P&R run)"})
     else:
         checks.append({"check": "t2 determinism", "verdict": "not_run", "first_run": None, "rerun": None, "note": "no determinism block in t2_summary.json"})
+    # Provenance: same inputs for first run and rerun?  (git object SHAs of the input dirs at rerun start/end;
+    # the first run's summary must be newer than the last commit touching those inputs, and no uncommitted edits.)
+    prov = {}
+    for tag, summ in (("t1", "results/t1_summary.json"), ("t3", "results/t3_summary.json")):
+        st, en = jl(P(a.run, "inputs_%s_start.json" % tag)), jl(P(a.run, "inputs_%s_end.json" % tag))
+        if not (st and en):
+            checks.append({"check": "provenance %s inputs" % tag, "verdict": "not_run", "first_run": None, "rerun": None, "note": "no input snapshot"})
+            continue
+        same = {k: v["git_object_sha"] for k, v in st["paths"].items()} == {k: v["git_object_sha"] for k, v in en["paths"].items()}
+        clean = not any(v["uncommitted_changes"] for v in list(st["paths"].values()) + list(en["paths"].values()))
+        last = max(v["last_commit_epoch"] for v in st["paths"].values())
+        try: first_m = int(os.path.getmtime(P(summ)))
+        except OSError: first_m = 0
+        ok_first = first_m >= last
+        prov[tag] = {"start": st, "end": en}
+        checks.append({"check": "provenance %s: rerun inputs unchanged during the run, committed, and first run newer than the last input commit" % tag,
+                       "verdict": "identical" if (same and clean and ok_first) else "different",
+                       "first_run": {"summary_mtime_epoch": first_m, "last_input_commit_epoch": last},
+                       "rerun": {"inputs_unchanged_start_to_end": same, "no_uncommitted_changes": clean, "head": st["head"],
+                                 "object_shas": {k: v["git_object_sha"] for k, v in st["paths"].items()}},
+                       "note": "git object SHAs of the input paths at HEAD; see provenance block"})
     rep = {"generated_epoch": int(time.time()), "rerun_dir": a.run,
-           "pass": all(c["verdict"] == "identical" for c in checks), "checks": checks,
+           "pass": all(c["verdict"] == "identical" for c in checks), "checks": checks, "provenance": prov,
            "counts": {v: sum(1 for c in checks if c["verdict"] == v) for v in ("identical", "different", "not_run")}}
     json.dump(rep, open(P(a.out), "w"), indent=2, sort_keys=True); open(P(a.out), "a").write("\n")
     for c in checks: print("%-10s %s" % (c["verdict"], c["check"]))
