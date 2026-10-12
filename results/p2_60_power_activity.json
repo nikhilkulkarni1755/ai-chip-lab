@@ -7,56 +7,56 @@
     {
       "name": "setup_reproduces_orfs_vectorless",
       "threshold": "our own vectorless report_power on the routed design (same Liberty/ODB/SDC/SPEF) within 1 % of ORFS finish__power__total of the same run",
-      "written_before_run": "PENDING_COMMIT",
+      "written_before_run": "3492369",
       "measured": null,
       "pass": null
     },
     {
       "name": "vcd_annotation_coverage",
       "threshold": "annotated fraction of netlist pins >= 0.90 for every workload (VCD names map onto the routed flat netlist)",
-      "written_before_run": "PENDING_COMMIT",
+      "written_before_run": "3492369",
       "measured": null,
       "pass": null
     },
     {
       "name": "workloads_valid",
       "threshold": "0 mismatches vs NumPy per workload; operand zero fraction sparse50 in [0.48,0.52], allmax = 0, random < 0.01",
-      "written_before_run": "PENDING_COMMIT",
+      "written_before_run": "3492369",
       "measured": null,
       "pass": null
     },
     {
       "name": "sparse_uses_less_dynamic_power_than_random",
       "threshold": "dynamic (internal+switching) power sparse50 < random (spec sanity)",
-      "written_before_run": "PENDING_COMMIT",
+      "written_before_run": "3492369",
       "measured": null,
       "pass": null
     },
     {
       "name": "allmax_uses_less_dynamic_power_than_random",
       "threshold": "additional expected ordering: constant all-max operands, dynamic power allmax < random",
-      "written_before_run": "PENDING_COMMIT",
+      "written_before_run": "3492369",
       "measured": null,
       "pass": null
     },
     {
       "name": "leakage_roughly_constant",
       "threshold": "(max-min)/mean of leakage over the three workloads <= 0.10",
-      "written_before_run": "PENDING_COMMIT",
+      "written_before_run": "3492369",
       "measured": null,
       "pass": null
     },
     {
       "name": "analysis_deterministic",
       "threshold": "second identical analysis of the random workload gives identical internal/switching/leakage/total",
-      "written_before_run": "PENDING_COMMIT",
+      "written_before_run": "3492369",
       "measured": null,
       "pass": null
     },
     {
       "name": "netlist_identity",
       "threshold": "sha256 of the netlist OpenROAD analysed equals the one the VCD simulation used (results/part1_snapshot/systolic_os_routed/6_final.v)",
-      "written_before_run": "PENDING_COMMIT",
+      "written_before_run": "3492369",
       "measured": null,
       "pass": null
     }
