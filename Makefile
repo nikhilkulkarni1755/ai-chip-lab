@@ -3,19 +3,19 @@
 # Every recipe runs from the repo root and sources env.sh itself (scripts do `source ~/ai-chip-lab/env.sh`).
 # Cheap/safe to try: make preflight, make smoke, DRY_RUN=1 make t2 t2-stretch sweeps, make -n all.
 SHELL := /bin/bash
-.PHONY: preflight runtime images t1 t2 t2-stretch t3 sweeps repro demo all smoke
+.PHONY: preflight runtime images t1 t2 t2-stretch t3 sweeps repro demo all smoke failsoft-test
 STAGES := results/.stages
 
-# `make all` runs every stage in order. A stage that fails (including an honest scientific FAIL verdict)
-# does not stop the later independent stages, and the demo is always built; exit status is non-zero if
-# any stage failed. Heavy stages wait for the heavy-job lock. DRY_RUN=1 make all prints the t2/sweeps
-# commands instead of running them (runtime, images, t1, t3, repro, demo have no dry-run mode and are skipped then).
+# `make all` (scripts/make_all.py) runs every stage in order: preflight runtime images t1 t2 t2-stretch t3 sweeps
+# repro demo. Fail-soft: a failing stage (including an honest scientific FAIL verdict) never stops the later ones,
+# the demo is ALWAYS built last, and the exit status is non-zero with the failed stages listed.
+#   make all            real run of everything          RESUME=1 make all   skip stages whose git-tracked inputs
+#   FORCE=1 make all    rerun everything                                    (scripts/stage_inputs.json) are unchanged
+#   DRY_RUN=1 make all  print what has a dry mode                           since they last succeeded; skips are logged
+# Per-stage outcome of the last run: results/make_all_last.json. Fail-soft self-test: scripts/make_all_failsoft_test.sh.
+# Only container steps take the heavy-job lock (inside the stage scripts); a recipe is never wrapped in one lock.
 all:
-	@failed=""; for t in preflight runtime images t1 t2 t3 sweeps repro demo; do \
-	  if [ "$${DRY_RUN:-0}" = 1 ] && case $$t in t1|t3|repro|runtime|images|demo) true;; *) false;; esac; then echo "== make $$t: skipped in DRY_RUN (no dry-run mode)"; continue; fi; \
-	  echo "== make $$t"; $(MAKE) --no-print-directory $$t || failed="$$failed $$t"; \
-	done; \
-	if [ -n "$$failed" ]; then echo "make all: stages that failed:$$failed"; exit 1; else echo "make all: every stage passed"; fi
+	@MAKE="$(MAKE)" python3 scripts/make_all.py
 
 # ---- main: 00_preflight ---------------------------------------------------------------------
 preflight:
@@ -38,9 +38,10 @@ t1:
 	scripts/t1_run.sh $(or $(T1_CASES),10000) $(or $(T1_OUT),results)
 
 # ---- pnr: 20_pnr_ref (Task 2) -----------------------------------------------------------------
-# t2: nangate45/gcd and sky130hd/gcd, each twice from clean, threshold check, extract, render, summary.
-#     ~35 min of ORFS under the heavy-job lock; DELETES and regenerates the previous reference outputs.
-# t2-stretch: systolic_os 4x4 on nangate45 (~30 min more), kept separate so `make t2` stays the baseline.
+# t2: nangate45/gcd and sky130hd/gcd: one clean ORFS run each via pnr's scripts/t2_repro.sh (compared against all
+#     earlier runs; two runs if no earlier run exists or T2_FRESH=1), threshold check, extract, render, summary.
+#     Each ORFS run takes the heavy-job lock by itself and REPLACES orfs/work/.../base of that design.
+# t2-stretch: systolic_os 4x4 on nangate45 (~30 min), kept separate so `make t2` stays the baseline.
 # DRY_RUN=1 make t2 prints the exact command sequence (scripts/make_t2.sh).
 t2:
 	scripts/make_t2.sh ref
@@ -58,8 +59,8 @@ t3:
 	@python3 -c 'import json,os;s=json.load(open(os.environ.get("T3_SUMMARY") or "results/t3_summary.json"));print("t3: pass =",s["pass"],s.get("checks"));raise SystemExit(0 if s["pass"] else 1)'
 
 # ---- arch + pnr: 40_sweeps ---------------------------------------------------------------------
-# Starts sweep A (detached lab-sim container) and sweep B (ORFS, heavy-job lock), both resumable and
-# stopping themselves at budget.json:deadline_sweeps_stop_epoch, then waits for them. Never starts a
+# Starts the two sweep drivers as host processes (every point takes the lock itself at LOCK_PRIO=low), both
+# resumable and stopping at budget_part2.json:deadline_sweeps_stop_epoch, then waits for them. Never starts a
 # second copy of a running sweep. DRY_RUN=1 prints the commands; SWEEPS_DETACH=1 does not wait.
 sweeps:
 	scripts/make_sweeps.sh
@@ -75,3 +76,7 @@ demo:
 	@if [ -x .venv-demo/bin/python ]; then .venv-demo/bin/python scripts/evidence_render.py && python3 scripts/demo_build.py; else echo "evidence PNGs not re-rendered: no .venv-demo (uv venv .venv-demo && uv pip install pillow)"; fi
 	python3 scripts/demo_check.py
 	@echo "demo: open demo/index.html ; 5-minute cut: bash demo/run_demo.sh"
+
+# ---- infra: self-test of `make all` (forces one cheap stage to fail, resumes the rest, restores) --------
+failsoft-test:
+	scripts/make_all_failsoft_test.sh
