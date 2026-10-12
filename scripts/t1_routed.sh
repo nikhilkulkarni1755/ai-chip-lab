@@ -35,7 +35,11 @@
 # T1R_RESUME=1 continues an interrupted or partly failed run: steps that already
 # succeeded (rc 0 in <work>/steps.tsv) are skipped, the others run again, proven EQY
 # partitions are kept.  T1R_SKIP="<step names>" leaves those steps as they are.
-# T1R_EQY_BUDGET_SECONDS caps the EQY solver lock time of one invocation.
+# T1R_EQY_BUDGET_SECONDS caps the EQY solver lock time of one invocation (a MAC hold
+# is started only if T1R_HOLD_ESTIMATE_SECONDS, default the hold limit, still fits).
+# On resume a step that is kept needs no container job and no lock acquisition.
+# Kept/executed bookkeeping: <work>/.done/step.<name>.done and
+# <work>/.done/partition.<name>.done (one per finished step / solved partition).
 set -u -o pipefail
 
 NCASES="${1:-200}"
@@ -75,8 +79,18 @@ if [ -z "${T1R_INSIDE:-}" ]; then
       -e T1R_IMAGE_ID="$IMAGE_ID" \
       "$LAB_SIM_IMAGE" bash scripts/t1_routed.sh "$NCASES" "$OUT_REL"
   }
+  kept() {  # kept <step>: true if this invocation leaves the step as it is (no container job)
+    case " ${T1R_SKIP:-} " in *" $1 "*) echo "[t1r] $1: skipped on request (T1R_SKIP), earlier result kept"; return 0 ;; esac
+    if [ "${T1R_RESUME:-0}" = 1 ] && grep -q "^$1	0	" "$WORK/steps.tsv" 2>/dev/null; then
+      echo "[t1r] $1: already done (resume), kept"; return 0
+    fi
+    return 1
+  }
   # Cell library straight out of the pinned ORFS image (nothing is downloaded), and
   # step 1 of the task: can ORFS's built-in LEC (Kepler-Formal) run on this CPU?
+  if [ "${T1R_RESUME:-0}" = 1 ] && [ -s "$WORK/steps.tsv" ] && [ -s "$WORK/cells/NangateOpenCellLibrary_typical.lib" ] && [ -s "$WORK/kepler_check.txt" ]; then
+    echo "[t1r] Liberty copy and Kepler-Formal check: already done (resume), kept"
+  else
   "${LOCK[@]}" docker run --rm --platform linux/amd64 -v "$LAB_DIR":/lab "$ORFS_IMAGE" bash -c '
     cp "$0" "/lab/$1/cells/NangateOpenCellLibrary_typical.lib" || exit 3
     K=/OpenROAD-flow-scripts/tools/install/kepler-formal/bin/kepler-formal
@@ -91,11 +105,12 @@ if [ -z "${T1R_INSIDE:-}" ]; then
       if grep -m1 flags /proc/cpuinfo | grep -qw avx512f; then echo "cpu avx512f: yes"; else echo "cpu avx512f: no"; fi
     } > "/lab/$1/kepler_check.txt" 2>&1
   ' "$LIB_IN_IMAGE" "$WORK" || { echo "cannot copy Liberty from ORFS image" >&2; exit 3; }
-  phase prep || true
+  fi
+  kept cells || phase prep || true
   if [[ " $STEPS " == *" gls "* ]]; then
-    for st in gls_icarus gls_verilator gls_neg; do phase "$st" || true; done
+    for st in gls_icarus gls_verilator gls_neg; do kept "$st" || phase "$st" || true; done
   elif [[ " $STEPS " == *" gls_icarus "* ]]; then
-    phase gls_icarus || true
+    kept gls_icarus || phase gls_icarus || true
   fi
   if [[ " $STEPS " == *" eqy "* ]]; then
     # EQY holds: the first one sets the proof up (and starts solving); after that every
@@ -123,12 +138,12 @@ if [ -z "${T1R_INSIDE:-}" ]; then
     while :; do
       m="$(todo '\.acc_o\.' | head -n "${T1R_EQY_PARALLEL:-2}" | tr '\n' ' ')"
       [ -n "${m// /}" ] || break
-      if [ "$budget" -gt 0 ] && [ $(( spent + ${T1R_CHUNK_SECONDS:-540} )) -gt "$budget" ]; then
+      if [ "$budget" -gt 0 ] && [ $(( spent + ${T1R_HOLD_ESTIMATE_SECONDS:-${T1R_CHUNK_SECONDS:-540}} )) -gt "$budget" ]; then
         echo "[t1r] EQY lock budget ($budget s) reached with partitions still open: $(todo '.' | tr '\n' ' ')"; break
       fi
       hold $m
     done
-    for st in eqy_neg_rtl_mac eqy_neg_rtl_reg eqy_neg_netlist; do phase "$st" || true; done
+    for st in eqy_neg_rtl_mac eqy_neg_rtl_reg eqy_neg_netlist; do kept "$st" || phase "$st" || true; done
   fi
   phase finish
   exit $?
@@ -179,6 +194,8 @@ step() {  # step <name> <timeout-seconds> <function> [args]
   "$@" > "$LOGS/step_$name.log" 2>&1
   rc=$?
   printf '%s\t%s\t%s\n' "$name" "$rc" "$(( $(date +%s) - t0 ))" >> "$WORK/steps.tsv"
+  mkdir -p "$WORK/.done"; rm -f "$WORK/.done/step.$name.done"
+  [ $rc -eq 0 ] && echo "rc=0 seconds=$(( $(date +%s) - t0 ))" > "$WORK/.done/step.$name.done"
   echo "[t1r] $name: rc=$rc, $(( $(date +%s) - t0 )) s"
   return $rc
 }
@@ -254,6 +271,12 @@ equiv() {
   fi
   echo "hold exit code: $rc (124 = time limit of this hold)"
   for p in ${T1R_EQY_TARGETS:-}; do echo "status $p: $(cat "$WORK/eqy_routed/strategies/$p/smt/status" 2>/dev/null || echo none)"; done
+  mkdir -p "$WORK/.done"   # one done file per solved partition, dated like its solver status file
+  while read -r _ p _; do
+    if grep -qE '^(PASS|FAIL)' "$WORK/eqy_routed/strategies/$p/smt/status" 2>/dev/null && [ ! -e "$WORK/.done/partition.$p.done" ]; then
+      cp -p "$WORK/eqy_routed/strategies/$p/smt/status" "$WORK/.done/partition.$p.done"
+    fi
+  done < "$WORK/eqy_routed/partition.list"
   return 0
 }
 # EQY's own verdict over all partition results (nothing is solved here: finished
