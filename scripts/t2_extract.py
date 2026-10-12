@@ -34,7 +34,7 @@ KEYS = {
     "clock_period_ns": ["constraints__clocks__period", "finish__clock__period"],
 }
 # fields that legitimately differ between two otherwise identical runs
-NONDET = re.compile(r"(elapsed|runtime|peak_mem|memory|timestamp|date|time_s|__mem|cpu)", re.I)
+NONDET = re.compile(r"(elapsed|runtime|peak_mem|memory|timestamp|date|time_s|__mem|cpu|total_time|run__flow__uuid|_s$)", re.I)
 
 
 def rd(p):
@@ -58,6 +58,25 @@ def sha256(p, chunk=1 << 20):
     return h.hexdigest()
 
 
+def gds_norm_sha256(p):
+    """sha256 of a GDSII stream with the BGNLIB/BGNSTR modification/access timestamps zeroed (only bytes that
+    legitimately differ run to run: they hold the wall-clock date of writing)."""
+    h = hashlib.sha256()
+    with open(p, "rb") as f:
+        d = f.read()
+    out = bytearray(d); i = 0
+    while i + 4 <= len(d):
+        ln = (d[i] << 8) | d[i + 1]; rt = d[i + 2]
+        if ln < 4:
+            break
+        if rt in (0x02, 0x05):                      # BGNLIB, BGNSTR: 12 x int16 date fields
+            for k in range(i + 4, i + ln):
+                out[k] = 0
+        i += ln
+    h.update(bytes(out))
+    return h.hexdigest()
+
+
 def extract(plat, des, var="base"):
     P = paths(plat, des, var)
     md = rd(P["meta"])
@@ -74,7 +93,7 @@ def extract(plat, des, var="base"):
     if os.path.exists(P["run"]):
         out["run"] = rd(P["run"])
     if os.path.exists(P["gds"]):
-        out["gds"] = {"path": os.path.relpath(P["gds"], LAB), "bytes": os.path.getsize(P["gds"]), "sha256": sha256(P["gds"])}
+        out["gds"] = {"path": os.path.relpath(P["gds"], LAB), "bytes": os.path.getsize(P["gds"]), "sha256": sha256(P["gds"]), "sha256_timestamps_zeroed": gds_norm_sha256(P["gds"])}
     out["flow_version"] = md.get("run__flow__version") or md.get("run__flow__openroad_version")
     out["n_metadata_fields"] = len(md)
     det = {k: v for k, v in md.items() if not NONDET.search(k)}
@@ -97,9 +116,12 @@ def compare(plat, des, va, vb):
     ga, gb = paths(plat, des, va)["gds"], paths(plat, des, vb)["gds"]
     sa = sha256(ga) if os.path.exists(ga) else None
     sb = sha256(gb) if os.path.exists(gb) else None
-    return {"compared_fields": nsame + len(diffs), "identical_fields": nsame, "differing_fields": diffs,
+    na = gds_norm_sha256(ga) if os.path.exists(ga) else None
+    nb = gds_norm_sha256(gb) if os.path.exists(gb) else None
+    return {"gds_sha256_timestamps_zeroed": [na, nb], "gds_identical_ignoring_timestamps": na is not None and na == nb,
+            "compared_fields": nsame + len(diffs), "identical_fields": nsame, "differing_fields": diffs,
             "excluded_fields": excluded, "gds_sha256": [sa, sb], "gds_identical": sa is not None and sa == sb,
-            "identical": (not diffs) and sa is not None and sa == sb}
+            "identical": (not diffs) and na is not None and na == nb}
 
 
 if __name__ == "__main__":
