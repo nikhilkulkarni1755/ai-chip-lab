@@ -15,9 +15,8 @@ OUT_ARG="${1:-results/t3}"; SUMMARY="${T3_SUMMARY:-results/t3_summary.json}"
 FINAL="$OUT_ARG"; OUT="${FINAL}.partial"; RERUN="${FINAL}.rerun.tmp"
 if [ ! -f /.dockerenv ]; then
   source "$LAB/env.sh"; source "$LAB/coord/images.env"
-  dk() { docker run --rm --platform linux/amd64 -e PYTHONHASHSEED=0 -e T3_SUMMARY -e T3_PLOTS -e T3_PASSES -e T3_LOCK -e T3_RESUME \
-           -v "$LAB":/lab -w /lab "$LAB_SIM_IMAGE" "$@"; }
-  if [ "${T3_LOCK:-0}" != "1" ]; then dk bash scripts/t3_run.sh "$@"; exit $?; fi
+  dk="$LAB/scripts/t3_dk.sh"
+  if [ "${T3_LOCK:-0}" != "1" ]; then "$dk" bash scripts/t3_run.sh "$@"; exit $?; fi
   LK="$LAB/scripts/with_lock.sh arch"
   cd "$LAB"; mkdir -p logs/part2/31_roofline_fix
   if [ "${T3_RESUME:-0}" != "1" ]; then rm -rf "$OUT" "$RERUN"; fi
@@ -27,12 +26,12 @@ if [ ! -f /.dockerenv ]; then
     for j in $JOBS; do
       if [ -e "$D/.jobs/$j.done" ]; then continue; fi
       echo "== t3 pass $pass job $j $(date +%T)"
-      $LK dk python3 model/t3_stage.py job "$j" --out "$D" > "logs/part2/31_roofline_fix/pass${pass}_$j.log" 2>&1 \
+      $LK "$dk" python3 model/t3_stage.py job "$j" --out "$D" > "logs/part2/31_roofline_fix/pass${pass}_$j.log" 2>&1 \
         || { echo "JOB FAILED: $j (see logs/part2/31_roofline_fix/pass${pass}_$j.log)"; tail -20 "logs/part2/31_roofline_fix/pass${pass}_$j.log"; exit 1; }
     done
   done
   if [ "${T3_PASSES:-2}" -lt 2 ]; then rm -rf "$RERUN"; cp -r "$OUT" "$RERUN"; fi   # quick mode: identity trivially true
-  $LK dk bash -c "python3 model/t3_stage.py summary --out '$OUT' --rerun '$RERUN' --summary-json '$SUMMARY' && { [ \"\${T3_PLOTS:-1}\" != 1 ] || python3 model/t3_plots.py '$OUT' '$SUMMARY'; }"
+  $LK "$dk" bash -c "python3 model/t3_stage.py summary --out '$OUT' --rerun '$RERUN' --summary-json '$SUMMARY' && { [ \"\${T3_PLOTS:-1}\" != 1 ] || python3 model/t3_plots.py '$OUT' '$SUMMARY'; }"
   rm -rf "$RERUN"; rm -rf "$FINAL"; mv "$OUT" "$FINAL"
   exit 0
 fi
