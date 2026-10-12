@@ -17,6 +17,6 @@ else
   echo "no $REP/metadata.json and no committed copy (run scripts/t2_run.sh first)"; exit 2
 fi
 FLOW=/OpenROAD-flow-scripts/flow
-docker run --rm --platform linux/amd64 -v "$LAB:/lab" -w "$FLOW" "$ORFS_IMAGE" \
+"$LAB/scripts/with_lock.sh" pnr docker run --rm --platform linux/amd64 -v "$LAB:/lab" -w "$FLOW" "$ORFS_IMAGE" \
   python3 util/checkMetadata.py -m "/lab/$MD" -r "designs/$PLAT/$DES/rules-base.json" 2>&1 | tee "$LOG"
 exit ${PIPESTATUS[0]}

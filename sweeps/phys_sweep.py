@@ -63,7 +63,7 @@ def stock_sdc(plat, des):
     else:
         env = dict(l.strip().split("=", 1) for l in open(os.path.join(LAB, "coord", "images.env")) if "=" in l)
         txt = subprocess.check_output(
-            ["docker", "run", "--rm", "--platform", "linux/amd64", env["ORFS_IMAGE"], "cat",
+            [os.path.join(LAB, "scripts", "with_lock.sh"), "pnr", "docker", "run", "--rm", "--platform", "linux/amd64", env["ORFS_IMAGE"], "cat",
              f"/OpenROAD-flow-scripts/flow/designs/{plat}/{des}/constraint.sdc"], text=True)
     os.makedirs(SDCDIR, exist_ok=True)
     open(cached, "w").write(txt)
@@ -82,9 +82,9 @@ def make_sdc(plat, des, period):
 def run_point(plat, des, period, util, timeout):
     var = f"sw_{int(round(period*1000))}ps_u{util}"
     sdc = make_sdc(plat, des, period)
-    env = dict(os.environ, T2_TIMEOUT=str(timeout), LOCK_PRIO="low")   # sweep points never starve stage work
+    env = dict(os.environ, T2_TIMEOUT=str(timeout), LOCK_PRIO="low")  # whole point runs under ONE with_lock.sh call (low priority); t2_run.sh re-enters it   # sweep points never starve stage work
     t0 = now()
-    rc = subprocess.call([os.path.join(LAB, "scripts", "t2_run.sh"), plat, des, var,
+    rc = subprocess.call([os.path.join(LAB, "scripts", "with_lock.sh"), "pnr", os.path.join(LAB, "scripts", "t2_run.sh"), plat, des, var,
                           f"CORE_UTILIZATION={util}", f"SDC_FILE={sdc}"], env=env,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     rec = {"platform": plat, "design": des, "clock_period_ns": round(period, 4), "core_utilization": util,

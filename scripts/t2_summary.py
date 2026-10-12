@@ -30,7 +30,7 @@ def check_log(plat, des, var):
 
 def tool_versions():
     env = dict(l.strip().split("=", 1) for l in open(os.path.join(LAB, "coord", "images.env")) if "=" in l and not l.startswith("#"))
-    r = subprocess.run(f'source {LAB}/env.sh; docker run --rm --platform linux/amd64 {env["ORFS_IMAGE"]} bash -c '
+    r = subprocess.run(f'source {LAB}/env.sh; {LAB}/scripts/with_lock.sh pnr docker run --rm --platform linux/amd64 {env["ORFS_IMAGE"]} bash -c '
                        f'\'source /OpenROAD-flow-scripts/env.sh >/dev/null 2>&1; openroad -version; yosys -V; klayout -v\'',
                        shell=True, capture_output=True, text=True, executable="/bin/bash")
     vers = [scrub(l) for l in r.stdout.strip().splitlines()]
