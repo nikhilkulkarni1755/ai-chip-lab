@@ -1,0 +1,24 @@
+{
+  "platform": "nangate45",
+  "design": "systolic_os",
+  "new_run_variant": "base",
+  "new_run_id": "p2_1791821931",
+  "runs": 2,
+  "identical": true,
+  "verdict": "IDENTICAL",
+  "new_gds_sha256_timestamps_zeroed": "1d676f34b49e776753de3d8b905700f1ef26de9f63f6f0f8830b30603b14a68c",
+  "comparisons": [
+    {
+      "vs": "nangate45_systolic_os_final_rtl_cebd174",
+      "identical": true,
+      "differing_fields": {},
+      "localized_stages": [],
+      "gds_identical_ignoring_timestamps": true,
+      "num_cores": [
+        3,
+        3
+      ]
+    }
+  ],
+  "compare_rule": "all metadata.json fields except wall-clock/cpu/memory/profiling(_s)/uuid; GDS with GDSII BGNLIB/BGNSTR timestamps zeroed"
+}

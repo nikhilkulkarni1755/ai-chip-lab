@@ -1,0 +1,18 @@
+nangate45/gcd: 3 runs, verdict identical
+   run1 vs run2: 444/444 fields identical, GDS(ts-zeroed) identical=True
+   run1 vs p2_1791821378: 444/444 fields identical, GDS(ts-zeroed) identical=True
+   run2 vs p2_1791821378: 444/444 fields identical, GDS(ts-zeroed) identical=True
+   run run1: gds 74faf7bf0a7b5c69… cores=3
+   run run2: gds 74faf7bf0a7b5c69… cores=3
+   run p2_1791821378: gds 74faf7bf0a7b5c69… cores=3
+sky130hd/gcd: 3 runs, verdict identical
+   run1 vs run2: 459/459 fields identical, GDS(ts-zeroed) identical=True
+   run1 vs p2_1791821635: 459/459 fields identical, GDS(ts-zeroed) identical=True
+   run2 vs p2_1791821635: 459/459 fields identical, GDS(ts-zeroed) identical=True
+   run run1: gds 1a1d84451ab02e96… cores=3
+   run run2: gds 1a1d84451ab02e96… cores=3
+   run p2_1791821635: gds 1a1d84451ab02e96… cores=3
+nangate45/systolic_os: 2 runs, verdict identical
+   final_rtl_cebd174 vs p2_1791821931: 446/446 fields identical, GDS(ts-zeroed) identical=True
+   run final_rtl_cebd174: gds 1d676f34b49e7767… cores=3
+   run p2_1791821931: gds 1d676f34b49e7767… cores=3
