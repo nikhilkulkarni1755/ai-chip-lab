@@ -520,7 +520,7 @@ def evidence_blocks(L, h):
 
 
 
-PPA_COLS = [("area_um2", "area (um2)"), ("utilization_pct", "utilization (value as written)"), ("wns_setup_ns", "WNS setup (ns)"),
+PPA_COLS = [("area_um2", "area (um2)"), ("utilization_frac", "utilization (fraction)"), ("wns_setup_ns", "WNS setup (ns)"),
             ("tns_setup_ns", "TNS setup (ns)"), ("power_total_w", "power total (W)"), ("power_leakage_w", "leakage (W)"),
             ("cell_count", "cells"), ("drc_errors", "DRC errors"), ("wall_s", "wall (s)")]
 
@@ -529,7 +529,9 @@ def t2_table(s2):
     h = ["<div class='tw'><table><thead><tr><th>design</th><th>status</th>%s</tr></thead><tbody>" % "".join(
         "<th>%s</th>" % e(c[1]) for c in PPA_COLS)]
     for name, d in (s2.get("designs") or {}).items():
-        ppa = d.get("ppa") or {}
+        ppa = dict(d.get("ppa") or {})
+        if "utilization_frac" not in ppa and "utilization_pct" in ppa:  # older summaries (pre-rename)
+            ppa["utilization_frac"] = ppa["utilization_pct"]
         st = d.get("status", "?")
         extra = ""
         if isinstance(d.get("checks"), dict):
@@ -542,8 +544,7 @@ def t2_table(s2):
     tv = s2.get("tool_versions") or []
     h.append("<p class='sub'>Tool versions as reported by the image: %s. A version of &quot;unknown&quot; is what this OpenROAD build prints; "
              "the build is identified by the image digest %s. "
-             "The utilization column is shown exactly as stored in <code>t2_summary.json</code> (field name ends in <code>_pct</code> "
-             "but values below 1 are ratios; treat it as a fraction until the field is clarified). Negative setup WNS can still be "
+             "The utilization column is the fraction stored in <code>t2_summary.json</code> (0.876 = 87.6 %%). Negative setup WNS can still be "
              "within the shipped thresholds because those rules allow a margin.</p>" % (
                  e("; ".join(t.strip() for t in tv)), e(str(s2.get("image", "?")))))
     return "".join(h)

@@ -11,11 +11,11 @@ STATUS
   PENDING  Task 1: RTL = netlist equivalence (EQY) - waits for Task 1 summary
   PASS     Task 2: OpenROAD reference flow vs shipped thresholds - t2_summary.json: pass=true
   RUNNING  Task 3: SCALE-Sim vs analytical model - stage in progress
-  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 3 point(s) in results/sweeps/arch.jsonl
-  RUNNING  Sweep B: physical (ORFS) - sweep in progress
+  RUNNING  Sweep A: architecture (SCALE-Sim) - sweep in progress; 8 point(s) in results/sweeps/arch.jsonl
+  RUNNING  Sweep B: physical (ORFS) - sweep in progress; 11 point(s) in results/sweeps/phys.jsonl
   PENDING  Repeatability rerun (repro) - no marker and no results/repro_report.json yet
 
-Elapsed: 1h 16m since start (2026-10-12 02:48:36 PDT), budget 6h
+Elapsed: 1h 52m since start (2026-10-12 02:48:36 PDT), budget 6h
 Machine: Intel(R) Core(TM) i7-7660U CPU @ 2.50GHz, 2 physical / 4 logical cores, 8 GB RAM, macOS 13.7.8 (x86_64)
 
 START / STOP THE VM

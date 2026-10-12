@@ -6,7 +6,7 @@ Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, t
 
 ## Status
 
-Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 1h 16m since start (2026-10-12 02:48:36 PDT), budget 6h).
+Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 1h 52m since start (2026-10-12 02:48:36 PDT), budget 6h).
 
 | Check | Status | Detail |
 |---|---|---|
@@ -17,8 +17,8 @@ Generated from the files in this repository by `python3 scripts/demo_build.py` (
 | Task 1: RTL = netlist equivalence (EQY) | **PENDING** | waits for Task 1 summary |
 | Task 2: OpenROAD reference flow vs shipped thresholds | **PASS** | t2_summary.json: pass=true |
 | Task 3: SCALE-Sim vs analytical model | **RUNNING** | stage in progress |
-| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 3 point(s) in results/sweeps/arch.jsonl |
-| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress |
+| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 8 point(s) in results/sweeps/arch.jsonl |
+| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 11 point(s) in results/sweeps/phys.jsonl |
 | Repeatability rerun (repro) | **PENDING** | no marker and no results/repro_report.json yet |
 
 PASS means the stage's `.done` marker exists and its summary JSON says `"pass": true`. Anything unfinished is shown as PENDING/RUNNING/BLOCKED/UNKNOWN and not assumed.
