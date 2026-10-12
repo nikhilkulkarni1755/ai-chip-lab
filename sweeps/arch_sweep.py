@@ -64,16 +64,19 @@ def grid():
         pts.extend(batch)
 
     sq = [(n, n) for n in SQUARES]
-    cheap = ["alexnet_part", "vit_s", "ncf"]
-    add(1, cheap, sq, ["default"])
-    add(2, cheap, [(16, 64), (64, 16), (32, 128), (128, 32)], ["default"])
-    add(3, cheap, sq, ["small", "large"])
-    add(4, ["alexnet"], sq, ["default"])
-    add(5, cheap, [(8, 8), (24, 24), (48, 48), (96, 96)], ["default"])
-    add(6, ["resnet18"], [(32, 32), (64, 64), (128, 128)], ["default"])
-    add(7, ["alexnet", "resnet18"], [(16, 64), (64, 16), (32, 128), (128, 32)], ["default"])
-    add(8, ["alexnet", "resnet18"], [(64, 64), (128, 128)], ["small", "large"])
-    add(9, ["mobilenet"], sq, ["default"])
+    sq5 = [(n, n) for n in (8, 16, 32, 64, 128)]
+    rect = [(16, 64), (64, 16), (32, 128), (128, 32)]
+    add(1, ["alexnet_part"], sq5, ["default"])           # complete coarse grid: 1 topo x 3 df x 5 sizes
+    add(2, ["alexnet_part"], sq5, ["small", "large"])
+    add(3, ["vit_s"], sq5, ["default"])
+    add(4, ["ncf"], sq5, ["default"])
+    add(5, ["alexnet_part", "vit_s"], rect, ["default"])
+    add(6, ["vit_s", "ncf"], sq5, ["small", "large"])
+    add(7, ["ncf"], rect, ["default"])
+    add(8, ["alexnet"], [(16, 16), (32, 32), (64, 64), (128, 128)], ["default"])
+    add(9, ["alexnet_part", "vit_s", "ncf"], [(24, 24), (48, 48), (96, 96)], ["default"])
+    add(10, ["resnet18"], [(64, 64), (128, 128)], ["default"])
+    add(11, ["alexnet"], rect, ["default"])
     # within a phase: cheapest first so a complete coarse grid finishes early
     out, i = [], 0
     while i < len(pts):
