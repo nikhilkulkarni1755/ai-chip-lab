@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Task 3 (stage 30_arch_model + 31_roofline_fix): SCALE-Sim vs analytic model + pre-registered roofline check.
 #   scripts/t3_run.sh [OUTDIR]        default OUTDIR=results/t3   (relative to the lab / main checkout)
-# Jobs (model/t3_stage.py list): bundled ws/os/is runs, analytic fit, superseded synthetic roofline, 9 USER-bandwidth
-# + 3 CALC-mode ResNet-18 runs. Pass 2 re-runs only the cheap jobs (bundled ws/os/is + fit) for in-stage byte identity;
+# Jobs (model/t3_stage.py list): bundled ws/os/is runs, analytic fit, superseded synthetic roofline, 3 CALC-mode
+# + 6 USER-bandwidth (B=256 then 64) ResNet-18 runs (amended design P2-A2). Pass 2 re-runs only the cheap jobs (bundled ws/os/is + fit + CALC runs) for in-stage byte identity;
 # the 12 roofline2 runs are compared by `make repro` (decision P2-6); summary says which files were compared where.  Env:
 #   T3_SUMMARY=path   summary JSON (default results/t3_summary.json)     T3_PLOTS=1|0 (default 1)
 #   T3_PASSES=1       single pass (quick/repro mode; identity then trivially true and flagged)
@@ -11,8 +11,8 @@
 #   T3_RESUME=1       keep OUTDIR.partial / OUTDIR.rerun.tmp from an interrupted run and skip finished jobs
 set -euo pipefail
 LAB="${LAB:-$HOME/ai-chip-lab}"
-CHEAP="bundled_ws bundled_os bundled_is fit"
-JOBS="bundled_ws bundled_os bundled_is fit roofline_synthetic rl2_user_ws_low rl2_user_ws_mid rl2_user_ws_high rl2_user_os_low rl2_user_os_mid rl2_user_os_high rl2_user_is_low rl2_user_is_mid rl2_user_is_high rl2_calc_ws rl2_calc_os rl2_calc_is"
+CHEAP="bundled_ws bundled_os bundled_is fit rl2_calc_ws rl2_calc_os rl2_calc_is"
+JOBS="bundled_ws bundled_os bundled_is fit roofline_synthetic rl2_calc_ws rl2_calc_os rl2_calc_is rl2_user_ws_high rl2_user_os_high rl2_user_is_high rl2_user_ws_mid rl2_user_os_mid rl2_user_is_mid"
 OUT_ARG="${1:-results/t3}"; SUMMARY="${T3_SUMMARY:-results/t3_summary.json}"
 FINAL="$OUT_ARG"; OUT="${FINAL}.partial"; RERUN="${FINAL}.rerun.tmp"
 if [ ! -f /.dockerenv ]; then
@@ -27,6 +27,8 @@ if [ ! -f /.dockerenv ]; then
     D="$OUT"; JL="$JOBS"; [ "$pass" = 2 ] && { D="$RERUN"; JL="$CHEAP"; }
     for j in $JL; do
       if [ -e "$D/.jobs/$j.done" ]; then continue; fi
+      # criterion-A (user-bandwidth) runs stop being started at the Phase 1 deadline (Decision P2-7); the summary reports them unfinished
+      case "$j" in rl2_user_*) if [ "$(date +%s)" -ge "${T3_USER_DEADLINE:-$(python3 -c "import json;print(json.load(open('$LAB/budget_part2.json'))['deadline_phase1_epoch'])")}" ]; then echo "== skip $j (past Phase 1 deadline)"; continue; fi;; esac
       while [ ! -e "$D/.jobs/$j.done" ]; do
         echo "== t3 pass $pass job $j $(date +%T)"
         rc=0

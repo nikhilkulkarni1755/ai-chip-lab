@@ -47,12 +47,16 @@ def roofline_plot(out):
     import t3_roofline2 as R2
     dfs = R2.DFS
     fig, axes = plt.subplots(2, 3, figsize=(14, 8))
-    cols = {"low": "#d1495b", "mid": "#e9a03b", "high": "#1b6ca8"}
+    cols = {"mid": "#e9a03b", "high": "#1b6ca8"}
     r2 = json.load(open(os.path.join(out, "roofline2.json")))
     for k, df in enumerate(dfs):
         ax = axes[0][k]
         for b, B in R2.BW.items():
-            r = json.load(open(os.path.join(d2, f"rl2_user_{df}_{b}.json")))
+            fp = os.path.join(d2, f"rl2_user_{df}_{b}.json")
+            if not os.path.exists(fp):
+                ax.text(0.5, 0.5 - 0.1 * list(R2.BW).index(b), f"B={B}: {r2['cell_status'].get('rl2_user_'+df+'_'+b, 'not_run')}", transform=ax.transAxes, ha="center", color=cols[b])
+                continue
+            r = json.load(open(fp))
             ax.scatter([l["ai"] for l in r["layers"]], [max(l["stall_frac"], 1e-4) for l in r["layers"]],
                        s=26, color=cols[b], alpha=.85,
                        label=f"B={B} w/cyc, rho={r2['per_dataflow'][df]['user'][b]['rho']:+.2f}")
@@ -62,17 +66,21 @@ def roofline_plot(out):
         ax.set_ylabel("stall cycles / total cycles (0 drawn at 1e-4)")
         ax.legend(frameon=False, fontsize=7)
         ax = axes[1][k]
-        r = json.load(open(os.path.join(d2, f"rl2_calc_{df}.json")))
+        fp = os.path.join(d2, f"rl2_calc_{df}.json")
+        if not os.path.exists(fp):
+            ax.text(0.5, 0.5, "CALC run: " + r2["cell_status"].get("rl2_calc_" + df, "not_run"), transform=ax.transAxes, ha="center")
+            continue
+        r = json.load(open(fp))
         ax.scatter([l["ai"] for l in r["layers"]], [l["required_bw_words_per_cycle"] for l in r["layers"]], s=26, color="#2a9d8f")
         for l in r["layers"]:
             if l["name"] in ("FC", "Conv1", "Conv5_1b", "Conv3_s"):
                 ax.annotate(l["name"], (l["ai"], l["required_bw_words_per_cycle"]), fontsize=7, xytext=(3, 3), textcoords="offset points")
         ax.set_xscale("log"); ax.set_yscale("log")
-        ax.set_title(f"{df}: CALC mode, required DRAM bandwidth, rho = {r2['per_dataflow'][df]['calc_rho_ai_vs_required_bw']:+.2f}", fontsize=9)
+        ax.set_title(f"{df}: CALC mode, required DRAM bandwidth, rho = {r2['per_dataflow'][df].get('calc_rho_ai_vs_required_bw', float('nan')):+.2f}", fontsize=9)
         ax.set_xlabel("arithmetic intensity (FLOP / compulsory DRAM byte)")
         ax.set_ylabel("SCALE-Sim required DRAM BW (words/cycle)")
     fig.suptitle("Task 3 roofline check (pre-registered): ResNet-18, 21 layers, 128x128 array. "
-                 f"{'PASS' if r2['passed'] else 'FAIL'}: criteria rho <= -0.6", fontsize=10)
+                 f"{'PASS' if r2['passed'] else ('FAIL' if r2['complete'] else 'INCOMPLETE')}: criteria rho <= -0.6 (amended design P2-A2: B = 64, 256)", fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(ASSETS, "t3_roofline.png"), dpi=130)
 

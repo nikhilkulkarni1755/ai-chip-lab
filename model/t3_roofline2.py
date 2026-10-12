@@ -20,7 +20,7 @@ from t3_roofline import spearman  # noqa: E402
 
 CRIT = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "t3_roofline2_criteria.json")))
 DFS = ["ws", "os", "is"]
-BW = {"low": 16, "mid": 64, "high": 256}
+BW = {"mid": 64, "high": 256}      # amended (P2-A2 / Decision P2-7): registered "low" (B=16) dropped on cost alone
 ARRAY = 128
 TOPO = os.path.join(sim.SCALESIM_SRC, "topologies/conv_nets/Resnet18.csv")
 BASE = os.path.join(sim.SCALESIM_SRC, "configs/scale.cfg")
@@ -30,7 +30,8 @@ MIN_STALLED = 5
 
 
 def jobs():
-    return [f"rl2_user_{df}_{b}" for df in DFS for b in BW] + [f"rl2_calc_{df}" for df in DFS]
+    """Order (Decision P2-7): CALC runs (criterion B) first, then user-bandwidth: high level for all dataflows, then mid."""
+    return [f"rl2_calc_{df}" for df in DFS] + [f"rl2_user_{df}_{b}" for b in ("high", "mid") for df in DFS]
 
 
 NWORKERS = int(os.environ.get("T3_LAYER_WORKERS", "2"))
@@ -184,44 +185,81 @@ def sim_reports():
     return ["COMPUTE_REPORT.csv", "BANDWIDTH_REPORT.csv", "DETAILED_ACCESS_REPORT.csv"]
 
 
+def _status(out, job):
+    if os.path.exists(os.path.join(out, ".jobs", job + ".done")):
+        return "evaluated"
+    if os.path.isdir(os.path.join(out, "roofline2", job, "layers")):
+        return "in_progress"
+    return "not_run"
+
+
 def assemble(out):
-    cells, checks, per_df = {}, {}, {}
+    """Evaluate the pre-registered criteria on whatever has run; unevaluated cells are reported as such and make
+    the corresponding checks False (the stage is PASS only when everything is evaluated and passes)."""
+    checks, per_df, cell_status = {}, {}, {}
+    n_layers = None
     for df in DFS:
         a = {}
         for b, B in BW.items():
-            r = json.load(open(os.path.join(out, "roofline2", f"rl2_user_{df}_{b}.json")))
+            job = f"rl2_user_{df}_{b}"
+            st = _status(out, job)
+            cell_status[job] = st
+            if st != "evaluated":
+                a[b] = dict(B=B, status=st, satisfies=False)
+                continue
+            r = json.load(open(os.path.join(out, "roofline2", job + ".json")))
             ai = [l["ai"] for l in r["layers"]]
             sf = [l["stall_frac"] for l in r["layers"]]
+            n_layers = len(ai)
             n_st = sum(1 for v in sf if v > 0)
             rho = spearman(ai, sf)
-            a[b] = dict(B=B, rho=rho, n_layers_with_stalls=n_st, informative=n_st >= MIN_STALLED,
+            a[b] = dict(B=B, status=st, rho=rho, n_layers_with_stalls=n_st, informative=n_st >= MIN_STALLED,
                         total_stall_cycles=sum(l["stall_cycles"] for l in r["layers"]),
                         rho_effective_ai=spearman([l["ai_effective"] for l in r["layers"]], sf),
                         satisfies=bool(n_st >= MIN_STALLED and rho <= RHO_PASS))
-        n_sat = sum(v["satisfies"] for v in a.values())
-        wrong = any(v["rho"] >= RHO_WRONG for v in a.values())
-        mono = a["low"]["total_stall_cycles"] >= a["mid"]["total_stall_cycles"] >= a["high"]["total_stall_cycles"]
-        rc = json.load(open(os.path.join(out, "roofline2", f"rl2_calc_{df}.json")))
-        rho_c = spearman([l["ai"] for l in rc["layers"]], [l["required_bw_words_per_cycle"] for l in rc["layers"]])
-        per_df[df] = dict(user=a, levels_satisfied=n_sat, wrong_sign_at_any_level=wrong,
-                          stall_cycles_monotone_in_B=mono, calc_rho_ai_vs_required_bw=rho_c,
-                          calc_rho_effective_ai=spearman([l["ai_effective"] for l in rc["layers"]],
-                                                         [l["required_bw_words_per_cycle"] for l in rc["layers"]]),
-                          calc_mean_ifmap_reads_over_tensor=sum(l["ifmap_reads_over_tensor"] for l in rc["layers"]) / len(rc["layers"]))
-        checks[f"user_bw_stalls_vs_ai_{df}"] = bool(n_sat >= 2 and not wrong)
-        checks[f"stall_cycles_monotone_in_B_{df}"] = bool(mono)
-        checks[f"calc_required_bw_inverse_to_ai_{df}"] = bool(rho_c <= RHO_PASS)
-    res = dict(criteria=CRIT, per_dataflow=per_df, checks=checks, passed=bool(all(checks.values())),
-               array=f"{ARRAY}x{ARRAY}", layers=len(rc["layers"]), topology="Resnet18.csv (bundled)")
+        ev = all(v["status"] == "evaluated" for v in a.values())
+        d = dict(user=a, user_all_levels_evaluated=ev)
+        if ev:
+            n_sat = sum(v["satisfies"] for v in a.values())
+            wrong = any(v["rho"] >= RHO_WRONG for v in a.values())
+            mono = a["mid"]["total_stall_cycles"] >= a["high"]["total_stall_cycles"]
+            d.update(levels_satisfied=n_sat, wrong_sign_at_any_level=wrong, stall_cycles_monotone_in_B=mono)
+            checks[f"user_bw_stalls_vs_ai_{df}"] = bool(n_sat == len(BW) and not wrong)
+            checks[f"stall_cycles_monotone_in_B_{df}"] = bool(mono)
+        else:
+            checks[f"user_bw_stalls_vs_ai_{df}"] = False
+            checks[f"stall_cycles_monotone_in_B_{df}"] = False
+        job = f"rl2_calc_{df}"
+        st = _status(out, job)
+        cell_status[job] = st
+        if st == "evaluated":
+            rc = json.load(open(os.path.join(out, "roofline2", job + ".json")))
+            n_layers = len(rc["layers"])
+            rho_c = spearman([l["ai"] for l in rc["layers"]], [l["required_bw_words_per_cycle"] for l in rc["layers"]])
+            d.update(calc_rho_ai_vs_required_bw=rho_c,
+                     calc_rho_effective_ai=spearman([l["ai_effective"] for l in rc["layers"]],
+                                                    [l["required_bw_words_per_cycle"] for l in rc["layers"]]),
+                     calc_mean_ifmap_reads_over_tensor=sum(l["ifmap_reads_over_tensor"] for l in rc["layers"]) / len(rc["layers"]))
+            checks[f"calc_required_bw_inverse_to_ai_{df}"] = bool(rho_c <= RHO_PASS)
+        else:
+            checks[f"calc_required_bw_inverse_to_ai_{df}"] = False
+        d["calc_status"] = st
+        per_df[df] = d
+    complete = all(v == "evaluated" for v in cell_status.values())
+    res = dict(criteria=CRIT, per_dataflow=per_df, checks=checks, cell_status=cell_status, complete=complete,
+               passed=bool(complete and all(checks.values())), array=f"{ARRAY}x{ARRAY}", layers=n_layers,
+               topology="Resnet18.csv (bundled)",
+               byte_identity_note="user-bandwidth runs: not rerun unless lock time remains (cost ~N min per run); never claimed byte-identical without a rerun")
     json.dump(res, open(os.path.join(out, "roofline2.json"), "w"), indent=1, sort_keys=True)
     return res
 
 
 def table(res):
-    L = ["df  USER-B rho(AI,stall_frac) [layers w/ stalls]        levels  wrong  monotone | CALC rho(AI,req_bw)"]
+    L = ["cell status: " + ", ".join(f"{k.replace('rl2_', '')}={v}" for k, v in res["cell_status"].items())]
     for df, v in res["per_dataflow"].items():
         u = v["user"]
-        cells = "  ".join(f"{b}:{u[b]['rho']:+.2f}[{u[b]['n_layers_with_stalls']:2d}]" for b in BW)
-        L.append(f"{df:3s} {cells}   {v['levels_satisfied']}/3   {str(v['wrong_sign_at_any_level']):5s}  {str(v['stall_cycles_monotone_in_B']):5s}    | {v['calc_rho_ai_vs_required_bw']:+.3f}")
-    L.append("roofline2 pass: %s" % res["passed"])
+        cells = "  ".join((f"{b}:{u[b]['rho']:+.2f}[{u[b]['n_layers_with_stalls']:2d}]" if u[b].get("rho") is not None else f"{b}:{u[b]['status']}") for b in BW)
+        calc = f"{v['calc_rho_ai_vs_required_bw']:+.3f}" if "calc_rho_ai_vs_required_bw" in v else v["calc_status"]
+        L.append(f"{df:3s} USER rho(AI,stall_frac)[layers w/ stalls] {cells} | CALC rho(AI,req_bw) {calc}")
+    L.append("roofline2 complete: %s  pass: %s" % (res["complete"], res["passed"]))
     return "\n".join(L)

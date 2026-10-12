@@ -35,14 +35,14 @@ def _bundled_one(args):
     return df, res
 
 
-CHEAP_JOBS = [f"bundled_{df}" for df in DATAFLOWS] + ["fit"]     # re-run in-stage for byte identity
+CHEAP_JOBS = [f"bundled_{df}" for df in DATAFLOWS] + ["fit"] + [f"rl2_calc_{df}" for df in DATAFLOWS]   # re-run in-stage for byte identity
 
 
 def job_list(only=None):
     import t3_roofline2
     if only == "cheap":
         return list(CHEAP_JOBS)
-    return CHEAP_JOBS + ["roofline_synthetic"] + t3_roofline2.jobs()
+    return CHEAP_JOBS[:4] + ["roofline_synthetic"] + t3_roofline2.jobs()
 
 
 def do_job(job, out):
@@ -93,7 +93,8 @@ def deterministic_files(root):
 
 
 def do_summary(out, rerun):
-    missing = [j for j in job_list() if not os.path.exists(os.path.join(out, ".jobs", j + ".done"))]
+    missing = [j for j in job_list() if not os.path.exists(os.path.join(out, ".jobs", j + ".done"))
+               and not j.startswith("rl2_user_")]     # criterion-A runs may be unfinished (Decision P2-7): reported as such
     if missing:
         raise SystemExit("jobs not finished: %s" % missing)
     a, b = deterministic_files(out), deterministic_files(rerun)
@@ -107,6 +108,9 @@ def do_summary(out, rerun):
     jobs_info = {}
     for j in job_list():
         mk = os.path.join(out, ".jobs", j + ".done")
+        if not os.path.exists(mk):
+            jobs_info[j] = dict(completed=None, state="in_progress" if os.path.isdir(os.path.join(out, "roofline2", j, "layers")) else "not_run")
+            continue
         jobs_info[j] = dict(completed=datetime.datetime.fromtimestamp(os.path.getmtime(mk)).isoformat(timespec="seconds"),
                             rerun_in_stage=os.path.exists(os.path.join(rerun, ".jobs", j + ".done")))
     fit = json.load(open(os.path.join(out, "fit.json")))
@@ -121,7 +125,7 @@ def do_summary(out, rerun):
         stage="30_arch_model", scalesim_version="3.0.0",
         bundled=dict(config=BUNDLED_CFG, topology=BUNDLED_TOPO, array="256x256", dataflows=DATAFLOWS),
         identity=dict(state="in_stage_ok_pending_repro" if ident and pending else ("complete" if ident else "mismatch"),
-                      scope_in_stage="bundled ws/os/is runs + analytic fit, pass 2 in the same stage",
+                      scope_in_stage="bundled ws/os/is runs + analytic fit + 3 CALC-mode roofline runs, pass 2 in the same stage; user-bandwidth runs: not rerun in-stage (cost)",
                       files_compared_in_stage=len(b), compared_in_stage=sorted(b), mismatches=mism,
                       pending_repro=pending, pending_repro_note="compared by make repro (51_repro_full), not yet in this summary",
                       sha256=hashes),
@@ -141,7 +145,7 @@ def do_summary(out, rerun):
     summ["roofline"] = dict(
         summary="Pre-registered (model/t3_roofline2_criteria.json) re-specification: ResNet-18 real layers, "
                 "USER-bandwidth stalls and CALC-mode required bandwidth vs arithmetic intensity.",
-        passed=r2["passed"], per_dataflow=r2["per_dataflow"], checks=r2["checks"], criteria=r2["criteria"])
+        passed=r2["passed"], complete=r2["complete"], cell_status=r2["cell_status"], per_dataflow=r2["per_dataflow"], checks=r2["checks"], criteria=r2["criteria"])
     chk.update(r2["checks"])
     chk["roofline_agrees"] = bool(r2["passed"])
     rf = os.path.join(out, "roofline.json")
@@ -156,9 +160,9 @@ def do_summary(out, rerun):
                 checks=old["checks"], summary=old["summary"]))
     summ["bundled_config_zero_stalls"] = all(summ["bundled_summary"][df]["stall_cycles"] == 0 for df in DATAFLOWS)
     summ["checks"] = chk
-    summ["pass"] = bool(all(chk.values()))
-    summ["complete"] = not pending
-    summ["state"] = summ["identity"]["state"]
+    summ["pass"] = bool(all(chk.values()) and r2["complete"])
+    summ["complete"] = bool(not pending and r2["complete"])
+    summ["state"] = ("A_incomplete(" + ",".join(k.replace("rl2_user_", "") + "=" + v for k, v in r2["cell_status"].items() if k.startswith("rl2_user_") and v != "evaluated") + ")") if not r2["complete"] else summ["identity"]["state"]
     summ["pending"] = ["repro byte-identity of %d result files" % len(pending)] if pending else []
     return summ
 
