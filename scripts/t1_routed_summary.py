@@ -420,6 +420,64 @@ def summary(a):
     else:
         eqy_pass = None
 
+    # A check that could not be evaluated is neither PASS nor FAIL.  No Verilator gate-level
+    # simulation result exists when its model build did not finish, so every check that needs
+    # one moves out of `checks` (evaluated, boolean) into `checks_not_evaluated` with the
+    # reason.  The both-simulators criterion as first scripted is a superseded criterion
+    # (Decision P2-R1): it is kept with its result (not met) in `superseded_checks`.
+    not_evaluated, superseded_checks = {}, {}
+    vstate = values.get("gls_routed_by_simulator", {}).get("verilator", "")
+    if "gls" in steps_run and vstate.startswith("not run"):
+        objs = len([f for f in os.listdir(os.path.join(work, "sim_verilator")) if f.endswith(".o")]) \
+            if os.path.isdir(os.path.join(work, "sim_verilator")) else None
+        cpps = len([f for f in os.listdir(os.path.join(work, "sim_verilator")) if f.endswith(".cpp")]) \
+            if os.path.isdir(os.path.join(work, "sim_verilator")) else None
+        why = (f"no Verilator gate-level simulation result exists ({vstate}; {objs} of {cpps} generated C++ files "
+               f"were compiled when it was stopped)")
+        values["gls_verilator_build_progress"] = {"cpp_files": cpps, "object_files_compiled": objs}
+        for c, extra in (("gls_verilator_zero_mismatches", ""),
+                         ("gls_csv_identical_across_simulators", "; needs both CSVs"),
+                         ("gls_csv_equals_official_rtl_prefix",
+                          "; this is the both-simulators form, the Icarus half is evaluated as "
+                          "gls_icarus_csv_equals_official_rtl_prefix")):
+            if c in checks:
+                del checks[c]
+                not_evaluated[c] = why + extra
+        if "gls_both_simulators_as_first_scripted" in checks:
+            superseded_checks["gls_both_simulators_as_first_scripted"] = {
+                "met": bool(checks.pop("gls_both_simulators_as_first_scripted")),
+                "reason": "superseded by the Icarus-required criterion, COORDINATION.md Decision P2-R1: it could only be "
+                          "met with a Verilator result, and none exists"}
+    elif "gls_both_simulators_as_first_scripted" in checks:
+        superseded_checks["gls_both_simulators_as_first_scripted"] = {
+            "met": bool(checks.pop("gls_both_simulators_as_first_scripted")),
+            "reason": "superseded criterion, COORDINATION.md Decision P2-R1; a Verilator result exists and is evaluated"}
+    verdict_definition = {
+        "pass": "complete AND gls_routed_pass AND eqy_routed_pass",
+        "gls_routed_pass": {
+            "decided_by": ["gls_icarus_zero_mismatches", "gls_icarus_csv_equals_official_rtl_prefix",
+                           "gls_negative_control_detected", "all_netlist_cells_have_models"],
+            "plus": "a Verilator gate-level result, if one exists, must also pass (a failing one fails the verdict; "
+                    "a missing one does not)",
+            "coverage": ("Icarus only" if vstate.startswith("not run") else "Icarus and Verilator"),
+            "against_task": "TASK2 P1.3 item 4 asks for Icarus '(and Verilator if the cell models parse)'. The cell models "
+                            "do parse in Verilator, so the Verilator half of the task is NOT done when its simulation was "
+                            "not run: gls_routed_pass = true then means 'the Icarus gate-level simulation passes', a "
+                            "partial fulfilment of item 4, not a two-simulator result",
+        } if "gls" in steps_run else None,
+        "eqy_routed_pass": {
+            "decided_by": ["eqy_routed_all_partitions_proved", "all_netlist_cells_have_models", "all_flops_clocked_by_clk",
+                           "eqy_neg_rtl_mac_detected", "eqy_neg_rtl_reg_detected", "eqy_neg_netlist_detected"],
+        } if "eqy" in steps_run else None,
+        "checks": "every entry of `checks` was evaluated and is true or false; `checks_not_evaluated` lists checks that "
+                  "could not be evaluated, with the reason (neither pass nor fail, they decide nothing); "
+                  "`superseded_checks` holds criteria replaced by a recorded decision, with their result",
+    }
+    gls_cov = None
+    if gls_pass is not None:
+        gls_cov = ("pass on Icarus and Verilator" if gls_pass and not vstate.startswith("not run") else
+                   "pass on Icarus only; Verilator gate-level simulation not run (partial vs TASK2 P1.3 item 4)" if gls_pass
+                   else "fail")
     complete = all(s in steps_run for s in ALL_STEPS)
     ran = [p for p in (gls_pass, eqy_pass, gls_icarus_only) if p is not None]
     result = {
@@ -430,8 +488,12 @@ def summary(a):
         "pass_of_steps_run": bool(ran) and all(ran),
         "eqy_routed_pass": eqy_pass,
         "gls_routed_pass": gls_pass,
+        "gls_routed_status": gls_cov,
         "steps_run": steps_run,
         "checks": checks,
+        "checks_not_evaluated": not_evaluated,
+        "superseded_checks": superseded_checks,
+        "verdict_definition": verdict_definition,
         "values": values,
         "inputs": inputs,
         "config": {"ncases": a.ncases, "seed": 1234},
@@ -456,8 +518,17 @@ def summary(a):
 
     print(f"[t1r] summary: pass={result['pass']} complete={complete} "
           f"gls_routed_pass={gls_pass} eqy_routed_pass={eqy_pass}")
+    if gls_cov:
+        print(f"[t1r] gls_routed_status: {gls_cov}")
+    deciding = set()
+    for k in ("gls_routed_pass", "eqy_routed_pass"):
+        deciding.update((verdict_definition.get(k) or {}).get("decided_by", []))
     for c in sorted(checks):
-        print(f"[t1r]   {'PASS' if checks[c] else 'FAIL'}  {c}")
+        print(f"[t1r]   {'PASS' if checks[c] else 'FAIL'}  {c}{'' if c in deciding else '   (informational)'}")
+    for c in sorted(not_evaluated):
+        print(f"[t1r]   NOT EVALUATED  {c}: {not_evaluated[c]}")
+    for c in sorted(superseded_checks):
+        print(f"[t1r]   SUPERSEDED  {c}: met={superseded_checks[c]['met']} ({superseded_checks[c]['reason']})")
     return 0 if result["pass_of_steps_run"] else 1
 
 
@@ -504,20 +575,26 @@ def write_p2(out, r, evidence):
         criteria.append(crit("all_flops_clocked_by_clk", "clock pin of all 806 flops resolves to port clk through the clock buffers",
                              f"step exit code {r['step_exit_codes'].get('clock_check')}", CLOCK_CHECK_COMMIT))
     superseded = []
-    if "gls_both_simulators_as_first_scripted" in c:
+    if "gls_both_simulators_as_first_scripted" in r.get("superseded_checks", {}):
         superseded.append({
             "name": "gls on both simulators (as first scripted)",
             "threshold": "Icarus AND Verilator: 0 mismatches, identical CSVs",
             "measured": json.dumps(v.get("gls_routed_by_simulator")),
-            "pass": bool(c["gls_both_simulators_as_first_scripted"]),
-            "reason": "TASK2 P1.3 requires Icarus and asks for Verilator only 'if the cell models parse'; see "
-                      "COORDINATION.md Decisions (Part 2) P2-R1",
+            "pass": bool(r.get("superseded_checks", {}).get("gls_both_simulators_as_first_scripted", {}).get("met")),
+            "reason": "not met: no Verilator result exists. The cell models parse in Verilator, but its model build of "
+                      "the routed netlist did not finish within a 10-minute lock hold (two attempts), so the "
+                      "both-simulators criterion measured build time on this machine, not the netlist; replaced by the "
+                      "Icarus-required criterion, COORDINATION.md Decisions (Part 2) P2-R1. The Verilator half of "
+                      "TASK2 P1.3 item 4 remains open",
         })
     p2 = {
         "stage": "11_eqy_routed", "pass": r["pass"],
-        "note": r["note"],
+        "note": r["note"] + (f"; gate-level simulation: {r['gls_routed_status']}" if r.get("gls_routed_status") else ""),
         "eqy_routed_pass": r["eqy_routed_pass"], "gls_routed_pass": r["gls_routed_pass"],
         "gls_routed_by_simulator": v.get("gls_routed_by_simulator"),
+        "gls_routed_status": r.get("gls_routed_status"),
+        "verdict_definition": r.get("verdict_definition"),
+        "checks_not_evaluated": r.get("checks_not_evaluated"),
         "oracle": "NumPy int32 matmul for the gate-level simulation (plus byte-identity with the RTL run's CSV); "
                   "for the equivalence proof the RTL itself, compared by an SMT solver, with injected-bug negative controls",
         "criteria": criteria, "superseded": superseded,
@@ -566,6 +643,10 @@ def merge_into_t1_summary(out):
                                                     "liberty_sha256", "orfs_image")},
         "cell_treatment": rs["values"].get("cell_treatment"), "not_covered": rs["values"].get("not_covered"),
         "checks": rs["checks"],
+        "checks_not_evaluated": rs.get("checks_not_evaluated"),
+        "superseded_checks": rs.get("superseded_checks"),
+        "verdict_definition": rs.get("verdict_definition"),
+        "gls_routed_status": rs.get("gls_routed_status"),
     }
     with open(p, "w") as f:
         json.dump(d, f, indent=2, sort_keys=True)
