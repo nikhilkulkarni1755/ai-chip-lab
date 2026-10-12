@@ -1,0 +1,190 @@
+{
+  "reference": {
+    "source": "https://dashboard.precisioninno.com/api/commits/25781/metrics",
+    "commit": "3a964e13f11a4e435aac01ffa14db0a7d2853720",
+    "retrieved_utc": "2026-10-12T17:10:21Z",
+    "kind": "measured CI build of the exact pinned commit (QoR dashboard)"
+  },
+  "tolerance_doc": "docs/t2_dashboard_crosscheck_tolerance.md",
+  "designs": {
+    "nangate45/gcd": {
+      "clock_period_ns": 0.25,
+      "metrics": {
+        "finish__timing__setup__ws": {
+          "published": -0.161583,
+          "ours": -0.161583,
+          "delta": 0.0,
+          "tolerance": "0.05*T",
+          "within": true,
+          "within_1pct": true
+        },
+        "finish__timing__setup__tns": {
+          "published": -7.08646,
+          "ours": -7.08646,
+          "delta": 0.0,
+          "tolerance": "0.2*T",
+          "within": true,
+          "within_1pct": true
+        },
+        "finish__design__instance__area": {
+          "published": 943.502,
+          "ours": 943.502,
+          "delta": 0.0,
+          "tolerance": "15%",
+          "within": true,
+          "within_1pct": true
+        },
+        "placeopt__design__instance__area": {
+          "published": 827.526,
+          "ours": 827.526,
+          "delta": 0.0,
+          "tolerance": "15%",
+          "within": true,
+          "within_1pct": true
+        },
+        "placeopt__design__instance__count__stdcell": {
+          "published": 711,
+          "ours": 711,
+          "delta": 0,
+          "tolerance": "15%",
+          "within": true,
+          "within_1pct": true
+        },
+        "detailedroute__route__wirelength": {
+          "published": 4429,
+          "ours": 4429,
+          "delta": 0,
+          "tolerance": "15%",
+          "within": true,
+          "within_1pct": true
+        },
+        "finish__power__total": {
+          "published": 0.00633406,
+          "ours": 0.00633406,
+          "delta": 0.0,
+          "tolerance": "15%",
+          "within": true,
+          "within_1pct": true
+        },
+        "detailedroute__route__drc_errors": {
+          "published": 0,
+          "ours": 0,
+          "delta": 0,
+          "tolerance": "equal",
+          "within": true,
+          "within_1pct": true
+        }
+      },
+      "matches_published_dashboard": true,
+      "exact_1pct_informational": true,
+      "synth_netlist_hashes": {
+        "synth__netlist__hash": {
+          "published": null,
+          "ours": "9e39a316f1ac13251b7cb6a660740991997af5c3",
+          "equal": null,
+          "note": "the dashboard stores numeric metrics only; netlist hashes are not published there"
+        },
+        "synth__canonical_netlist__hash": {
+          "published": null,
+          "ours": "061b4cd4004130e38a0d4380ac60e08e664a6eb9",
+          "equal": null,
+          "note": "the dashboard stores numeric metrics only; netlist hashes are not published there"
+        }
+      },
+      "per_iteration_series_identical": true,
+      "per_iteration_series_count": 2,
+      "numeric_metrics_common": 430,
+      "numeric_metrics_differing": 9
+    },
+    "sky130hd/gcd": {
+      "clock_period_ns": 1.1,
+      "metrics": {
+        "finish__timing__setup__ws": {
+          "published": -1.45954,
+          "ours": -1.45954,
+          "delta": 0.0,
+          "tolerance": "0.05*T",
+          "within": true,
+          "within_1pct": true
+        },
+        "finish__timing__setup__tns": {
+          "published": -64.9417,
+          "ours": -64.9417,
+          "delta": 0.0,
+          "tolerance": "0.2*T",
+          "within": true,
+          "within_1pct": true
+        },
+        "finish__design__instance__area": {
+          "published": 5412.69,
+          "ours": 5412.69,
+          "delta": 0.0,
+          "tolerance": "15%",
+          "within": true,
+          "within_1pct": true
+        },
+        "placeopt__design__instance__area": {
+          "published": 4055.14,
+          "ours": 4055.14,
+          "delta": 0.0,
+          "tolerance": "15%",
+          "within": true,
+          "within_1pct": true
+        },
+        "placeopt__design__instance__count__stdcell": {
+          "published": 478,
+          "ours": 478,
+          "delta": 0,
+          "tolerance": "15%",
+          "within": true,
+          "within_1pct": true
+        },
+        "detailedroute__route__wirelength": {
+          "published": 11728,
+          "ours": 11728,
+          "delta": 0,
+          "tolerance": "15%",
+          "within": true,
+          "within_1pct": true
+        },
+        "finish__power__total": {
+          "published": 0.00985037,
+          "ours": 0.00985037,
+          "delta": 0.0,
+          "tolerance": "15%",
+          "within": true,
+          "within_1pct": true
+        },
+        "detailedroute__route__drc_errors": {
+          "published": 0,
+          "ours": 0,
+          "delta": 0,
+          "tolerance": "equal",
+          "within": true,
+          "within_1pct": true
+        }
+      },
+      "matches_published_dashboard": true,
+      "exact_1pct_informational": true,
+      "synth_netlist_hashes": {
+        "synth__netlist__hash": {
+          "published": null,
+          "ours": "9aee1444e62e2785dc2ef50d4e278a326853fe68",
+          "equal": null,
+          "note": "the dashboard stores numeric metrics only; netlist hashes are not published there"
+        },
+        "synth__canonical_netlist__hash": {
+          "published": null,
+          "ours": "f71ed75a728f1b09f265949d818d4ab321b6d3c2",
+          "equal": null,
+          "note": "the dashboard stores numeric metrics only; netlist hashes are not published there"
+        }
+      },
+      "per_iteration_series_identical": true,
+      "per_iteration_series_count": 2,
+      "numeric_metrics_common": 439,
+      "numeric_metrics_differing": 9
+    }
+  },
+  "matches_published_dashboard": true
+}

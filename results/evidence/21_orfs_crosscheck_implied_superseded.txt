@@ -1,0 +1,18 @@
+nangate45/gcd matches_published = False
+   finish__timing__setup__ws ours -0.161583 ref~ -0.1805 +- 0.0125 -> OUT better
+   finish__timing__setup__tns ours -7.08646 ref~ -7.94 +- 0.05 -> OUT better
+   finish__design__instance__area ours 943.502 ref~ 969.56522 +- 145.43478 -> IN better
+   placeopt__design__instance__area ours 827.526 ref~ 827.82609 +- 124.17391 -> IN better
+   placeopt__design__instance__count__stdcell ours 711 ref~ 711.30435 +- 106.69565 -> IN better
+   detailedroute__route__wirelength ours 4429 ref~ 6277.3913 +- 941.6087 -> OUT better
+   finish__timing__hold__ws ours 0.0880612 ref~ 0.0 not worse: True
+   finish__timing__hold__tns ours 0 ref~ 0.0 not worse: True
+sky130hd/gcd matches_published = True
+   finish__timing__setup__ws ours -1.45954 ref~ -1.465 +- 0.055 -> IN better
+   finish__timing__setup__tns ours -64.9417 ref~ -65.08 +- 0.22 -> IN better
+   finish__design__instance__area ours 5412.69 ref~ 5053.91304 +- 758.08696 -> IN worse
+   placeopt__design__instance__area ours 4055.14 ref~ 4054.78261 +- 608.21739 -> IN worse
+   placeopt__design__instance__count__stdcell ours 478 ref~ 478.26087 +- 71.73913 -> IN better
+   detailedroute__route__wirelength ours 11728 ref~ 11786.08696 +- 1767.91304 -> IN better
+   finish__timing__hold__ws ours 0.532397 ref~ 0 not worse: True
+   finish__timing__hold__tns ours 0 ref~ 0 not worse: True

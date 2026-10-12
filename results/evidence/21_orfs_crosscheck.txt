@@ -1,24 +1,20 @@
-nangate45/gcd matches_published = False
-   finish__timing__setup__ws ours -0.161583 ref~ -0.1805 +- 0.0125 -> OUT better
-   finish__timing__setup__tns ours -7.08646 ref~ -7.94 +- 0.05 -> OUT better
-   finish__design__instance__area ours 943.502 ref~ 969.56522 +- 145.43478 -> IN better
-   placeopt__design__instance__area ours 827.526 ref~ 827.82609 +- 124.17391 -> IN better
-   placeopt__design__instance__count__stdcell ours 711 ref~ 711.30435 +- 106.69565 -> IN better
-   detailedroute__route__wirelength ours 4429 ref~ 6277.3913 +- 941.6087 -> OUT better
-   finish__timing__hold__ws ours 0.0880612 ref~ 0.0 not worse: True
-   finish__timing__hold__tns ours 0 ref~ 0.0 not worse: True
-sky130hd/gcd matches_published = True
-   finish__timing__setup__ws ours -1.45954 ref~ -1.465 +- 0.055 -> IN better
-   finish__timing__setup__tns ours -64.9417 ref~ -65.08 +- 0.22 -> IN better
-   finish__design__instance__area ours 5412.69 ref~ 5053.91304 +- 758.08696 -> IN worse
-   placeopt__design__instance__area ours 4055.14 ref~ 4054.78261 +- 608.21739 -> IN worse
-   placeopt__design__instance__count__stdcell ours 478 ref~ 478.26087 +- 71.73913 -> IN better
-   detailedroute__route__wirelength ours 11728 ref~ 11786.08696 +- 1767.91304 -> IN better
-   finish__timing__hold__ws ours 0.532397 ref~ 0 not worse: True
-   finish__timing__hold__tns ours 0 ref~ 0 not worse: True
-
-stage progression (informational): ours vs implied reference, relative delta %
-nangate45/gcd synth hashes equal: {'synth__canonical_netlist__hash': False, 'synth__netlist__hash': False}
-  synth.stdcell=-0.04, placeopt.area=-0.04, placeopt.stdcell=-0.04, cts.ws=-0.06, cts.tns=1.23, globalroute.ws=5.48, globalroute.tns=9.37, detailedroute.wirelength=-29.45, finish.ws=10.48, finish.tns=10.75, finish.area=-2.69
-sky130hd/gcd synth hashes equal: {'synth__canonical_netlist__hash': True, 'synth__netlist__hash': True}
-  synth.stdcell=0.02, placeopt.area=0.01, placeopt.stdcell=-0.05, cts.ws=0.04, cts.tns=0.04, globalroute.ws=-0.27, globalroute.tns=0.07, detailedroute.wirelength=-0.49, finish.ws=0.37, finish.tns=0.21, finish.area=7.1
+nangate45/gcd matches_published_dashboard = True | exact_1pct True | differing numeric metrics 9 / 430
+   finish__timing__setup__ws published -0.161583 ours -0.161583 -> IN (tol 0.05*T)
+   finish__timing__setup__tns published -7.08646 ours -7.08646 -> IN (tol 0.2*T)
+   finish__design__instance__area published 943.502 ours 943.502 -> IN (tol 15%)
+   placeopt__design__instance__area published 827.526 ours 827.526 -> IN (tol 15%)
+   placeopt__design__instance__count__stdcell published 711 ours 711 -> IN (tol 15%)
+   detailedroute__route__wirelength published 4429 ours 4429 -> IN (tol 15%)
+   finish__power__total published 0.00633406 ours 0.00633406 -> IN (tol 15%)
+   detailedroute__route__drc_errors published 0 ours 0 -> IN (tol equal)
+   hashes equal: {'synth__netlist__hash': None, 'synth__canonical_netlist__hash': None}
+sky130hd/gcd matches_published_dashboard = True | exact_1pct True | differing numeric metrics 9 / 439
+   finish__timing__setup__ws published -1.45954 ours -1.45954 -> IN (tol 0.05*T)
+   finish__timing__setup__tns published -64.9417 ours -64.9417 -> IN (tol 0.2*T)
+   finish__design__instance__area published 5412.69 ours 5412.69 -> IN (tol 15%)
+   placeopt__design__instance__area published 4055.14 ours 4055.14 -> IN (tol 15%)
+   placeopt__design__instance__count__stdcell published 478 ours 478 -> IN (tol 15%)
+   detailedroute__route__wirelength published 11728 ours 11728 -> IN (tol 15%)
+   finish__power__total published 0.00985037 ours 0.00985037 -> IN (tol 15%)
+   detailedroute__route__drc_errors published 0 ours 0 -> IN (tol equal)
+   hashes equal: {'synth__netlist__hash': None, 'synth__canonical_netlist__hash': None}

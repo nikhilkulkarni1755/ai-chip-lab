@@ -1,0 +1,2 @@
+P1.5 done: matches_published_dashboard = true for nangate45/gcd and sky130hd/gcd (exact match with ORFS's measured CI build of the pinned commit 3a964e13f; tolerance pre-registered in 9b81746).
+The earlier criterion matches_published (reference implied from rules-base.json) is superseded (Decision P2-5): it compared against an inferred number from a rules file regenerated 4 weeks before the pinned commit, and nangate45/gcd was outside that implied band (better side). Kept as `superseded` in results/p2_21_orfs_crosscheck.json.
