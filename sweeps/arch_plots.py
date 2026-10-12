@@ -25,16 +25,22 @@ def load(path):
             r = json.loads(line)
         except Exception:
             continue
-        if r.get("status") == "ok":
-            rows.append(r)
+        rows.append(r)
     return rows
 
 
-def heat(rows, topo, key, label, logc, fname, sram="default"):
-    rs = [r for r in rows if r["topo"] == topo and r["sram"] == sram]
+WORKLOAD = {"alexnet_part": "alexnet_part (AlexNet Conv1 only, 1 layer)",
+            "gemm_test": "gemm_test (single 256x128x256 GEMM; separate small-array workload)",
+            "vit_s": "vit_s (5 GEMMs)", "ncf": "ncf (12 GEMMs)", "alexnet": "alexnet (5 conv layers)",
+            "resnet18": "resnet18 (21 conv layers)", "mobilenet": "mobilenet"}
+
+
+def heat(allrows, topo, key, label, logc, fname, sram="default"):
+    rs_all = [r for r in allrows if r["topo"] == topo and r["sram"] == sram]
+    rs = [r for r in rs_all if r.get("status") == "ok"]
     if not rs:
         return False
-    dims_r = sorted({r["rows"] for r in rs}); dims_c = sorted({r["cols"] for r in rs})
+    dims_r = sorted({r["rows"] for r in rs_all}); dims_c = sorted({r["cols"] for r in rs_all})
     vals = [r[key] for r in rs]
     norm = LogNorm(min(vals), max(vals)) if logc and min(vals) > 0 else None
     fig, axes = plt.subplots(1, 3, figsize=(13, 4.3))
@@ -45,16 +51,20 @@ def heat(rows, topo, key, label, logc, fname, sram="default"):
                 grid[dims_r.index(r["rows"])][dims_c.index(r["cols"])] = r[key]
         import numpy as np
         a = np.array([[np.nan if v is None else v for v in row] for row in grid], float)
+        bad = {(r["rows"], r["cols"]): r["status"] for r in rs_all if r["dataflow"] == df and r.get("status") != "ok"}
         im = ax.imshow(a, origin="lower", cmap="viridis", norm=norm if norm else None, aspect="auto")
         for i in range(len(dims_r)):
             for j in range(len(dims_c)):
                 if not np.isnan(a[i, j]):
                     ax.text(j, i, f"{a[i, j]:.3g}", ha="center", va="center", color="w", fontsize=7)
+        for (rr, cc), st in bad.items():
+            ax.text(dims_c.index(cc), dims_r.index(rr), {"skipped_after_timeout": "skipped\n(timeout)", "error": "error", "timeout": "timeout"}.get(st, st),
+                    ha="center", va="center", color="#d1495b", fontsize=7)
         ax.set_xticks(range(len(dims_c))); ax.set_xticklabels(dims_c)
         ax.set_yticks(range(len(dims_r))); ax.set_yticklabels(dims_r)
         ax.set_xlabel("array columns C"); ax.set_ylabel("array rows R"); ax.set_title(df)
         fig.colorbar(im, ax=ax, fraction=.046)
-    fig.suptitle(f"SCALE-Sim sweep A: {topo}, SRAM {sram}: {label}   ({len(rs)} points)", fontsize=10)
+    fig.suptitle(f"SCALE-Sim sweep A, workload {WORKLOAD.get(topo, topo)}, SRAM {sram}\n{label}; blank = not run, red text = error/skipped   ({len(rs)} ok points)", fontsize=9)
     fig.tight_layout()
     fig.savefig(os.path.join(ASSETS, fname), dpi=120)
     plt.close(fig)
@@ -75,7 +85,7 @@ def sram_plot(rows, topo):
         ax.set_xscale("log", base=2); ax.set_yscale("log"); ax.set_title(df); ax.set_xlabel("array size N (NxN)")
         ax.legend(frameon=False, fontsize=7)
     axes[0].set_ylabel("avg DRAM traffic, words/cycle")
-    fig.suptitle(f"SRAM size vs DRAM traffic: {topo}", fontsize=10)
+    fig.suptitle(f"SRAM size vs estimated DRAM traffic: {WORKLOAD.get(topo, topo)}", fontsize=9)
     fig.tight_layout(); fig.savefig(os.path.join(ASSETS, f"sweepA_sram_{topo}.png"), dpi=120); plt.close(fig)
     return True
 
@@ -99,7 +109,7 @@ def best_df(rows):
             ax.scatter(C, R, s=420, color=cmap[b], marker="s")
             ax.text(C, R, b, ha="center", va="center", color="w", fontsize=8)
         ax.set_xscale("log", base=2); ax.set_yscale("log", base=2)
-        ax.set_xlabel("C"); ax.set_ylabel("R"); ax.set_title(f"{t}: fastest dataflow")
+        ax.set_xlabel("C"); ax.set_ylabel("R"); ax.set_title(f"{t}: fastest dataflow", fontsize=8)
     fig.tight_layout(); fig.savefig(os.path.join(ASSETS, "sweepA_best_dataflow.png"), dpi=120); plt.close(fig)
     return True
 
@@ -107,11 +117,12 @@ def best_df(rows):
 def main():
     path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(LAB, "results/sweeps/arch.jsonl")
     os.makedirs(ASSETS, exist_ok=True)
-    rows = load(path)
+    allrows = load(path)
+    rows = [r for r in allrows if r.get("status") == "ok"]
     made = []
     for topo in sorted({r["topo"] for r in rows}):
         for name, key, label, logc in METRICS:
-            if heat(rows, topo, key, label, logc, f"sweepA_{name}_{topo}.png"):
+            if heat(allrows, topo, key, label, logc, f"sweepA_{name}_{topo}.png"):
                 made.append(f"sweepA_{name}_{topo}.png")
         if sram_plot(rows, topo):
             made.append(f"sweepA_sram_{topo}.png")

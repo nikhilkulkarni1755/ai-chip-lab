@@ -1,0 +1,3 @@
+Sweep A (SCALE-Sim 3.0.0, CALC bandwidth mode, bundled scale.cfg, SRAM 16/64/1024 kB) stopped itself at the deadline: 167 rows = 165 ok, 1 error (alexnet_part|ws|8x8|default, 604.7 s, no error text, cause unverified), 1 skipped_after_timeout (alexnet_part|os|8x8). Planned grid 264 points; 97 not reached.
+Swept: gemm_test (separate small-array workload, 8..128 squares + rectangles, all 3 SRAM levels: complete 57/57), alexnet_part (1 layer, 57/60), vit_s (39/60), ncf (11/57), alexnet (1/24).
+NOT swept: resnet18, mobilenet; most of alexnet and ncf; part of vit_s SRAM small/large. Details: results/sweeps/arch_summary.json

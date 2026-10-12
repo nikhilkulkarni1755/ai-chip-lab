@@ -1,0 +1,14 @@
+$ python3 sweeps/arch_summary.py   # final, sweep stopped itself at deadline_sweeps_stop_epoch
+[arch_plots] 165 ok points -> 20 plots
+rows 167 status {'ok': 165, 'error': 1, 'skipped_after_timeout': 1} planned 264 not_run 97
+alexnet       planned  24 ok   1 err 0 skipped 0 timeout 0 not_run 23
+alexnet_part  planned  60 ok  57 err 1 skipped 1 timeout 0 not_run 1
+gemm_test     planned  57 ok  57 err 0 skipped 0 timeout 0 not_run 0
+ncf           planned  57 ok  11 err 0 skipped 0 timeout 0 not_run 46
+resnet18      planned   6 ok   0 err 0 skipped 0 timeout 0 not_run 6
+vit_s         planned  60 ok  39 err 0 skipped 0 timeout 0 not_run 21
+best dataflow (default SRAM):
+errored: alexnet_part|ws|8x8|default status=error wall=604.7s error='' returncode not recorded (cause unverified)
+SCALE-Sim ran in CALC interface-bandwidth mode (bundled scale.cfg): stall_cycles = 0 is structural there (stalls are not modelled in that mode) and dram_bw_* is SCALE-Sim's estimated DRAM demand, not 
+[arch_sweep] 166 vit_s|is|128x32|default ok 66.8s cycles=139309
+[arch_sweep] finished loop: 153 new points; stopped_by_deadline=True

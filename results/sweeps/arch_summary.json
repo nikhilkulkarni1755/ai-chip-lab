@@ -1,0 +1,366 @@
+{
+ "best_dataflow_default_sram": {
+  "alexnet_part|128x128": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 34415,
+    "os": 14807,
+    "ws": 10220
+   }
+  },
+  "alexnet_part|128x32": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 108869,
+    "os": 37511,
+    "ws": 29798
+   }
+  },
+  "alexnet_part|16x16": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 620539,
+    "os": 448019,
+    "ws": 423797
+   }
+  },
+  "alexnet_part|16x64": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 209759,
+    "os": 167579,
+    "ws": 143473
+   }
+  },
+  "alexnet_part|24x24": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 337311,
+    "os": 207771,
+    "ws": 198079
+   }
+  },
+  "alexnet_part|32x128": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 82367,
+    "os": 49494,
+    "ws": 38579
+   }
+  },
+  "alexnet_part|32x32": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 216599,
+    "os": 121124,
+    "ws": 112283
+   }
+  },
+  "alexnet_part|48x48": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 121855,
+    "os": 58495,
+    "ws": 50671
+   }
+  },
+  "alexnet_part|64x16": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 271319,
+    "os": 127007,
+    "ws": 114011
+   }
+  },
+  "alexnet_part|64x64": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 82367,
+    "os": 46943,
+    "ws": 38579
+   }
+  },
+  "alexnet_part|96x96": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 48895,
+    "os": 17695,
+    "ws": 13243
+   }
+  },
+  "alexnet|128x128": {
+   "best": "os",
+   "complete": false,
+   "cycles": {
+    "os": 67567
+   }
+  },
+  "gemm_test|128x128": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 2039,
+    "os": 1019,
+    "ws": 1275
+   }
+  },
+  "gemm_test|128x32": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 6623,
+    "os": 3311,
+    "ws": 4335
+   }
+  },
+  "gemm_test|16x16": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 44543,
+    "os": 36607,
+    "ws": 38655
+   }
+  },
+  "gemm_test|16x64": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 14207,
+    "os": 10687,
+    "ws": 11199
+   }
+  },
+  "gemm_test|32x128": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 5087,
+    "os": 3311,
+    "ws": 3567
+   }
+  },
+  "gemm_test|32x32": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 14207,
+    "os": 10175,
+    "ws": 11199
+   }
+  },
+  "gemm_test|64x16": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 17279,
+    "os": 10687,
+    "ws": 12735
+   }
+  },
+  "gemm_test|64x64": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 5087,
+    "os": 3055,
+    "ws": 3567
+   }
+  },
+  "gemm_test|8x8": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 153599,
+    "os": 138239,
+    "ws": 142335
+   }
+  },
+  "ncf|128x128": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 146932,
+    "os": 92820,
+    "ws": 85812
+   }
+  },
+  "ncf|64x64": {
+   "best": "ws",
+   "complete": false,
+   "cycles": {
+    "os": 252156,
+    "ws": 231300
+   }
+  },
+  "vit_s|128x128": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 45367,
+    "os": 37819,
+    "ws": 56639
+   }
+  },
+  "vit_s|128x32": {
+   "best": "os",
+   "complete": false,
+   "cycles": {
+    "is": 139309,
+    "os": 120951
+   }
+  },
+  "vit_s|24x24": {
+   "best": "os",
+   "complete": false,
+   "cycles": {
+    "os": 587947
+   }
+  },
+  "vit_s|32x128": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 129951,
+    "os": 113563,
+    "ws": 142429
+   }
+  },
+  "vit_s|32x32": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 380249,
+    "os": 352781,
+    "ws": 397875
+   }
+  },
+  "vit_s|48x48": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 203565,
+    "os": 183685,
+    "ws": 217667
+   }
+  },
+  "vit_s|64x64": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 130459,
+    "os": 114611,
+    "ws": 132779
+   }
+  },
+  "vit_s|96x96": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 77791,
+    "os": 65707,
+    "ws": 78079
+   }
+  }
+ },
+ "coverage_per_topology": {
+  "alexnet": {
+   "error": 0,
+   "not_run": 23,
+   "ok": 1,
+   "planned": 24,
+   "skipped_after_timeout": 0,
+   "timeout": 0
+  },
+  "alexnet_part": {
+   "error": 1,
+   "not_run": 1,
+   "ok": 57,
+   "planned": 60,
+   "skipped_after_timeout": 1,
+   "timeout": 0
+  },
+  "gemm_test": {
+   "error": 0,
+   "not_run": 0,
+   "ok": 57,
+   "planned": 57,
+   "skipped_after_timeout": 0,
+   "timeout": 0
+  },
+  "ncf": {
+   "error": 0,
+   "not_run": 46,
+   "ok": 11,
+   "planned": 57,
+   "skipped_after_timeout": 0,
+   "timeout": 0
+  },
+  "resnet18": {
+   "error": 0,
+   "not_run": 6,
+   "ok": 0,
+   "planned": 6,
+   "skipped_after_timeout": 0,
+   "timeout": 0
+  },
+  "vit_s": {
+   "error": 0,
+   "not_run": 21,
+   "ok": 39,
+   "planned": 60,
+   "skipped_after_timeout": 0,
+   "timeout": 0
+  }
+ },
+ "errored_points": [
+  {
+   "error": "",
+   "key": "alexnet_part|ws|8x8|default",
+   "returncode": null,
+   "status": "error",
+   "wall_s": 604.7
+  }
+ ],
+ "not_run_points": 97,
+ "not_run_sample": [
+  "ncf|os|64x64|small",
+  "ncf|os|64x64|large",
+  "ncf|is|128x128|small",
+  "ncf|is|128x128|large",
+  "alexnet_part|is|8x8|default",
+  "alexnet|os|64x64|default",
+  "alexnet|ws|128x128|default",
+  "alexnet|is|128x128|default",
+  "vit_s|ws|24x24|default",
+  "vit_s|is|24x24|default",
+  "ncf|ws|96x96|default",
+  "vit_s|ws|16x16|default"
+ ],
+ "notes": [
+  "SCALE-Sim ran in CALC interface-bandwidth mode (bundled scale.cfg): stall_cycles = 0 is structural there (stalls are not modelled in that mode) and dram_bw_* is SCALE-Sim's estimated DRAM demand, not a measured stall effect.",
+  "SRAM levels are per buffer: small 16 kB, default 64 kB, large 1024 kB.",
+  "Workloads are NOT interchangeable: alexnet_part = AlexNet Conv1 only (1 layer); gemm_test = one 256x128x256 GEMM, used as the separate small-array (8x8/16x16) workload; vit_s, ncf, alexnet as named.",
+  "Points were ordered cheapest-estimated-first; points never reached before the deadline are in not_run_points.",
+  "alexnet_part|ws|8x8|default: process ended without a result after the logged wall time, empty error text; the cause is unverified (not shown to be a timeout; likely out-of-memory kill but not confirmed)."
+ ],
+ "planned_points": 264,
+ "rows_total": 167,
+ "status_counts": {
+  "error": 1,
+  "ok": 165,
+  "skipped_after_timeout": 1
+ },
+ "sweep": "A (SCALE-Sim 3.0.0 architecture sweep)"
+}
