@@ -1,1 +1,1 @@
-infra: install Colima/Lima/docker CLI (01_runtime); rtl/arch/pnr authoring in parallel
+DONE — open demo/index.html (run demo/run_demo.sh to re-verify in ~2 min)

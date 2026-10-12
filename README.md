@@ -6,7 +6,7 @@ Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, t
 
 ## Status
 
-Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 4h 14m since start (2026-10-12 02:48:36 PDT), budget 6h).
+Generated from the files in this repository by `python3 scripts/demo_build.py` (elapsed at generation: 5h 04m since start (2026-10-12 02:48:36 PDT), budget 6h).
 
 | Check | Status | Detail |
 |---|---|---|
@@ -16,9 +16,9 @@ Generated from the files in this repository by `python3 scripts/demo_build.py` (
 | Task 1: formal MAC proof (SBY) | **PASS** | checks: formal_bmc_pass=true, formal_prove_pass=true |
 | Task 1: RTL = netlist equivalence (EQY) | **PASS** | checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true; scope: split proof (1) mac_int8 incl. multiplier, (2) full 4x4 array with mac_int8 black-boxed; compared against the generic-gate Yosys netlist (synth; abc; opt), NOT the placed-and-routed nangate45 netlist (the ORFS logic-equivalence step is disabled, see caveats) |
 | Task 2: OpenROAD gcd flows within ORFS's shipped regression thresholds | **PASS** | t2_summary.json: pass=true; NOT timing-closed: nangate45/gcd misses timing at its 0.25 ns reference clock (WNS -0.161583 ns, TNS -7.08646 ns, 51 violating endpoints); sky130hd/gcd misses timing at its 1.1 ns reference clock (WNS -1.45954 ns, TNS -64.9417 ns, 63 violating endpoints) |
-| Task 3: SCALE-Sim vs analytical model | **FAIL** | marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes). |
-| Sweep A: architecture (SCALE-Sim) | **RUNNING** | sweep in progress; 142 point(s) in results/sweeps/arch.jsonl |
-| Sweep B: physical (ORFS) | **RUNNING** | sweep in progress; 38 point(s) in results/sweeps/phys.jsonl |
+| Task 3: SCALE-Sim vs analytical model | **FAIL** | marker .failed: 30_arch_model: 1 of 6 criteria FAILED (honest result, not a crash). Run: scripts/t3_run.sh (container lab-sim, 2 passes).; criteria that fail: roofline_agreement_is, roofline_agreement_os, roofline_agreement_ws, roofline_agrees, roofline_rank_corr_is, roofline_rank_corr_ws (the roofline-vs-stalls agreement; the analytic cycle model and byte-identity checks pass) |
+| Sweep A: architecture (SCALE-Sim) | **DONE** | sweep stopped (marker .done); this is a completion status, not a pass/fail verdict; 165 ok of 264 planned points (1 error, 1 skipped after timeout, 97 never reached before the deadline) |
+| Sweep B: physical (ORFS) | **DONE** | sweep stopped (marker .done); this is a completion status, not a pass/fail verdict; gcd frontier 0.42 ns (fastest closing period over utilizations 30-60 %), 1 failed point(s) |
 | Repeatability rerun (repro) | **PASS** | repro_report.json: pass=true; 10 of 10 checks identical. Scope: Tasks 1 and 3 were re-run from clean directories; Task 2 reuses the two original clean runs (nangate45/gcd and sky130hd/gcd, not a third run); systolic_os has a single run, so it has no determinism verdict |
 
 PASS means the stage's `.done` marker exists and its summary JSON says `"pass": true`. Anything unfinished is shown as PENDING/RUNNING/BLOCKED/UNKNOWN and not assumed.
@@ -121,6 +121,10 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 
 ![30_sweepA_progress](demo/assets/evidence/30_sweepA_progress.png)
 
+![40_sweepA_summary](demo/assets/evidence/40_sweepA_summary.png)
+
+![40_sweepB_frontier](demo/assets/evidence/40_sweepB_frontier.png)
+
 ## Results
 
 ![sweepA best dataflow](demo/assets/sweepA_best_dataflow.png)
@@ -131,6 +135,8 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 
 ![sweepA cycles gemm test](demo/assets/sweepA_cycles_gemm_test.png)
 
+![sweepA cycles ncf](demo/assets/sweepA_cycles_ncf.png)
+
 ![sweepA cycles vit s](demo/assets/sweepA_cycles_vit_s.png)
 
 ![sweepA dram bw alexnet](demo/assets/sweepA_dram_bw_alexnet.png)
@@ -139,11 +145,15 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 
 ![sweepA dram bw gemm test](demo/assets/sweepA_dram_bw_gemm_test.png)
 
+![sweepA dram bw ncf](demo/assets/sweepA_dram_bw_ncf.png)
+
 ![sweepA dram bw vit s](demo/assets/sweepA_dram_bw_vit_s.png)
 
 ![sweepA sram alexnet part](demo/assets/sweepA_sram_alexnet_part.png)
 
 ![sweepA sram gemm test](demo/assets/sweepA_sram_gemm_test.png)
+
+![sweepA sram ncf](demo/assets/sweepA_sram_ncf.png)
 
 ![sweepA sram vit s](demo/assets/sweepA_sram_vit_s.png)
 
@@ -153,11 +163,17 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 
 ![sweepA util gemm test](demo/assets/sweepA_util_gemm_test.png)
 
+![sweepA util ncf](demo/assets/sweepA_util_ncf.png)
+
 ![sweepA util vit s](demo/assets/sweepA_util_vit_s.png)
 
 ![sweepB frontier gcd](demo/assets/sweepB_frontier_gcd.png)
 
+![sweepB frontier systolic os](demo/assets/sweepB_frontier_systolic_os.png)
+
 ![sweepB wns heatmap gcd](demo/assets/sweepB_wns_heatmap_gcd.png)
+
+![sweepB wns heatmap systolic os](demo/assets/sweepB_wns_heatmap_systolic_os.png)
 
 ![t1 waveform](demo/assets/t1_waveform.png)
 
@@ -174,6 +190,6 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 ## Notes
 
 - Versions, image digests, URLs and SHA256s: `versions.lock`, `coord/images.env`.
-- VM end-state is stated at final packaging; start/stop commands are in `demo/README.md`.
+- The Colima VM is left RUNNING at the end of the run because demo/run_demo.sh needs it. Stop it with: source ~/ai-chip-lab/env.sh && colima stop
 - No personal paths, hostnames or credentials are stored in this repository; a pre-commit hook and `scripts/evidence_privacy.py` enforce that.
 
