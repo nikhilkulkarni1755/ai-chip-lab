@@ -1,0 +1,14 @@
+P2.4 63_sram_cacti: CACTI 7 @ 1ffd8dfb10303d306ecd8d215320aea07651e878 (image lab-cacti:20261012), ram type, 45 nm, 128 B block, 1 rw port, 1 bank, 350 K, ITRS-HP, no ECC.
+Criteria registered in commit 028b413 before the first run. Commands: scripts/p2_sram_run.py gen|run|parse, scripts/p2_sram_energy.py (one lock hold for all runs).
+size_kB  tech  access_ns  cycle_ns  read_nJ   write_nJ  leak_mW    area_mm2
+1024    0.045    1.9620    2.5120   0.49927   0.81946     905.53     4.1911   (s1024k_45nm)
+16      0.045    0.3670    0.6953   0.07825   0.10181      16.37     0.1412   (s16k_45nm)
+2048    0.045    2.6385    2.5120   0.83167   1.15186    1811.07     8.1009   (s2048k_45nm)
+4096    0.045    3.5276    2.5120   1.29768   1.61787    3622.13    17.7721   (s4096k_45nm)
+6144    0.045    4.1584    2.3618   1.72956   1.96933    5444.17    26.1268   (s6144k_45nm)
+64      0.045    0.5050    0.7954   0.09262   0.19068      60.89     0.2685   (s64k_45nm)
+64      0.045    0.5050    0.7954   0.09262   0.19068      60.89     0.2685   (s64k_45nm_rep)
+64      0.090    1.0699    1.4316   0.29668   0.62499      21.52     1.0748   (s64k_90nm)
+Observation not in the criteria: cycle time is not monotone (6144 kB: 2.36 ns < 2048 kB: 2.51 ns) because CACTI picks a different internal organisation (optimiser ED^2), a known property of its search, not an error.
+Determinism: s64k_45nm.txt, its second run and the identical-config repeat are byte-identical.
+Energy model: results/sram_energy_model.json (order of magnitude; SRAM read energy only). Verdict: all 7 pass/fail criteria PASS.

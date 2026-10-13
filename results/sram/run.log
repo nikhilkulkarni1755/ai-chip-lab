@@ -1,0 +1,9 @@
+s16k_45nm rc=0
+s64k_45nm rc=0
+s1024k_45nm rc=0
+s2048k_45nm rc=0
+s6144k_45nm rc=0
+s4096k_45nm rc=0
+s64k_90nm rc=0
+s64k_45nm_rep rc=0
+ 

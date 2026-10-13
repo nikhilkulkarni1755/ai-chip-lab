@@ -1,0 +1,54 @@
+{
+ "label": "ORDER-OF-MAGNITUDE model, not a prediction: 45 nm ITRS-based CACTI numbers, SRAM read energy only, DRAM and MAC energy not modelled, leakage at an assumed 1 GHz clock",
+ "workload": "ViT-S GEMM list (sweep A topology vit_s), output stationary, 128x128 array",
+ "configs": [
+  {
+   "config": "vit_s os 128x128, 16 kB per buffer",
+   "sram": "small",
+   "cycles": 37819,
+   "sram_words": 5791935.999999999,
+   "dram_words": 5776699,
+   "sram_read_pJ_per_word": 0.61132734375,
+   "sram_energy_uJ": 3.5407688500499988,
+   "buffer_area_mm2_x3": 0.42359784105599996,
+   "buffer_leakage_mW_x3": 49.0971,
+   "leakage_energy_uJ_at_1GHz": 1.8568032248999997
+  },
+  {
+   "config": "vit_s os 128x128, 64 kB per buffer",
+   "sram": "default",
+   "cycles": 37819,
+   "sram_words": 5791935.999999999,
+   "dram_words": 5581720,
+   "sram_read_pJ_per_word": 0.7236125,
+   "sram_energy_uJ": 4.191117288799999,
+   "buffer_area_mm2_x3": 0.80535435036,
+   "buffer_leakage_mW_x3": 182.66969999999998,
+   "leakage_energy_uJ_at_1GHz": 6.9083853843
+  },
+  {
+   "config": "vit_s os 128x128, 1024 kB per buffer",
+   "sram": "large",
+   "cycles": 37819,
+   "sram_words": 5791935.999999999,
+   "dram_words": 2919284,
+   "sram_read_pJ_per_word": 3.9005546875,
+   "sram_energy_uJ": 22.591763114499997,
+   "buffer_area_mm2_x3": 12.573392832,
+   "buffer_leakage_mW_x3": 2716.602,
+   "leakage_energy_uJ_at_1GHz": 102.73917103800001
+  }
+ ],
+ "break_even": {
+  "small->default": {
+   "dram_words_saved": 194979,
+   "sram_energy_added_uJ": 0.6503484387500005,
+   "break_even_dram_pJ_per_word": 3.3354794041922484
+  },
+  "default->large": {
+   "dram_words_saved": 2662436,
+   "sram_energy_added_uJ": 18.400645825699996,
+   "break_even_dram_pJ_per_word": 6.911206814248303
+  }
+ }
+}
