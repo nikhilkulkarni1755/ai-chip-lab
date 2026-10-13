@@ -1,0 +1,86 @@
+{
+ "stage": "63_sram_cacti",
+ "pass": null,
+ "state": "criteria registered; CACTI not yet run",
+ "oracle": "CACTI 7 (HewlettPackard/cacti @ 1ffd8dfb10303d306ecd8d215320aea07651e878, image lab-cacti:20261012) is an analytical SRAM model, not a measurement; the oracle is therefore (a) internal consistency of the physical trends it must obey and (b) reproducibility, not agreement with silicon. The energy-per-inference figure is an order-of-magnitude model by construction.",
+ "model": {
+  "technology": "CACTI 7 ships ITRS-based parameter sets for 22, 32, 45, 65, 90 and 180 nm; this study uses 45 nm (-technology 0.045) for all capacities. Feature size equals the Nangate45 / FreePDK45 library used by the ORFS runs in this lab, but the transistor and wire parameters are CACTI's ITRS HP numbers, not Nangate45's; absolute values are NOT claimed to match what an SRAM macro in nangate45 would give (the lab has no SRAM macro in any ORFS run, so there is nothing to compare against). Only trends and order of magnitude are used. A 90 nm point at 64 kB is run once as a scaling sanity check (matches the infra smoke run).",
+  "sram_sizes_kB": {
+   "16": "sweep A 'small' per-buffer size",
+   "64": "sweep A 'default' and bundled scale.cfg per-buffer size (Task 3 roofline runs)",
+   "1024": "sweep A 'large' per-buffer size",
+   "2048": "google.cfg ofmap buffer (bundled TPU-like config, Task 3 bundled runs)",
+   "6144": "google.cfg ifmap and filter buffers (6 MiB each)"
+  },
+  "non_power_of_two": "6144 kB is not a power of two. If CACTI rejects it, the rejection text is reported and 6144 kB is represented as 4096 kB + 2048 kB macros (sum of areas, energies of the larger macro, leakage summed); this rule is fixed here before any run.",
+  "fixed_cacti_settings": "cache type ram (scratchpad, no tags), block size 128 bytes (one 128-wide array row of 1-byte words per access, matching the 128x128 arrays of Task 3), 1 read/write port, UCA bank count 1, 350 K, ITRS HP cells and peripherals, design objective and deviation left at CACTI's cache.cfg defaults, interconnect projection conservative, ECC off.",
+  "double_buffering": "SCALE-Sim's per-buffer size is the total capacity of a double-buffered scratchpad (90 % active / 10 % prefetch halves inside it); the capacity is modelled as one SRAM of that size. No extra capacity is added for double buffering."
+ },
+ "criteria": [
+  {
+   "name": "area_monotone_in_capacity",
+   "threshold": "area strictly increases across 16 < 64 < 1024 < 2048 < 6144 kB",
+   "written_before_run": "PENDING_COMMIT",
+   "measured": null,
+   "pass": null
+  },
+  {
+   "name": "access_time_monotone",
+   "threshold": "access time non-decreasing across the five capacities",
+   "written_before_run": "PENDING_COMMIT",
+   "measured": null,
+   "pass": null
+  },
+  {
+   "name": "read_energy_monotone",
+   "threshold": "dynamic read energy per access non-decreasing across the five capacities",
+   "written_before_run": "PENDING_COMMIT",
+   "measured": null,
+   "pass": null
+  },
+  {
+   "name": "leakage_monotone",
+   "threshold": "leakage power non-decreasing across the five capacities",
+   "written_before_run": "PENDING_COMMIT",
+   "measured": null,
+   "pass": null
+  },
+  {
+   "name": "area_per_kB_physically_plausible",
+   "threshold": "0.002 <= area / capacity <= 0.05 mm2 per kB for every size at 45 nm (lower bound: a 6T bit cell of ~0.35 um2 gives 0.0029 mm2/kB of bare cells; upper bound: 17x bare cells, generous for periphery on small arrays)",
+   "written_before_run": "PENDING_COMMIT",
+   "measured": null,
+   "pass": null
+  },
+  {
+   "name": "node_scaling_sanity",
+   "threshold": "64 kB at 45 nm has smaller area and shorter access time than 64 kB at 90 nm, and the area ratio 90 nm / 45 nm lies between 1.5 and 6 (ideal square law: 4)",
+   "written_before_run": "PENDING_COMMIT",
+   "measured": null,
+   "pass": null
+  },
+  {
+   "name": "cacti_deterministic",
+   "threshold": "two runs of the identical config give byte-identical numeric output",
+   "written_before_run": "PENDING_COMMIT",
+   "measured": null,
+   "pass": null
+  },
+  {
+   "name": "energy_per_inference_model",
+   "threshold": "reported only, NOT a pass/fail threshold: for 3 sweep A configurations (alexnet_part, vit_s, ncf at 128x128 and a smaller array if present, default vs large SRAM) SRAM energy = SRAM word traffic (sweep A sram_bw_avg_words_per_cycle x total_cycles) x CACTI read energy per word (access energy / 128); DRAM energy and MAC energy are NOT modelled and DRAM word traffic is listed next to it; label: order-of-magnitude model",
+   "written_before_run": "PENDING_COMMIT",
+   "measured": null,
+   "pass": null
+  }
+ ],
+ "superseded": [],
+ "pass_rule": "stage passes iff every criterion except energy_per_inference_model passes; a failed criterion stays FAIL with diagnosis, no threshold is changed after seeing numbers",
+ "commands": [
+  "scripts/p2_sram_run.py (planned)"
+ ],
+ "seeds": "none (CACTI is deterministic)",
+ "evidence": [
+  "results/evidence/63_cacti_image_smoke.txt"
+ ]
+}
