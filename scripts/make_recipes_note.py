@@ -121,15 +121,30 @@ def main():
                  "; ".join("%s %s%s%s" % (s["stage"], s["action"] + ((" %.0f s, of which lock wait %s s" % (s["runtime_s"], s.get("lock_wait_s", 0))) if s["action"] == "ran" else ""), (" exit %s" % s["exit_code"]) if s.get("exit_code") not in (None, 0) else "", (" — " + s["reason"]) if s["action"] == "skipped" else "") for s in al["stages"])))
     if not al:
         L += ["", "**`make all` run for real once (TASK2 P1.7 / Final steps): not run yet.**"]
+    if al:
+        st_ = {x["stage"]: x for x in al["stages"]}
+        caveats = []
+        if st_.get("t3", {}).get("action") == "ran" and st_["t3"].get("runtime_s", 999) < 60:
+            caveats.append("the `t3` entry was a %.0f-second resume of jobs already finished (`T3_RESUME=1`: no SCALE-Sim job was re-executed, only the verdict was recomputed and the summary rewritten); "
+                           "Task 3's real executions are the recorded `make t3`, `make t3-clean-first` and `make repro` runs above" % st_["t3"]["runtime_s"])
+        if st_.get("sweeps", {}).get("action") == "skipped":
+            sw = [h for h in [d.get("failsoft_test")] + d.get("failsoft_history", []) if h and "sweeps" in h.get("executed_for_real", [])]
+            caveats.append("`sweeps` was skipped because its inputs are unchanged since its last recorded success, and that success is only the detached start inside the first fail-soft test "
+                           "(`SWEEPS_DETACH=1`: `scripts/make_sweeps.sh` found both drivers already running, started nothing and returned in a fraction of a second%s); the sweep work itself was "
+                           "done by the drivers the agents started directly, stage `41_sweeps_finish`" % ((", at %s" % sw[-1]["generated"][11:16]) if sw else ""))
+        if caveats: L += ["", "What two of these entries mean: " + "; ".join(caveats) + "."]
     pr = (al or {}).get("post_repro_identity_check")
     if pr:
         t1c = pr["task1"]
         L += ["", "**Why the repro verdict still covers the files on HEAD.** `make all` re-executed stages whose first-run files `make repro` had already compared. "
               "Checked afterwards by `scripts/post_repro_identity_check.py`: Task 1 files on HEAD vs the rerun copies repro compared — %s; "
-              "summary check booleans equal to the rerun's (%d compared): %s; Task 2 (the stage's own comparison against every earlier run): %s. Overall: **%s**."
+              "summary check booleans equal to the rerun's (%d compared): %s; Task 2 (the stage's own comparison against every earlier run): %s; Task 3: %s. Overall: **%s**."
               % ("; ".join("`%s` %s" % (f["file"], "identical" if f["identical"] else "DIFFERENT") for f in t1c["files"]), t1c["summary_check_booleans_compared"],
                  "yes" if t1c["summary_check_booleans_equal_to_rerun"] else "NO (%s)" % ", ".join(t1c["differing_summary_checks"]),
                  "; ".join("%s run %s %s" % (x["design"], x["runs"], "identical" if x["identical_to_all_earlier_runs"] else "DIFFERENT") for x in pr["task2_stage_own_comparison"]) or "no record",
+                 ("%d of %d files that repro compared have, on HEAD, the sha256 recorded in the repro report for both the first run and the rerun (newest file time on HEAD %s, i.e. after the last resume of the stage; %s)"
+                  % (pr["task3"]["identical_count"], pr["task3"]["files_compared"], pr["task3"]["newest_file_mtime_on_head"], pr["task3"].get("excluded_by_repro") or "no exclusion")
+                  + ("" if pr["task3"]["identical"] else " — DIFFERENT: " + ", ".join(pr["task3"]["differing_files"]))) if pr.get("task3") else "not checked",
                  "identical" if pr["identical"] else "DIFFERENCE FOUND — a determinism finding, see results/make_all_last.json")]
     ce = os.path.join(ROOT, "coord", "images_cacti.env")
     if os.path.exists(ce):

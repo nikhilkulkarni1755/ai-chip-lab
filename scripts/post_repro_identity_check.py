@@ -6,6 +6,7 @@ and prints it. Any difference is reported as a determinism finding (exit 1); not
 
 Task 1: results/t1_{icarus,verilator}.csv, coverage JSONs and waveform case vs .cache/repro_run/t1/, plus the summary's
         `checks` booleans and the csv hashes recorded in results/repro_report.json.
+Task 3: sha256 of every file repro compared (the list and hashes are in results/repro_report.json) vs results/t3 on HEAD.
 Task 2: cites the stage's own comparison (scripts/t2_repro.sh -> results/repro/t2_<platform>_<design>.json: run count,
         identical yes/no against every earlier run).
 """
@@ -44,15 +45,31 @@ for f in sorted(os.listdir("results/repro")) if os.path.isdir("results/repro") e
         d = json.load(open(os.path.join("results/repro", f)))
         t2.append({"source": "results/repro/" + f, "design": "%s/%s" % (d.get("platform"), d.get("design")), "runs": d.get("runs"),
                    "new_run_id": d.get("new_run_id"), "identical_to_all_earlier_runs": d.get("identical")})
+# Task 3: every file repro compared (hashes recorded in the repro report) against the file now in results/t3
+t3 = None
+c3 = next((c for c in rep.get("checks", []) if c["check"].startswith("t3 cheap-set result files byte-identical")), None)
+if c3 and isinstance(c3.get("first_run"), dict):
+    rows = []
+    for rel, h_first in sorted(c3["first_run"].items()):
+        pth = os.path.join("results/t3", rel); h_rerun = (c3.get("rerun") or {}).get(rel)
+        h_head = sha(pth) if os.path.exists(pth) else None
+        rows.append({"file": rel, "identical": h_head is not None and h_head == h_first == h_rerun})
+    mt = [os.path.getmtime(os.path.join("results/t3", r["file"])) for r in rows if os.path.exists(os.path.join("results/t3", r["file"]))]
+    t3 = {"files_compared": len(rows), "identical_count": sum(r["identical"] for r in rows), "differing_files": [r["file"] for r in rows if not r["identical"]],
+          "compared": "sha256 of results/t3/<file> on HEAD == first-run hash == rerun hash recorded in results/repro_report.json",
+          "newest_file_mtime_on_head": time.strftime("%F %T", time.localtime(max(mt))) if mt else None,
+          "excluded_by_repro": rep.get("excluded_file_class", {}).get("label"),
+          "identical": bool(rows) and all(r["identical"] for r in rows)}
 block = {"generated": time.strftime("%F %T %Z"), "repro_report_generated_epoch": rep.get("generated_epoch"), "repro_pass": rep.get("pass"),
          "why": "make all re-executed stages whose first-run files `make repro` had already compared; this block shows whether the files on HEAD "
                 "are byte-identical to what repro compared, which is the reason its verdict still applies",
-         "task1": t1, "task2_stage_own_comparison": t2,
-         "identical": bool(t1["identical"] and all(x["identical_to_all_earlier_runs"] for x in t2))}
+         "task1": t1, "task2_stage_own_comparison": t2, "task3": t3,
+         "identical": bool(t1["identical"] and all(x["identical_to_all_earlier_runs"] for x in t2) and (t3 is None or t3["identical"]))}
 p = "results/make_all_last.json"
 if os.path.exists(p):
     d = json.load(open(p)); d["post_repro_identity_check"] = block; json.dump(d, open(p, "w"), indent=1)
 print(json.dumps({"identical": block["identical"], "task1_files": [(f["file"], f["identical"]) for f in files],
                   "task1_summary_checks_equal": t1["summary_check_booleans_equal_to_rerun"],
-                  "task2": [(x["design"], x["runs"], x["identical_to_all_earlier_runs"]) for x in t2]}, indent=1))
+                  "task2": [(x["design"], x["runs"], x["identical_to_all_earlier_runs"]) for x in t2],
+                  "task3": t3 and (t3["identical_count"], t3["files_compared"], t3["differing_files"], t3["newest_file_mtime_on_head"])}, indent=1))
 sys.exit(0 if block["identical"] else 1)
