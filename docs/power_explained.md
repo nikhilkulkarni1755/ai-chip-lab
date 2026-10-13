@@ -28,3 +28,6 @@ Power of the routed nangate45 `systolic_os` (4x4 INT8 output-stationary array, 4
 
 ## Caveats
 Zero-delay simulation has no glitches, so simulated switching power is a lower bound; 624 cycles at a 4.0 ns clock (not the 1.25 ns frontier clock); one design, one seed. The workload set is small and synthetic, not a trained network's activations.
+
+## Why the default estimate is so much higher (28.5 mW vs 7.8 mW)
+It is an assumption, not a measurement. Without simulation data OpenROAD's `report_power` uses its default input activity of 0.1 transitions per clock cycle at duty 0.5 on every input, and propagates it through the gates; the OpenROAD help text for `report_power` and `set_power_activity` states these defaults (captured in `logs/part2/60_power_activity/probe.log`). A streaming array whose operands are held for several cycles and whose internal nodes mostly stay quiet toggles much less than that, so the simulated numbers are lower. Conversely the simulated numbers come from zero-delay simulation: no glitch power, so they are a lower bound, and a real workload's activity would sit between the two.
