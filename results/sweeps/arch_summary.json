@@ -1,4 +1,11 @@
 {
+ "accounting": {
+  "cut_not_reached": 91,
+  "cut_reason": "sweep driver stops at the Phase 1 gate (budget_part2.json deadline_sweeps_stop_epoch); points run cheapest-estimated-first at low lock priority behind stage jobs, so the most expensive points were not reached",
+  "done_ok": 173,
+  "errored_or_skipped_with_diagnosis": 0,
+  "planned": 264
+ },
  "best_dataflow_default_sram": {
   "alexnet_part|128x128": {
    "best": "ws",
@@ -88,6 +95,14 @@
     "is": 82367,
     "os": 46943,
     "ws": 38579
+   }
+  },
+  "alexnet_part|8x8": {
+   "best": "ws",
+   "complete": false,
+   "cycles": {
+    "os": 1714595,
+    "ws": 1681943
    }
   },
   "alexnet_part|96x96": {
@@ -196,10 +211,19 @@
     "ws": 85812
    }
   },
-  "ncf|64x64": {
+  "ncf|32x32": {
    "best": "ws",
    "complete": false,
    "cycles": {
+    "os": 817052,
+    "ws": 774084
+   }
+  },
+  "ncf|64x64": {
+   "best": "ws",
+   "complete": true,
+   "cycles": {
+    "is": 358516,
     "os": 252156,
     "ws": 231300
    }
@@ -219,6 +243,15 @@
    "cycles": {
     "is": 139309,
     "os": 120951
+   }
+  },
+  "vit_s|16x16": {
+   "best": "os",
+   "complete": true,
+   "cycles": {
+    "is": 1273839,
+    "os": 1222983,
+    "ws": 1328091
    }
   },
   "vit_s|24x24": {
@@ -284,11 +317,11 @@
    "timeout": 0
   },
   "alexnet_part": {
-   "error": 1,
+   "error": 0,
    "not_run": 1,
-   "ok": 57,
+   "ok": 59,
    "planned": 60,
-   "skipped_after_timeout": 1,
+   "skipped_after_timeout": 0,
    "timeout": 0
   },
   "gemm_test": {
@@ -301,8 +334,8 @@
   },
   "ncf": {
    "error": 0,
-   "not_run": 46,
-   "ok": 11,
+   "not_run": 43,
+   "ok": 14,
    "planned": 57,
    "skipped_after_timeout": 0,
    "timeout": 0
@@ -317,23 +350,108 @@
   },
   "vit_s": {
    "error": 0,
-   "not_run": 21,
-   "ok": 39,
+   "not_run": 18,
+   "ok": 42,
    "planned": 60,
    "skipped_after_timeout": 0,
    "timeout": 0
   }
  },
- "errored_points": [
-  {
-   "error": "",
-   "key": "alexnet_part|ws|8x8|default",
-   "returncode": null,
-   "status": "error",
-   "wall_s": 604.7
-  }
+ "cut_points": [
+  "alexnet_part|is|8x8|default",
+  "alexnet|is|128x128|default",
+  "alexnet|is|128x32|default",
+  "alexnet|is|16x16|default",
+  "alexnet|is|16x64|default",
+  "alexnet|is|32x128|default",
+  "alexnet|is|32x32|default",
+  "alexnet|is|64x16|default",
+  "alexnet|is|64x64|default",
+  "alexnet|os|128x32|default",
+  "alexnet|os|16x16|default",
+  "alexnet|os|16x64|default",
+  "alexnet|os|32x128|default",
+  "alexnet|os|32x32|default",
+  "alexnet|os|64x16|default",
+  "alexnet|os|64x64|default",
+  "alexnet|ws|128x128|default",
+  "alexnet|ws|128x32|default",
+  "alexnet|ws|16x16|default",
+  "alexnet|ws|16x64|default",
+  "alexnet|ws|32x128|default",
+  "alexnet|ws|32x32|default",
+  "alexnet|ws|64x16|default",
+  "alexnet|ws|64x64|default",
+  "ncf|is|128x128|large",
+  "ncf|is|128x128|small",
+  "ncf|is|128x32|default",
+  "ncf|is|16x16|default",
+  "ncf|is|16x16|large",
+  "ncf|is|16x16|small",
+  "ncf|is|16x64|default",
+  "ncf|is|24x24|default",
+  "ncf|is|32x128|default",
+  "ncf|is|32x32|default",
+  "ncf|is|32x32|large",
+  "ncf|is|32x32|small",
+  "ncf|is|48x48|default",
+  "ncf|is|64x16|default",
+  "ncf|is|64x64|large",
+  "ncf|is|64x64|small",
+  "ncf|is|96x96|default",
+  "ncf|os|128x32|default",
+  "ncf|os|16x16|default",
+  "ncf|os|16x16|large",
+  "ncf|os|16x16|small",
+  "ncf|os|16x64|default",
+  "ncf|os|24x24|default",
+  "ncf|os|32x128|default",
+  "ncf|os|32x32|large",
+  "ncf|os|32x32|small",
+  "ncf|os|48x48|default",
+  "ncf|os|64x16|default",
+  "ncf|os|64x64|large",
+  "ncf|os|64x64|small",
+  "ncf|os|96x96|default",
+  "ncf|ws|128x32|default",
+  "ncf|ws|16x16|default",
+  "ncf|ws|16x16|large",
+  "ncf|ws|16x16|small",
+  "ncf|ws|16x64|default",
+  "ncf|ws|24x24|default",
+  "ncf|ws|32x128|default",
+  "ncf|ws|32x32|large",
+  "ncf|ws|32x32|small",
+  "ncf|ws|48x48|default",
+  "ncf|ws|64x16|default",
+  "ncf|ws|96x96|default",
+  "resnet18|is|128x128|default",
+  "resnet18|is|64x64|default",
+  "resnet18|os|128x128|default",
+  "resnet18|os|64x64|default",
+  "resnet18|ws|128x128|default",
+  "resnet18|ws|64x64|default",
+  "vit_s|is|16x16|large",
+  "vit_s|is|16x16|small",
+  "vit_s|is|16x64|default",
+  "vit_s|is|24x24|default",
+  "vit_s|is|64x16|default",
+  "vit_s|is|8x8|default",
+  "vit_s|os|16x16|large",
+  "vit_s|os|16x16|small",
+  "vit_s|os|16x64|default",
+  "vit_s|os|64x16|default",
+  "vit_s|os|8x8|default",
+  "vit_s|ws|128x32|default",
+  "vit_s|ws|16x16|large",
+  "vit_s|ws|16x16|small",
+  "vit_s|ws|16x64|default",
+  "vit_s|ws|24x24|default",
+  "vit_s|ws|64x16|default",
+  "vit_s|ws|8x8|default"
  ],
- "not_run_points": 97,
+ "errored_points": [],
+ "not_run_points": 91,
  "not_run_sample": [
   "ncf|os|64x64|small",
   "ncf|os|64x64|large",
@@ -346,21 +464,19 @@
   "vit_s|ws|24x24|default",
   "vit_s|is|24x24|default",
   "ncf|ws|96x96|default",
-  "vit_s|ws|16x16|default"
+  "vit_s|os|16x64|default"
  ],
  "notes": [
   "SCALE-Sim ran in CALC interface-bandwidth mode (bundled scale.cfg): stall_cycles = 0 is structural there (stalls are not modelled in that mode) and dram_bw_* is SCALE-Sim's estimated DRAM demand, not a measured stall effect.",
   "SRAM levels are per buffer: small 16 kB, default 64 kB, large 1024 kB.",
   "Workloads are NOT interchangeable: alexnet_part = AlexNet Conv1 only (1 layer); gemm_test = one 256x128x256 GEMM, used as the separate small-array (8x8/16x16) workload; vit_s, ncf, alexnet as named.",
   "Points were ordered cheapest-estimated-first; points never reached before the deadline are in not_run_points.",
-  "alexnet_part|ws|8x8|default: process ended without a result after the logged wall time, empty error text; the cause is unverified (not shown to be a timeout; likely out-of-memory kill but not confirmed)."
+  "Failed points keep every attempt in `errored_points[*].history`; Part 2 retries record docker exit code, OOMKilled flag and a diagnosis."
  ],
  "planned_points": 264,
- "rows_total": 167,
+ "rows_total": 173,
  "status_counts": {
-  "error": 1,
-  "ok": 165,
-  "skipped_after_timeout": 1
+  "ok": 173
  },
  "sweep": "A (SCALE-Sim 3.0.0 architecture sweep)"
 }

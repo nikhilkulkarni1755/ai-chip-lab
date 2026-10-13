@@ -1,0 +1,46 @@
+rows 173 status {'ok': 173} planned 264 not_run 91
+alexnet       planned  24 ok   1 err 0 skipped 0 timeout 0 not_run 23
+alexnet_part  planned  60 ok  59 err 0 skipped 0 timeout 0 not_run 1
+gemm_test     planned  57 ok  57 err 0 skipped 0 timeout 0 not_run 0
+ncf           planned  57 ok  14 err 0 skipped 0 timeout 0 not_run 43
+resnet18      planned   6 ok   0 err 0 skipped 0 timeout 0 not_run 6
+vit_s         planned  60 ok  42 err 0 skipped 0 timeout 0 not_run 18
+best dataflow (default SRAM):
+  alexnet|128x128        os (partial: <3 dataflows)
+  alexnet_part|128x128   ws 
+  alexnet_part|128x32    ws 
+  alexnet_part|16x16     ws 
+  alexnet_part|16x64     ws 
+  alexnet_part|24x24     ws 
+  alexnet_part|32x128    ws 
+  alexnet_part|32x32     ws 
+  alexnet_part|48x48     ws 
+  alexnet_part|64x16     ws 
+  alexnet_part|64x64     ws 
+  alexnet_part|8x8       ws (partial: <3 dataflows)
+  alexnet_part|96x96     ws 
+  gemm_test|128x128      os 
+  gemm_test|128x32       os 
+  gemm_test|16x16        os 
+  gemm_test|16x64        os 
+  gemm_test|32x128       os 
+  gemm_test|32x32        os 
+  gemm_test|64x16        os 
+  gemm_test|64x64        os 
+  gemm_test|8x8          os 
+  ncf|128x128            ws 
+  ncf|32x32              ws (partial: <3 dataflows)
+  ncf|64x64              ws 
+  vit_s|128x128          os 
+  vit_s|128x32           os (partial: <3 dataflows)
+  vit_s|16x16            os 
+  vit_s|24x24            os (partial: <3 dataflows)
+  vit_s|32x128           os 
+  vit_s|32x32            os 
+  vit_s|48x48            os 
+  vit_s|64x64            os 
+  vit_s|96x96            os 
+SCALE-Sim ran in CALC interface-bandwidth mode (bundled scale.cfg): stall_cycles = 0 is structural there (stalls are not modelled in that mode) and dram_bw_* is SCALE-Sim's estimated DRAM demand, not a measured stall effect.
+[arch_plots] 173 ok points -> 20 plots
+driver still running at accounting time: no
+Mon Oct 12 17:10:35 PDT 2026
