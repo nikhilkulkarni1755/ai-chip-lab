@@ -1452,6 +1452,16 @@ def recipes_note_md(L):
             "in Part 1 only `make preflight` was executed as a recipe).\n")
 
 
+def demo_run_md(L):
+    d = L.jload("results/run_demo_last.json")
+    if not isinstance(d, dict):
+        return ""
+    npass = sum(1 for x in d.get("steps") or [] if x.get("verdict") == "PASS")
+    return ("Timed run of `%s` (results/run_demo_last.json, results/evidence/final_run_demo.txt): **%s** in %s s (%s s of lock wait), %s of %s steps PASS. "
+            "The Task 3 criterion-B step's PASS only means the recomputed verdict equals the recorded one; the criterion itself is **not met**. The routed gate-level step is Icarus only (Verilator not run).\n\n") % (
+        d.get("command"), d.get("result"), d.get("total_s"), d.get("lock_wait_s"), npass, len(d.get("steps") or []))
+
+
 def build_root_readme(L, rows, vm):
     el_s, _ = elapsed_str(L)
     h = []
@@ -1461,7 +1471,7 @@ def build_root_readme(L, rows, vm):
              "math, a second independent tool, or published reference values); sweeps then explore the design space.\n")
     h.append("Open [`demo/index.html`](demo/index.html) for the full walk-through: concepts, tool map, how each result was tested, "
              "plots, and honest caveats.\n")
-    h.append("## Status\n\nGenerated from the files in this repository by `python3 scripts/demo_build.py` (%s).\n" % el_s)
+    h.append("## Status\n\nGenerated from the files in this repository by `python3 scripts/demo_build.py` (Part 1: %s; Part 2 runtime is in the Part 2 section).\n" % el_s)
     h.append(md_table(rows))
     if demo_part2.active(L):
         h.append("\n" + demo_part2.part2_md(L, rows, L.jload("coord/part2_before.json") or {"rows": []}))
@@ -1481,7 +1491,7 @@ def build_root_readme(L, rows, vm):
              "make repro                    # reruns Task 1 in full and the cheap Task 3 set clean and compares; Task 2 runs come from results/t2_reruns.json\n"
              "make demo                     # plots + evidence PNGs + demo/index.html + this README\n"
              "make all                      # fail-soft loop over the above, always builds the demo, exits non-zero listing failed stages\n"
-             "bash demo/run_demo.sh         # short cut (cached images, scratch output dir); needs the VM running\n```\n\n"
+             "bash demo/run_demo.sh         # short cut (cached images, scratch output dir); needs the VM running\n```\n\n" + demo_run_md(L)
              + recipes_note_md(L))
     ev = sorted(glob.glob(L.p("results/evidence/*.txt")))
     h.append("## Evidence that it builds and runs\n\nTerminal output saved by each stage, rendered to images from the saved text (not OS screenshots).\n")
