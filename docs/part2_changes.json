@@ -223,5 +223,20 @@
    "results/evidence/61_*.txt"
   ],
   "what": "bf16 MAC: 10k-case bit-exact verification on both simulators, ORFS runs of the INT8 and bf16 MAC alone at 1.25 ns, PPA table"
+ },
+ {
+  "agent": "arch",
+  "stage": "63_sram_cacti",
+  "files": [
+   "scripts/p2_sram_run.py",
+   "scripts/p2_sram_energy.py",
+   "results/sram_cacti.json",
+   "results/sram_energy_model.json",
+   "results/p2_63_sram_cacti.json",
+   "docs/sram_explained.md",
+   "demo/assets/sram_cacti.png",
+   "results/evidence/63_sram_cacti_results.txt"
+  ],
+  "what": "CACTI 7 45 nm scratchpad model for 16/64/1024/2048/6144 kB, order-of-magnitude SRAM energy for ViT-S from sweep A; 7 pre-registered criteria pass"
  }
 ]
