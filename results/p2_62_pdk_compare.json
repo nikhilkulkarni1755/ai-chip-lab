@@ -1,7 +1,6 @@
 {
   "stage": "62_pdk_compare",
-  "pass": null,
-  "state": "pending (criteria and comparison definition registered; not run yet)",
+  "pass": true,
   "oracle": "the flow's own reports (ORFS metadata, setup WNS >= 0, DRC count) for both PDKs on identical RTL; the nangate45 side is the already measured sweep-B closing point, the sky130hd side is a coarse search. Physical expectation: a 130 nm process is slower and larger than a 45 nm one.",
   "comparison_definition": {
     "compared": [
@@ -20,36 +19,36 @@
       "name": "accounting_complete",
       "threshold": "every planned sky130hd point (8.0, 5.5, 4.0 ns at 30 % utilization, plus at most one refinement started only if it can finish before 20:45) is recorded as ok / timeout (with the stage reached) / flow_error (with diagnosis from the log); no silent gaps, no retries of timeouts",
       "written_before_run": "f0a3afc",
-      "measured": null,
-      "pass": null
+      "measured": "8.0 ns: ok WNS 1.03696 hold 879 s; 5.5 ns: ok WNS -0.223852 hold 1425 s; 4.0 ns: ok WNS -1.72159 hold 1687 s; 6.75 ns: ok WNS 0.188089 hold 1150 s",
+      "pass": true
     },
     {
       "name": "sky130hd_closes_timing_somewhere",
       "threshold": "at least one sky130hd point has setup WNS >= 0, zero DRC errors and a GDS (otherwise the comparison is reported as 'no closure in the tested range' and this criterion is FALSE)",
       "written_before_run": "f0a3afc",
-      "measured": null,
-      "pass": null
+      "measured": "fastest closing 6.75 ns, WNS 0.188089, DRC 0, GDS True",
+      "pass": true
     },
     {
       "name": "frontier_claim_matches_evidence",
       "threshold": "the result label is computed by rule: 'coarse frontier bracket' only if a failing point exists below a closing point; a lone closing point is reported as an UPPER BOUND on the closure period, never as a frontier",
       "written_before_run": "f0a3afc",
-      "measured": null,
-      "pass": null
+      "measured": "coarse frontier bracket: fails at 5.5 ns, closes at 6.75 ns (true frontier in between; resolution 1.25 ns)",
+      "pass": true
     },
     {
       "name": "both_pdks_compared_on_same_design",
       "threshold": "area, standard-cell count, total power and clock period are reported for nangate45 (sweep B, 1.25 ns, u30 closing point) and for the fastest closing sky130hd point, same RTL (sha256 recorded), same 4x4 array, same utilization 30 %; power also normalised to energy per cycle because the clocks differ",
       "written_before_run": "f0a3afc",
-      "measured": null,
-      "pass": null
+      "measured": "RTL sha256 prefix(es) of sky130hd runs: ['85f945db2d56']; area_um2: nangate45 23969.5 vs sky130hd 121473, stdcell_count: nangate45 11924 vs sky130hd 14473, cell_count: nangate45 30166 vs sky130hd 47840, power_total_w: nangate45 0.102121 vs sky130hd 0.0760972, power_leakage_w: nangate45 0.000466542 vs sky130hd 5.38082e-08, wns_setup_ns: nangate45 0.0132117 vs sky130hd 0.188089, clock_period_ns: nangate45 1.25 vs sky130hd 6.75, energy_per_cycle_pj: nangate45 127.65124999999999 vs sky130hd 513.6561",
+      "pass": true
     },
     {
       "name": "expected_direction",
       "threshold": "sky130hd (130 nm) needs a longer closing period and more area than nangate45 (45 nm); a violation is reported as a finding, not tuned away",
       "written_before_run": "f0a3afc",
-      "measured": null,
-      "pass": null
+      "measured": "period ratio 5.4, area ratio 5.067815348672271",
+      "pass": true
     }
   ],
   "superseded": [],
@@ -58,5 +57,58 @@
     "python3 scripts/p2_pdk_compare.py summary"
   ],
   "seeds": "none (ORFS flow is deterministic)",
-  "evidence": []
+  "evidence": [
+    "results/evidence/62_pdk_compare.txt",
+    "results/pdk_compare/pdk_compare.json",
+    "results/pdk_compare/sky130hd_points.jsonl",
+    "demo/assets/pdk_compare.png",
+    "docs/pdk_compare_explained.md"
+  ],
+  "plan_change": {
+    "when": "18:42",
+    "decision": "P2-11a, amended 19:08",
+    "what": "Planned 8.0 / 5.5 / 4.0 ns. After 8.0 closed and 5.5 failed, a refinement point at 6.75 ns (midpoint of the bracket) was added. 4.0 ns was first to be cut (a faster clock cannot close), but its job already held the lock and ran to its end; it is recorded as a normal planned point with its real result. Criteria and thresholds untouched."
+  },
+  "finding": "coarse frontier bracket: fails at 5.5 ns, closes at 6.75 ns (true frontier in between; resolution 1.25 ns)",
+  "summary": {
+    "area_um2": {
+      "nangate45": 23969.5,
+      "sky130hd": 121473,
+      "ratio_sky_over_nangate": 5.067815348672271
+    },
+    "stdcell_count": {
+      "nangate45": 11924,
+      "sky130hd": 14473,
+      "ratio_sky_over_nangate": 1.213770546796377
+    },
+    "cell_count": {
+      "nangate45": 30166,
+      "sky130hd": 47840,
+      "ratio_sky_over_nangate": 1.5858914009149374
+    },
+    "power_total_w": {
+      "nangate45": 0.102121,
+      "sky130hd": 0.0760972,
+      "ratio_sky_over_nangate": 0.7451670077652981
+    },
+    "power_leakage_w": {
+      "nangate45": 0.000466542,
+      "sky130hd": 5.38082e-08,
+      "ratio_sky_over_nangate": 0.00011533409639432247
+    },
+    "wns_setup_ns": {
+      "nangate45": 0.0132117,
+      "sky130hd": 0.188089,
+      "ratio_sky_over_nangate": 14.236547908293407
+    },
+    "clock_period_ns": {
+      "nangate45": 1.25,
+      "sky130hd": 6.75,
+      "ratio_sky_over_nangate": 5.4
+    },
+    "energy_per_cycle_pj": {
+      "nangate45": 127.65124999999999,
+      "sky130hd": 513.6561
+    }
+  }
 }

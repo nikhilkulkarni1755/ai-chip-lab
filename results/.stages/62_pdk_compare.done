@@ -1,0 +1,1 @@
+sky130hd systolic_os coarse search 2026-10-12 19:29:07; pass=True; coarse frontier bracket: fails at 5.5 ns, closes at 6.75 ns (true frontier in between; resolution 1.25 ns)

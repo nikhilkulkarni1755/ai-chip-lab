@@ -249,5 +249,19 @@
    "scripts/p2_61_finish.py"
   ],
   "what": "bf16 stage explained (design, tests, PPA table, why FP costs more); next_action names the unmerged one-line lint fix (p2/rtl e21fd3b) and the two commands to re-verify (Decision P2-12)"
+ },
+ {
+  "agent": "pnr",
+  "stage": "62_pdk_compare",
+  "files": [
+   "orfs/pdk_compare/",
+   "scripts/p2_pdk_compare.py",
+   "scripts/p2_pdk_compare_finalize.py",
+   "results/p2_62_pdk_compare.json",
+   "results/pdk_compare/",
+   "docs/pdk_compare_explained.md",
+   "demo/assets/pdk_compare.png"
+  ],
+  "what": "systolic_os on sky130hd: 4 points (8.0/6.75/5.5/4.0 ns), coarse bracket 5.5 fail / 6.75 close; 5.1x area, 5.4x period vs nangate45"
  }
 ]

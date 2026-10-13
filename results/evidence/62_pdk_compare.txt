@@ -1,0 +1,53 @@
+coarse frontier bracket: fails at 5.5 ns, closes at 6.75 ns (true frontier in between; resolution 1.25 ns)
+
+points (sky130hd systolic_os, 30 % utilization):
+    4.0 ns  ok     closed=False WNS=-1.72159 area=151607 stdcells=16771 power=0.195407 W lock_hold=1687 s wait=162 s
+    5.5 ns  ok     closed=False WNS=-0.223852 area=138784 stdcells=15845 power=0.120335 W lock_hold=1425 s wait=111 s
+   6.75 ns  ok     closed=True WNS=0.188089 area=121473 stdcells=14473 power=0.0760972 W lock_hold=1150 s wait=0 s
+    8.0 ns  ok     closed=True WNS=1.03696 area=119978 stdcells=14278 power=0.0629714 W lock_hold=879 s wait=216 s
+
+nangate45 reference: {"clock_period_ns": 1.25, "core_utilization": 30, "wns_setup_ns": 0.0132117, "area_um2": 23969.5, "power_total_w": 0.102121, "stdcell_count": 11924, "variant": "sw_1250ps_u30"}
+
+comparison: {
+ "area_um2": {
+  "nangate45": 23969.5,
+  "sky130hd": 121473,
+  "ratio_sky_over_nangate": 5.067815348672271
+ },
+ "stdcell_count": {
+  "nangate45": 11924,
+  "sky130hd": 14473,
+  "ratio_sky_over_nangate": 1.213770546796377
+ },
+ "cell_count": {
+  "nangate45": 30166,
+  "sky130hd": 47840,
+  "ratio_sky_over_nangate": 1.5858914009149374
+ },
+ "power_total_w": {
+  "nangate45": 0.102121,
+  "sky130hd": 0.0760972,
+  "ratio_sky_over_nangate": 0.7451670077652981
+ },
+ "power_leakage_w": {
+  "nangate45": 0.000466542,
+  "sky130hd": 5.38082e-08,
+  "ratio_sky_over_nangate": 0.00011533409639432247
+ },
+ "wns_setup_ns": {
+  "nangate45": 0.0132117,
+  "sky130hd": 0.188089,
+  "ratio_sky_over_nangate": 14.236547908293407
+ },
+ "clock_period_ns": {
+  "nangate45": 1.25,
+  "sky130hd": 6.75,
+  "ratio_sky_over_nangate": 5.4
+ },
+ "energy_per_cycle_pj": {
+  "nangate45": 127.65124999999999,
+  "sky130hd": 513.6561
+ }
+}
+
+{"accounting_complete": true, "sky130hd_closes_timing_somewhere": true, "frontier_claim_matches_evidence": true, "both_pdks_compared_on_same_design": true, "expected_direction": true}
