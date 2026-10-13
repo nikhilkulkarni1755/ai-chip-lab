@@ -21,7 +21,7 @@ STATUS
   FAIL     P2.2 bf16 processing element - 9 of 10 evaluated criteria pass; failing checks: lint_clean; bit-exact checks over 10042 cases: Verilator True, Icarus True. INT8 vs bf16 MAC PPA table in section 16: bf16 power is at a clock it does not meet and fmax comes from one run per design, not a frontier; failing: lint_clean
   PASS     P2.3 systolic_os on sky130hd - 4 sky130hd points recorded (planned 8.0 / 5.5 / 4.0 ns plus one refinement, Decision P2-11a); result label by the file's rule: coarse frontier bracket: fails at 5.5 ns, closes at 6.75 ns; 5 of 5 evaluated criteria pass. Clock ratio is an upper bound on the slowdown; power is at clocks 5.4x apart, so energy per cycle is shown too
   PASS     P2.4 SRAM modelling (CACTI) - 7 of 7 evaluated criteria pass; 1 reported only or not evaluated yet (neither pass nor fail). CACTI is an analytical model: 45 nm matches nangate45 in feature size only and no SRAM macro exists in any ORFS run, so absolute numbers are unchecked; the energy model is order-of-magnitude (SRAM read energy only, DRAM and MAC energy not modelled); the non-monotone cycle time is an unregistered observation (docs/sram_explained.md)
-  RUNNING  Make recipes executed for real - 12 recipe(s) recorded in results/make_recipes.json; non-zero exit: t3, all; still running: make demo (started 2026-10-12 19:58:43 PDT) (the row keeps reading RUNNING until that run has finished and results/make_all_last.json and the note say otherwise)
+  RUNNING  Make recipes executed for real - 12 recipe(s) recorded in results/make_recipes.json; non-zero exit: t3, all; still running: make demo (started 2026-10-12 20:02:37 PDT) (the row keeps reading RUNNING until that run has finished and results/make_all_last.json and the note say otherwise)
 
 Total runtime: 5h 08m, from 2026-10-12 02:48:36 PDT to 07:57, budget 6h
 Machine: Intel(R) Core(TM) i7-7660U CPU @ 2.50GHz, 2 physical / 4 logical cores, 8 GB RAM, macOS 13.7.8 (x86_64)
@@ -36,7 +36,7 @@ RE-RUN THE SHORT DEMO
   Runs: Task 1 on 200 cases (Verilator + Icarus), the formal MAC proof restricted to the sby tasks "prove" (unbounded
   induction) and "cover", one SCALE-Sim run vs the analytic model, and ORFS's threshold check on the existing outputs.
   The full BMC-20 formal run is part of `make t1`, not of this cut (216 s in the official run).
-  Last measured run time of the short demo: 82 s with 200 cases (finished 2026-10-12 07:53:04, load average at the end: 2.30 2.25 2.86). The load average reflects other jobs on the same 2-core machine, so a quiet machine is faster.
+  Last measured run time of the short demo: 117 s with 200 cases (finished 2026-10-12 20:02:12, load average at the end: 2.53 3.20 3.97). The load average reflects other jobs on the same 2-core machine, so a quiet machine is faster.
 
 FREE DISK AFTERWARDS (all inside ~/ai-chip-lab; nothing outside the lab was changed)
   Safe to delete (re-creatable, results already saved under results/ and demo/):

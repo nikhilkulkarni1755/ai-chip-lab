@@ -27,7 +27,7 @@ Generated from the files in this repository by `python3 scripts/demo_build.py` (
 | P2.2 bf16 processing element | **FAIL** | 9 of 10 evaluated criteria pass; failing checks: lint_clean; bit-exact checks over 10042 cases: Verilator True, Icarus True. INT8 vs bf16 MAC PPA table in section 16: bf16 power is at a clock it does not meet and fmax comes from one run per design, not a frontier; failing: lint_clean |
 | P2.3 systolic_os on sky130hd | **PASS** | 4 sky130hd points recorded (planned 8.0 / 5.5 / 4.0 ns plus one refinement, Decision P2-11a); result label by the file's rule: coarse frontier bracket: fails at 5.5 ns, closes at 6.75 ns; 5 of 5 evaluated criteria pass. Clock ratio is an upper bound on the slowdown; power is at clocks 5.4x apart, so energy per cycle is shown too |
 | P2.4 SRAM modelling (CACTI) | **PASS** | 7 of 7 evaluated criteria pass; 1 reported only or not evaluated yet (neither pass nor fail). CACTI is an analytical model: 45 nm matches nangate45 in feature size only and no SRAM macro exists in any ORFS run, so absolute numbers are unchecked; the energy model is order-of-magnitude (SRAM read energy only, DRAM and MAC energy not modelled); the non-monotone cycle time is an unregistered observation (docs/sram_explained.md) |
-| Make recipes executed for real | **RUNNING** | 12 recipe(s) recorded in results/make_recipes.json; non-zero exit: t3, all; still running: make demo (started 2026-10-12 19:58:43 PDT) (the row keeps reading RUNNING until that run has finished and results/make_all_last.json and the note say otherwise) |
+| Make recipes executed for real | **RUNNING** | 12 recipe(s) recorded in results/make_recipes.json; non-zero exit: t3, all; still running: make demo (started 2026-10-12 20:02:37 PDT) (the row keeps reading RUNNING until that run has finished and results/make_all_last.json and the note say otherwise) |
 
 ### What is not green yet, why, and the next action
 
@@ -56,7 +56,7 @@ State is computed from the files; diagnosis and next action are explanations wri
 | Repro | PASS | **PASS** |
 | Make recipes | Untested | **RUNNING** |
 
-Part 2 elapsed so far (not finished): 10h 55m, from 2026-10-12 09:03:34 PDT to now, budget 14h (Part 1's total runtime stays as recorded in its own section)
+Part 2 elapsed so far (not finished): 10h 59m, from 2026-10-12 09:03:34 PDT to now, budget 14h (Part 1's total runtime stays as recorded in its own section)
 
 Part 2 stage states:
 
@@ -131,7 +131,7 @@ bash demo/run_demo.sh         # short cut (cached images, scratch output dir); n
 
 ### Make recipes: what was actually run
 
-Each row is one recorded invocation of `make` from the repo root with exactly the command shown (recorded by `scripts/make_record.py`, raw data in `results/make_recipes.json`). Not every recipe re-executed all of its work: `make t3 T3_USER_DEADLINE=1` ran in resume mode (8 step/job results kept from earlier runs of the same day by the identical commands, 0 executed under the recipe); `make t3-clean-first` ran in resume mode (0 step/job results kept from earlier runs of the same day by the identical commands, 8 executed under the recipe); `make t1-routed T1R_RESUME=1 T1R_SKIP=gls_verilator` ran in resume mode (46 step/job results kept from earlier runs of the same day by the identical commands, 2 executed under the recipe). Variables on a command line restrict what ran (`T3_USER_DEADLINE=1`: Task 3 criterion-A jobs not started; `T1R_SKIP=gls_verilator`: Verilator gate-level simulation not run; `REPRO_PART=t3`: Task 3 rerun only). Wall time includes waiting in the one-job-at-a-time queue of this machine; the time without that wait is shown separately. The recipes were not run in the order of the task text; all recorded invocations by start time: 09:17 runtime (exit 0), 09:27 images (exit 0), 10:27 t2 (exit 0), 11:36 t2-stretch (exit 0), 12:17 t3 (exit 2), 13:10 t3 (exit 2), 13:56 t1 (exit 0), 14:06 repro (exit 2), 15:18 t1-routed (exit 0), 15:40 preflight (exit 0), 15:40 demo (exit 0), 16:40 t3-clean-first (exit 0), 17:01 repro (exit 0), 19:07 t1-routed (exit 0), 19:08 demo (exit 0), 19:11 all (exit 2).
+Each row is one recorded invocation of `make` from the repo root with exactly the command shown (recorded by `scripts/make_record.py`, raw data in `results/make_recipes.json`). Not every recipe re-executed all of its work: `make t3 T3_USER_DEADLINE=1` ran in resume mode (8 step/job results kept from earlier runs of the same day by the identical commands, 0 executed under the recipe); `make t3-clean-first` ran in resume mode (0 step/job results kept from earlier runs of the same day by the identical commands, 8 executed under the recipe); `make t1-routed T1R_RESUME=1 T1R_SKIP=gls_verilator` ran in resume mode (46 step/job results kept from earlier runs of the same day by the identical commands, 2 executed under the recipe). Variables on a command line restrict what ran (`T3_USER_DEADLINE=1`: Task 3 criterion-A jobs not started; `T1R_SKIP=gls_verilator`: Verilator gate-level simulation not run; `REPRO_PART=t3`: Task 3 rerun only). Wall time includes waiting in the one-job-at-a-time queue of this machine; the time without that wait is shown separately. The recipes were not run in the order of the task text; all recorded invocations by start time: 09:17 runtime (exit 0), 09:27 images (exit 0), 10:27 t2 (exit 0), 11:36 t2-stretch (exit 0), 12:17 t3 (exit 2), 13:10 t3 (exit 2), 13:56 t1 (exit 0), 14:06 repro (exit 2), 15:18 t1-routed (exit 0), 15:40 preflight (exit 0), 15:40 demo (exit 0), 16:40 t3-clean-first (exit 0), 17:01 repro (exit 0), 19:07 t1-routed (exit 0), 19:08 demo (exit 0), 19:11 all (exit 2), 19:58 demo (exit 0).
 
 | Recipe | Exit code | Wall time | of which queue wait | Run time | Started | Log |
 |---|---|---|---|---|---|---|
@@ -142,7 +142,7 @@ Each row is one recorded invocation of `make` from the repo root with exactly th
 | `make t2-stretch` | 0 | 38 min 12 s | 19 min 49 s | 18 min 23 s | 11:36:27 | `logs/part2/32_make_recipes/t2-stretch_113627.log` |
 | `make t3 T3_USER_DEADLINE=1` | 2 | 55 min 39 s | 31 min 05 s | 24 min 34 s | 13:10:40 | `logs/part2/32_make_recipes/t3_131040.log` |
 | `make repro REPRO_PART=t3` | 0 | 125 min 36 s | 95 min 43 s | 29 min 53 s | 17:01:51 | `logs/part2/32_make_recipes/repro_170151.log` |
-| `make demo` | 0 | 20 s | 0 s | 20 s | 19:08:50 | `logs/part2/32_make_recipes/demo_190850.log` |
+| `make demo` | 0 | 18 s | 0 s | 18 s | 19:58:43 | `logs/part2/32_make_recipes/demo_195843.log` |
 | `make preflight` | 0 | 1 s | 0 s | 1 s | 15:40:37 | `logs/part2/32_make_recipes/preflight_154037.log` |
 | `make t3-clean-first` | 0 | 21 min 37 s | 6 min 11 s | 15 min 26 s | 16:40:13 | `logs/part2/32_make_recipes/t3-clean-first_164013.log` |
 | `make t1-routed T1R_RESUME=1 T1R_SKIP=gls_verilator` | 0 | 31 s | 0 s | 31 s | 19:07:27 | `logs/part2/32_make_recipes/t1-routed_190727.log` |
@@ -163,7 +163,7 @@ Notes:
 - earlier attempts of `make t3`: attempt started 12:17:29: exit 2 after 52 min 42 s — Stopped on purpose at 13:11 (loop killed, container of the current job killed): job rl2_user_ws_high held the lock 769 s (12:55:47-13:08:36, exit 75 'partial') without finishing a single layer (its layers/ dir is empty; log: 'parallel failed: BrokenProcessPool' for Conv5_1b/Conv5_2a) and had re-queued itself for an identical hold. Rule from main: no stage lock hold > 10 min. The three CALC jobs finished under this attempt (see executed_under_this_recipe). Next attempt runs with T3_USER_DEADLINE=1 (criterion-A user-bandwidth jobs not started) so the cheap second pass and the summary can complete; criterion A stays incomplete until arch fixes the job.
 - earlier attempts of `make t1-routed`: attempt started 15:18:53: exit 0 after 1 min 01 s
 - earlier attempts of `make repro`: attempt started 14:06:34: exit 2 after 93 min 53 s — Failed on Task 3 bookkeeping and provenance only (arch's diagnosis: results/evidence/51_repro_t3_diagnosis.txt, Decision P2-10): all SCALE-Sim reports and fit/CALC results byte-identical; differing files were scheduler bookkeeping (attempts.json), per-layer timing measurements (timing.timing) and roofline2.json, which had been regenerated natively (Python 3.11) during the rerun while the rerun's was written in the container (Python 3.12, 1-ulp difference in a float sum); a t3 input commit (8cd5d98) also landed during the rerun. The Task 1 full rerun inside this recipe ran 15:20-15:40.
-- earlier attempts of `make demo`: attempt started 15:40:38: exit 0 after 23 s
+- earlier attempts of `make demo`: attempt started 15:40:38: exit 0 after 23 s | attempt started 19:08:50: exit 0 after 20 s
 
 **`make all` fail-soft test: PASS.** Command: `MAKE_ALL_FAIL=preflight RESUME=markers SWEEPS_DETACH=1 T3_USER_DEADLINE=1 make all   (then marker restored and `make demo` rerun)`. `make all` exited 2 and listed the failed stage; the demo was built after the failure. In this test the forced stage's recipe was not run (preflight); executed for real: t3, demo; skipped because they had already succeeded (marker-only resume of the test, see each reason): runtime, images, t1, t2, t2-stretch, t1-routed, sweeps, repro; excluded from the test: none. The marker was restored and the demo rebuilt afterwards. Details: `results/make_all_failsoft.json`.
 
@@ -279,6 +279,8 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 ![63_cacti_image_smoke](demo/assets/evidence/63_cacti_image_smoke.png)
 
 ![63_sram_cacti_results](demo/assets/evidence/63_sram_cacti_results.png)
+
+![final_run_demo](demo/assets/evidence/final_run_demo.png)
 
 ## Results
 
