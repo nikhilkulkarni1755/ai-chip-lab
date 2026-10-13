@@ -1,0 +1,27 @@
+Sweep B timing-closure frontier (setup WNS >= 0, the flow's own report), from results/sweeps/phys.jsonl
+closed = WNS >= 0 at that (period, utilization); frontier = smallest swept period that closed; 'next failing' = the slower-than-... period just below it that failed
+
+gcd: util% | fastest closing ns | WNS there | next failing below ns | its WNS | bracketed | non-monotonic | points
+   30 | 0.425 | 0.00274 | 0.42 | -0.00382275 | True | False | 9
+   40 | 0.425 | 0.00304 | 0.42 | -0.00314013 | True | False | 12
+   50 | 0.42 | 0.00006 | 0.41 | -0.010512 | True | False | 9
+   60 | 0.425 | 0.00420 | 0.42 | -0.00699543 | True | False | 11
+
+systolic_os: util% | fastest closing ns | WNS there | next failing below ns | its WNS | bracketed | non-monotonic | points
+   30 | 1.25 | 0.01321 | 1.2 | -0.00730405 | True | False | 6
+   40 | 1.25 | 0.01687 | None | None | False | False | 1
+   50 | 1.25 | 0.01727 | None | None | False | False | 1
+
+failed/timeout points: [
+ {
+  "design": "gcd",
+  "clock_period_ns": 0.3,
+  "core_utilization": 60,
+  "status": "failed",
+  "flow_rc": 2,
+  "extractor_error": "FileNotFoundError(2, 'No such file or directory')",
+  "flow_error_from_log": "[ERROR DPL-0033] detailed placement checks failed during check placement. | Error: global_route.tcl, 175 DPL-0033",
+  "meaning": "flow aborted before metadata.json existed (extractor FileNotFoundError is a consequence, not the cause); deterministic flow, so a plain rerun is expected to fail identically",
+  "retry": "cd ~/ai-chip-lab && source env.sh && python3 sweeps/phys_sweep.py --design gcd --retry --max-points 1"
+ }
+]

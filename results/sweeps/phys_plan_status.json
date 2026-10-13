@@ -1,0 +1,241 @@
+{
+ "updated_epoch": 1791849823,
+ "final": true,
+ "counts": {
+  "done": 16,
+  "not_reached": 4,
+  "cut": 6
+ },
+ "points": [
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.4,
+   "core_utilization": 40,
+   "state": "done",
+   "wns_setup_ns": -0.0180586,
+   "closed": false,
+   "lock_hold_s": null,
+   "flow_elapsed_s": null
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.405,
+   "core_utilization": 40,
+   "state": "done",
+   "wns_setup_ns": -0.0129321,
+   "closed": false,
+   "lock_hold_s": 222,
+   "flow_elapsed_s": 131.27
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.41,
+   "core_utilization": 40,
+   "state": "done",
+   "wns_setup_ns": -0.00867662,
+   "closed": false,
+   "lock_hold_s": null,
+   "flow_elapsed_s": null
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.415,
+   "core_utilization": 40,
+   "state": "done",
+   "wns_setup_ns": -0.0103637,
+   "closed": false,
+   "lock_hold_s": 96,
+   "flow_elapsed_s": 50.13
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.42,
+   "core_utilization": 40,
+   "state": "done",
+   "wns_setup_ns": -0.00314013,
+   "closed": false,
+   "lock_hold_s": null,
+   "flow_elapsed_s": null
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.425,
+   "core_utilization": 40,
+   "state": "done",
+   "wns_setup_ns": 0.00304279,
+   "closed": true,
+   "lock_hold_s": null,
+   "flow_elapsed_s": null
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.43,
+   "core_utilization": 40,
+   "state": "done",
+   "wns_setup_ns": 0.00444539,
+   "closed": true,
+   "lock_hold_s": 69,
+   "flow_elapsed_s": 29.35
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.4,
+   "core_utilization": 60,
+   "state": "done",
+   "wns_setup_ns": -0.0216679,
+   "closed": false,
+   "lock_hold_s": null,
+   "flow_elapsed_s": null
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.405,
+   "core_utilization": 60,
+   "state": "done",
+   "wns_setup_ns": -0.0187859,
+   "closed": false,
+   "lock_hold_s": 107,
+   "flow_elapsed_s": 63.83
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.41,
+   "core_utilization": 60,
+   "state": "done",
+   "wns_setup_ns": -0.00989425,
+   "closed": false,
+   "lock_hold_s": null,
+   "flow_elapsed_s": null
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.415,
+   "core_utilization": 60,
+   "state": "done",
+   "wns_setup_ns": -0.0121877,
+   "closed": false,
+   "lock_hold_s": 115,
+   "flow_elapsed_s": 70.36
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.42,
+   "core_utilization": 60,
+   "state": "done",
+   "wns_setup_ns": -0.00699543,
+   "closed": false,
+   "lock_hold_s": null,
+   "flow_elapsed_s": null
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.425,
+   "core_utilization": 60,
+   "state": "done",
+   "wns_setup_ns": 0.00419678,
+   "closed": true,
+   "lock_hold_s": null,
+   "flow_elapsed_s": null
+  },
+  {
+   "design": "gcd",
+   "clock_period_ns": 0.43,
+   "core_utilization": 60,
+   "state": "done",
+   "wns_setup_ns": 0.00352479,
+   "closed": true,
+   "lock_hold_s": 74,
+   "flow_elapsed_s": 26.68
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.25,
+   "core_utilization": 40,
+   "state": "done",
+   "wns_setup_ns": 0.0168722,
+   "closed": true,
+   "lock_hold_s": 505,
+   "flow_elapsed_s": 228.76
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.25,
+   "core_utilization": 50,
+   "state": "done",
+   "wns_setup_ns": 0.0172729,
+   "closed": true,
+   "lock_hold_s": 534,
+   "flow_elapsed_s": 227.68
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.2,
+   "core_utilization": 40,
+   "state": "not_reached",
+   "reason": "sweep stopped at the Phase 1 gate (deadline_sweeps_stop_epoch in budget_part2.json): the heavy-job queue was dominated by stage work (low-priority points wait for every stage job plus a 45 s grace)"
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.2,
+   "core_utilization": 50,
+   "state": "not_reached",
+   "reason": "sweep stopped at the Phase 1 gate (deadline_sweeps_stop_epoch in budget_part2.json): the heavy-job queue was dominated by stage work (low-priority points wait for every stage job plus a 45 s grace)"
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.3,
+   "core_utilization": 40,
+   "state": "not_reached",
+   "reason": "sweep stopped at the Phase 1 gate (deadline_sweeps_stop_epoch in budget_part2.json): the heavy-job queue was dominated by stage work (low-priority points wait for every stage job plus a 45 s grace)"
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.3,
+   "core_utilization": 50,
+   "state": "not_reached",
+   "reason": "sweep stopped at the Phase 1 gate (deadline_sweeps_stop_epoch in budget_part2.json): the heavy-job queue was dominated by stage work (low-priority points wait for every stage job plus a 45 s grace)"
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.3,
+   "core_utilization": 30,
+   "state": "cut",
+   "reason": "not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)"
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.35,
+   "core_utilization": 30,
+   "state": "cut",
+   "reason": "not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)"
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.4,
+   "core_utilization": 30,
+   "state": "cut",
+   "reason": "not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)"
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.45,
+   "core_utilization": 30,
+   "state": "cut",
+   "reason": "not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)"
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.5,
+   "core_utilization": 30,
+   "state": "cut",
+   "reason": "not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)"
+  },
+  {
+   "design": "systolic_os",
+   "clock_period_ns": 1.55,
+   "core_utilization": 30,
+   "state": "cut",
+   "reason": "not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)"
+  }
+ ]
+}

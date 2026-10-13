@@ -400,18 +400,33 @@
           "area_um2": 819.28,
           "power_total_w": 0.00331371,
           "marginal": true,
+          "closing_periods_ns": [
+            0.425,
+            0.45,
+            0.5,
+            0.6
+          ],
+          "non_monotonic": false,
           "bracketed": true,
           "next_failing_period_ns": 0.42,
           "wns_at_next_failing_ns": -0.00382275
         },
         "40": {
-          "points": 9,
+          "points": 12,
           "tightest_swept_period_ns": 0.3,
           "fastest_closing_period_ns": 0.425,
           "wns_at_frontier_ns": 0.00304279,
           "area_um2": 745.332,
           "power_total_w": 0.00296769,
           "marginal": true,
+          "closing_periods_ns": [
+            0.425,
+            0.43,
+            0.45,
+            0.5,
+            0.6
+          ],
+          "non_monotonic": false,
           "bracketed": true,
           "next_failing_period_ns": 0.42,
           "wns_at_next_failing_ns": -0.00314013
@@ -424,18 +439,34 @@
           "area_um2": 773.262,
           "power_total_w": 0.00309714,
           "marginal": true,
+          "closing_periods_ns": [
+            0.42,
+            0.425,
+            0.45,
+            0.5,
+            0.6
+          ],
+          "non_monotonic": false,
           "bracketed": true,
           "next_failing_period_ns": 0.41,
           "wns_at_next_failing_ns": -0.010512
         },
         "60": {
-          "points": 8,
+          "points": 11,
           "tightest_swept_period_ns": 0.35,
           "fastest_closing_period_ns": 0.425,
           "wns_at_frontier_ns": 0.00419678,
           "area_um2": 747.194,
           "power_total_w": 0.00293746,
           "marginal": true,
+          "closing_periods_ns": [
+            0.425,
+            0.43,
+            0.45,
+            0.5,
+            0.6
+          ],
+          "non_monotonic": false,
           "bracketed": true,
           "next_failing_period_ns": 0.42,
           "wns_at_next_failing_ns": -0.00699543
@@ -443,16 +474,51 @@
       },
       "systolic_os": {
         "30": {
-          "points": 5,
+          "points": 6,
           "tightest_swept_period_ns": 1.0,
-          "fastest_closing_period_ns": 1.6,
-          "wns_at_frontier_ns": 0.177248,
-          "area_um2": 22781.8,
-          "power_total_w": 0.0707457,
+          "fastest_closing_period_ns": 1.25,
+          "wns_at_frontier_ns": 0.0132117,
+          "area_um2": 23969.5,
+          "power_total_w": 0.102121,
           "marginal": false,
+          "closing_periods_ns": [
+            1.25,
+            1.6,
+            2.0,
+            2.4
+          ],
+          "non_monotonic": false,
           "bracketed": true,
           "next_failing_period_ns": 1.2,
           "wns_at_next_failing_ns": -0.00730405
+        },
+        "40": {
+          "points": 1,
+          "tightest_swept_period_ns": 1.25,
+          "fastest_closing_period_ns": 1.25,
+          "wns_at_frontier_ns": 0.0168722,
+          "area_um2": 23813.4,
+          "power_total_w": 0.101398,
+          "marginal": false,
+          "closing_periods_ns": [
+            1.25
+          ],
+          "non_monotonic": false,
+          "bracketed": false
+        },
+        "50": {
+          "points": 1,
+          "tightest_swept_period_ns": 1.25,
+          "fastest_closing_period_ns": 1.25,
+          "wns_at_frontier_ns": 0.0172729,
+          "area_um2": 23700.3,
+          "power_total_w": 0.100191,
+          "marginal": false,
+          "closing_periods_ns": [
+            1.25
+          ],
+          "non_monotonic": false,
+          "bracketed": false
         }
       }
     },
@@ -468,7 +534,14 @@
         "meaning": "flow aborted before metadata.json existed (extractor FileNotFoundError is a consequence, not the cause); deterministic flow, so a plain rerun is expected to fail identically",
         "retry": "cd ~/ai-chip-lab && source env.sh && python3 sweeps/phys_sweep.py --design gcd --retry --max-points 1"
       }
-    ]
+    ],
+    "plan_accounting_file": "results/sweeps/phys_plan_status.json",
+    "plan_counts": {
+      "done": 16,
+      "not_reached": 4,
+      "cut": 6
+    },
+    "plan_final": true
   },
   "crosscheck_published": {
     "criterion": "matches_published_dashboard",

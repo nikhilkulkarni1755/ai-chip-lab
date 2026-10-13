@@ -1,0 +1,28 @@
+Part 2 sweep-B plan accounting (every planned point): {"done": 16, "not_reached": 4, "cut": 6}
+
+gcd          T=0.4    util=40  done         WNS=-0.01806 hold=Nones
+gcd          T=0.405  util=40  done         WNS=-0.01293 hold=222s
+gcd          T=0.41   util=40  done         WNS=-0.00868 hold=Nones
+gcd          T=0.415  util=40  done         WNS=-0.01036 hold=96s
+gcd          T=0.42   util=40  done         WNS=-0.00314 hold=Nones
+gcd          T=0.425  util=40  done         WNS=0.00304 hold=Nones
+gcd          T=0.43   util=40  done         WNS=0.00445 hold=69s
+gcd          T=0.4    util=60  done         WNS=-0.02167 hold=Nones
+gcd          T=0.405  util=60  done         WNS=-0.01879 hold=107s
+gcd          T=0.41   util=60  done         WNS=-0.00989 hold=Nones
+gcd          T=0.415  util=60  done         WNS=-0.01219 hold=115s
+gcd          T=0.42   util=60  done         WNS=-0.00700 hold=Nones
+gcd          T=0.425  util=60  done         WNS=0.00420 hold=Nones
+gcd          T=0.43   util=60  done         WNS=0.00352 hold=74s
+systolic_os  T=1.25   util=40  done         WNS=0.01687 hold=505s
+systolic_os  T=1.25   util=50  done         WNS=0.01727 hold=534s
+systolic_os  T=1.2    util=40  not_reached  sweep stopped at the Phase 1 gate (deadline_sweeps_stop_epoch in budget_part2.json): the heavy-job queue was dominated by stage work (low-priority points wait for every stage job plus a 45 s grace)
+systolic_os  T=1.2    util=50  not_reached  sweep stopped at the Phase 1 gate (deadline_sweeps_stop_epoch in budget_part2.json): the heavy-job queue was dominated by stage work (low-priority points wait for every stage job plus a 45 s grace)
+systolic_os  T=1.3    util=40  not_reached  sweep stopped at the Phase 1 gate (deadline_sweeps_stop_epoch in budget_part2.json): the heavy-job queue was dominated by stage work (low-priority points wait for every stage job plus a 45 s grace)
+systolic_os  T=1.3    util=50  not_reached  sweep stopped at the Phase 1 gate (deadline_sweeps_stop_epoch in budget_part2.json): the heavy-job queue was dominated by stage work (low-priority points wait for every stage job plus a 45 s grace)
+systolic_os  T=1.3    util=30  cut          not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)
+systolic_os  T=1.35   util=30  cut          not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)
+systolic_os  T=1.4    util=30  cut          not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)
+systolic_os  T=1.45   util=30  cut          not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)
+systolic_os  T=1.5    util=30  cut          not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)
+systolic_os  T=1.55   util=30  cut          not run (deliberate cut): 30 % frontier already bracketed at 0.05 ns by 1.20 (fail, -0.007 ns) / 1.25 (pass, +0.013 ns)
