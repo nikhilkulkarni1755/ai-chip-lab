@@ -74,7 +74,10 @@ def main():
     v["ppa_max_clock_note"] = ("max clock: fmax_reported_by_flow_mhz is OpenROAD's finish-stage fmax for core_clock in "
                                "the single run at 1.25 ns (metadata finish__timing__fmax__clock__core_clock); "
                                "max_clock_estimate_mhz = 1 / (period - setup WNS) of the same run. Both come from one "
-                               "run per design, not from a searched timing-closure frontier")
+                               "run per design, not from a searched timing-closure frontier. wns_setup covers every "
+                               "constrained path including the input-to-register paths (inputs arrive 20 % into the cycle), "
+                               "which is why the WNS-based estimate is lower than the flow's fmax. Power is the flow's "
+                               "default vectorless estimate at 1.25 ns, where the bf16 MAC does not meet timing")
     a, b = ppa.get("mac_int8", {}), ppa.get("mac_bf16", {})
     if a.get("area_um2") and b.get("area_um2"):
         v["ppa_ratio_bf16_over_int8"] = {
@@ -95,8 +98,10 @@ def main():
         f.write("\n")
 
     # evidence
-    rows = ["# INT8 MAC vs bf16 MAC alone, nangate45, ORFS synthesis-to-final, clock %.2f ns (zero I/O logic, same settings)" % CLOCK_NS,
-            "# numbers from each run's metadata.json; min period / max clock are estimates (period - setup WNS) from this one run",
+    rows = ["# INT8 MAC vs bf16 MAC alone, nangate45, ORFS synthesis-to-final, clock %.2f ns, same flow settings" % CLOCK_NS,
+            "# numbers from each run's metadata.json. wns_setup covers all paths incl. the I/O paths (20 % I/O delay);",
+            "# fmax_reported_by_flow is the flow's register-clock fmax; min period / max clock estimate = period - setup WNS.",
+            "# power is the flow's default (vectorless) estimate at this clock; one run per design, no frontier search",
             "%-28s %14s %14s" % ("metric", "mac_int8", "mac_bf16")]
     for k in ("flow_exit_code", "clock_period_ns", "wns_setup_ns", "timing_met_at_clock", "min_period_estimate_ns",
               "max_clock_estimate_mhz", "fmax_reported_by_flow_mhz", "area_um2", "stdcell_count", "utilization_frac", "power_total_w",
