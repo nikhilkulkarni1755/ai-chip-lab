@@ -1193,7 +1193,7 @@ def build_html(L, rows, vm):
     m = re.search(r'route:\s*"([^"]+)"', L.read("versions.lock"))
     if m:
         route = m.group(1)
-    h.append('<div class="cards"><div class="card"><span class="sub">Runtime</span><b>%s</b></div>'
+    h.append('<div class="cards"><div class="card"><span class="sub">Part 1 runtime</span><b>%s</b></div>'
              '<div class="card"><span class="sub">Runtime route</span><b>%s</b></div>'
              '<div class="card"><span class="sub">Machine</span><b>%s</b></div>'
              '<div class="card"><span class="sub">VM at end of run</span><b>%s</b></div></div>' % (
@@ -1318,16 +1318,25 @@ def build_html(L, rows, vm):
             items.append("<li>%s <b>%s</b>: %s</li>" % (badge(r.state), e(r.label), e(r.detail)))
     for f in sorted(glob.glob(L.p("results/.stages/*.failed")) + glob.glob(L.p("results/.stages/*.blocked"))):
         body = scrub_text(L.read(os.path.relpath(f, L.lab)).strip())
-        items.append("<li><b>%s</b><pre>%s</pre></li>" % (e(os.path.basename(f)), e(body[:2500])))
+        nm_ = os.path.basename(f)
+        hist = " <span class='sub'>(Part 1 marker kept as history: its roofline check was superseded by the Part 2 check in 31_roofline_fix)</span>" if nm_.startswith("30_arch_model") else ""
+        items.append("<li><b>%s</b>%s<pre>%s</pre></li>" % (e(nm_), hist, e(body[:2500])))
     for r in rows:
         if r.state in ("PENDING", "RUNNING", "UNKNOWN"):
             items.append("<li>%s <b>%s</b> was not finished when this page was built: %s</li>" % (badge(r.state), e(r.label), e(r.detail)))
     for tname in ("t1", "t2", "t3", "repro_report"):
         s = L.jload("results/%s%s.json" % (tname, "_summary" if tname != "repro_report" else ""))
         if isinstance(s, dict):
+            notfail = []
             for k, v in flatten(s):
                 if v is False and not k.endswith(".gds_identical"):
+                    if tname == "t3" and re.search(r"(user_bw_stalls_vs_ai_|stall_cycles_monotone_in_B_|roofline_agrees|reruns_byte_identical|rerun_in_stage|^complete$)", k):
+                        notfail.append(k)
+                        continue
                     items.append("<li>%s: <code>%s</code> is false</li>" % (e(tname), e(k)))
+            if notfail:
+                items.append("<li>t3: plain <code>false</code> values in results/t3_summary.json that are <b>not failures</b>: the criterion-A checks (user_bw_stalls_vs_ai_*, stall_cycles_monotone_in_B_*, roofline_agrees) were not evaluated (cost), and "
+                             "reruns_byte_identical, *.rerun_in_stage and complete are bookkeeping of a resumed single pass (arch's known_presentation_defects, shown in section 6): %s</li>" % e(", ".join(notfail)))
     items.append("<li>Task 2 determinism: raw GDS files of the two clean runs differ byte-wise only in the GDSII BGNLIB/BGNSTR timestamp records; "
                  "with timestamps zeroed they are identical and all compared metric fields match (see the determinism evidence images).</li>")
     for line in sweep_audit(L):
@@ -1336,8 +1345,8 @@ def build_html(L, rows, vm):
     items.append("<li><code>demo/run_demo.sh</code> runs only the sby tasks <code>prove</code> (unbounded induction) and <code>cover</code>; "
                  "the full BMC depth-20 run is part of <code>make t1</code> (%s s in the official run). %s</li>" % (
                      e(str(t1v.get("formal_bmc_seconds", "?"))), e(demo_timing(L))))
-    items.append("<li>EQY compares the RTL with Yosys's generic-gate netlist (<code>synth; abc; opt</code>, no liberty cells). The placed-and-routed nangate45 netlist has no "
-                 "equivalence proof: ORFS's own logic-equivalence step is disabled.</li>")
+    items.append("<li>The Part 1 EQY rows compare the RTL with Yosys's generic-gate netlist (<code>synth; abc; opt</code>, no liberty cells). ORFS's own logic-equivalence step stays disabled; "
+                 "the placed-and-routed nangate45 netlist is instead checked by the separate Part 2 stage 11_eqy_routed (EQY, see the routed rows in section 1).</li>")
     d11 = re.search(r"^\| 11 \|.*$", L.read("COORDINATION.md"), re.M)
     if d11:
         cmd = re.search(r"`(scripts/with_lock.sh[^`]*)`", d11.group(0))
@@ -1354,7 +1363,7 @@ def build_html(L, rows, vm):
     items.append("<li>Numbers come from a 2-core machine shared by several jobs; wall-clock figures are indicative only.</li>")
     b = L.jload("budget.json") or {}
     items.append("<li>The owner capped the run at %s h (the original task text says 14 h), so all stage budgets were scaled down; "
-                 "anything cut for time is listed above.</li>" % e(str(b.get("total_budget_h", "?"))))
+                 "anything cut for time is listed above. Part 2 ran under budget_part2.json (14 h).</li>" % e(str(b.get("total_budget_h", "?"))))
     h.append("<ul>%s</ul>" % "".join(items))
     coord = L.read("COORDINATION.md")
     mo = re.search(r"## Needs owner\s*(.*?)(?=\n## |\Z)", coord, re.S)

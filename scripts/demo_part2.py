@@ -84,6 +84,9 @@ def inferred_progress(L, stage):
         if done or os.path.isdir(L.p("results/t3.partial/roofline2")):
             return "INCOMPLETE", ("no stage marker: the roofline runs are executed inside the real `make t3` (stage 32_make_recipes). Runs finished: %s; the fixed-bandwidth runs "
                                  "(criterion A) are in progress or not started; see the Task 3 row for the pre-registered criteria" % (", ".join(done) or "none"))
+    if stage == "64_roadmap":
+        if L.read("docs/next.md").strip():
+            return "DONE", "no stage marker or result JSON (no long compute): docs/next.md is written and is shown in section 15"
     if stage == "62_pdk_compare":
         n = len(pdk_points(L))
         if n:
@@ -278,7 +281,7 @@ def what_changed(L):
             rows.append(a)
     skip = re.compile(r"^(results/part1_snapshot/|demo/assets/|results/evidence/|results/t[0-9]|results/sweeps/.*\.jsonl|demo/index\.html|README\.md|demo/README\.md)")
     h = ["<p>Files changed between <code>%s</code> and <code>%s</code>: <b>%d</b> (git numstat). Descriptions come from <code>docs/part2_changes.json</code>; "
-         "a file without an entry shows no description rather than a guess.</p>" % (e(base), e(head), len(rows))]
+         "a file without an entry shows no description rather than a guess. The wording is each agent's at the time of its commit: phrases such as &quot;authored; not run in the container yet&quot; describe that moment, and the later runs are the results in sections 12 and 16.</p>" % (e(base), e(head), len(rows))]
     h.append("<div class='tw'><table><thead><tr><th>file</th><th>+</th><th>-</th><th>what (one line, as recorded by the agent)</th></tr></thead><tbody>")
     shown = 0
     for add, dele, f in rows:
