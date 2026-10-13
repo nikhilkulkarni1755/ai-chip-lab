@@ -31,7 +31,7 @@ for des in sorted({r["design"] for r in rows}):
                 marginal=r["wns_setup_ns"] < 0.005)
             nb = [x for x in bad if x[0] < p]
             e["closing_periods_ns"] = [q for q, _ in ok]
-            e["non_monotonic"] = bool(nb) and any(q > min(x[0] for x in nb) for q, _ in ok)   # a closing period is slower than a failing one
+            e["non_monotonic"] = bool(bad) and any(q < max(x[0] for x in bad) for q, _ in ok)   # a closing period is FASTER than some failing one
             e["bracketed"] = bool(nb)   # False: no failing period swept below the frontier, true limit is lower
             if nb: q, rq = max(nb, key=lambda x: x[0]); e.update(next_failing_period_ns=q, wns_at_next_failing_ns=rq["wns_setup_ns"])
         else:
