@@ -186,5 +186,42 @@
    "docs/power_explained.md"
   ],
   "what": "Activity-based power run: 8/8 registered criteria pass; simulated workloads 0.15-0.27x of ORFS vectorless"
+ },
+ {
+  "agent": "rtl",
+  "stage": "11_eqy_routed",
+  "files": [
+   "scripts/p2_negcone.sh",
+   "scripts/p2_negcone.py",
+   "results/p2_11_negcone.json",
+   "results/p2_11_negcone_depth4.json"
+  ],
+  "what": "Extra negative control: one cell function changed inside a per-PE cone of the routed netlist; rejected (not proven at the proof's depth 2, concrete counterexample at depth 4)"
+ },
+ {
+  "agent": "rtl",
+  "stage": "60_power_activity",
+  "files": [
+   "scripts/t1_power_vcd.sh",
+   "scripts/p2_power_vcd_manifest.py",
+   "results/power_vcd/manifest.json"
+  ],
+  "what": "Three workload VCDs of the routed netlist (Icarus) for the power analysis, with a manifest (seed, cases, sha256, netlist sha256)"
+ },
+ {
+  "agent": "rtl",
+  "stage": "61_pe_bf16",
+  "files": [
+   "scripts/t61_run.sh",
+   "scripts/p2_61_orfs.sh",
+   "scripts/p2_61_orfs_staged.sh",
+   "scripts/p2_61_finish.py",
+   "orfs/p2_designs/nangate45/",
+   "results/p2_61_pe_bf16_summary.json",
+   "results/p2_61_pe_bf16.json",
+   "results/t61_*.csv",
+   "results/evidence/61_*.txt"
+  ],
+  "what": "bf16 MAC: 10k-case bit-exact verification on both simulators, ORFS runs of the INT8 and bf16 MAC alone at 1.25 ns, PPA table"
  }
 ]

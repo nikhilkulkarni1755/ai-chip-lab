@@ -1,0 +1,8 @@
+# bf16 MAC vs golden model: accumulator compared as a uint32 bit pattern after every MAC step
+verilator: 10042 cases, 84651 MAC steps, 0 mismatching, csv sha256 d816086be6e4dae2df53660db44304f880195c92457e6893f37e7614c69dab16
+icarus: 10042 cases, 84651 MAC steps, 0 mismatching, csv sha256 d816086be6e4dae2df53660db44304f880195c92457e6893f37e7614c69dab16
+csv identical across simulators: True
+oracle cross-check (golden vs exact-rational): {"steps_compared": 20002, "mismatches": 0, "random_cases": 2368, "directed_cases": 42, "first_mismatch": null}
+negative control (round half up): 55 mismatching steps (must be > 0)
+coverage verilator: {"bins": 101, "bins_hit": 101, "missed": {}}
+coverage icarus: {"bins": 101, "bins_hit": 101, "missed": {}}

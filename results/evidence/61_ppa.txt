@@ -1,0 +1,22 @@
+# INT8 MAC vs bf16 MAC alone, nangate45, ORFS synthesis-to-final, clock 1.25 ns, same flow settings
+# numbers from each run's metadata.json. wns_setup covers all paths incl. the I/O paths (20 % I/O delay);
+# fmax_reported_by_flow is the flow's register-clock fmax; min period / max clock estimate = period - setup WNS.
+# power is the flow's default (vectorless) estimate at this clock; one run per design, no frontier search
+metric                             mac_int8       mac_bf16
+flow_exit_code                            0              0
+clock_period_ns                        1.25           1.25
+wns_setup_ns                     0.00644129       -2.84086
+timing_met_at_clock                    True          False
+min_period_estimate_ns               1.2436         4.0909
+max_clock_estimate_mhz                804.1          244.4
+fmax_reported_by_flow_mhz             927.7          330.7
+area_um2                            1676.07        5063.84
+stdcell_count                           948           4083
+utilization_frac                   0.367705        0.44334
+power_total_w                     0.0106965      0.0641601
+power_internal_w                  0.0059503       0.032263
+power_switching_w                 0.0047093      0.0317663
+power_leakage_w                 3.69246e-05    0.000130845
+drc_errors                                0              0
+flow_elapsed_s                        55.89         507.73
+ratio bf16 / int8: {"area": 3.021, "stdcell_count": 4.307, "power_total": 5.998, "min_period_estimate": 3.29, "fmax_reported_by_flow": 0.356}

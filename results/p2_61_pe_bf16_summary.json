@@ -1,6 +1,6 @@
 {
   "stage": "61_pe_bf16",
-  "status": "criteria written; RTL, golden model and testbench authored; only native development runs so far (no container run, no official result)",
+  "status": "verification and ORFS comparison run",
   "criteria_written_before_first_run": true,
   "design": {
     "module": "rtl/mac_bf16.sv",
@@ -28,7 +28,7 @@
     "timing_at_int8_clock": "WNS of mac_bf16 at the INT8 MAC's closure clock (met or violated is a result, not a criterion)",
     "ppa_table": "area, power, max clock of INT8 MAC vs bf16 MAC"
   },
-  "pass": null,
+  "pass": false,
   "coverage_bins_amended": {
     "when": "after the first native 300-case development run (Icarus), before any official run",
     "what": "5 bins of the cross alignment-shift x normalisation-shift were removed from the bin set because they are mathematically unreachable; the criterion stays '100 % of the bins'",
@@ -44,5 +44,228 @@
       "result": "99/106 hit in the first native 300-case run (the 5 unreachable bins plus 2 reachable ones that got directed cases: cancel_left_16_exponents_differ, carry_out_far_aligned)"
     },
     "current_bin_set": "101 bins; native 1000-case development run hits 101/101"
+  },
+  "checks": {
+    "directed_cases_present": true,
+    "random_case_count": true,
+    "bit_exact_verilator": true,
+    "bit_exact_icarus": true,
+    "csv_sha256_identical": true,
+    "functional_coverage": true,
+    "oracle_cross_check": true,
+    "negative_control": true,
+    "lint_clean": false,
+    "orfs_flow_completes": true
+  },
+  "values": {
+    "verilator": {
+      "cases_total": 10042,
+      "cases_random": 10000,
+      "cases_directed": 42,
+      "mac_steps": 84651,
+      "mismatching_steps": 0,
+      "oracle_disagreements": 0,
+      "csv_sha256": "d816086be6e4dae2df53660db44304f880195c92457e6893f37e7614c69dab16",
+      "cocotb_failed_tests": [],
+      "seconds": 55
+    },
+    "directed_names": [
+      "align_24_to_26",
+      "align_27_or_more",
+      "alternating_signs",
+      "big_minus_small_product",
+      "cancel_left_16_exponents_differ",
+      "cancel_left_23",
+      "cancel_left_24",
+      "cancel_left_8",
+      "carry_out",
+      "carry_out_far_aligned",
+      "exact_cancel_pos_zero",
+      "exact_cancel_pos_zero_2",
+      "flush_product",
+      "flush_sum_neg_then_neg_zero",
+      "flush_sum_pos",
+      "inf_minus_inf",
+      "inf_times_inf",
+      "inf_times_zero",
+      "max_normal",
+      "min_normal",
+      "nan_negative",
+      "nan_operand_a",
+      "nan_operand_b",
+      "nan_sticky_through_inf",
+      "neg_inf",
+      "neg_zero_product",
+      "pos_inf",
+      "product_just_normal",
+      "product_overflow",
+      "product_overflow_neg",
+      "round_carry_to_next_exponent",
+      "round_down_below_half",
+      "round_up_above_half",
+      "subnormal_inputs",
+      "sum_overflow",
+      "sum_overflow_by_rounding",
+      "sum_overflow_neg",
+      "tie_sub_to_even",
+      "tie_to_even_down",
+      "tie_to_even_up",
+      "zero_plus_zero",
+      "zero_times_inf"
+    ],
+    "directed_missing": {},
+    "coverage_verilator": {
+      "bins": 101,
+      "bins_hit": 101,
+      "missed": {}
+    },
+    "icarus": {
+      "cases_total": 10042,
+      "cases_random": 10000,
+      "cases_directed": 42,
+      "mac_steps": 84651,
+      "mismatching_steps": 0,
+      "oracle_disagreements": 0,
+      "csv_sha256": "d816086be6e4dae2df53660db44304f880195c92457e6893f37e7614c69dab16",
+      "cocotb_failed_tests": [],
+      "seconds": 55
+    },
+    "coverage_icarus": {
+      "bins": 101,
+      "bins_hit": 101,
+      "missed": {}
+    },
+    "oracle_cross_check": {
+      "steps_compared": 20002,
+      "mismatches": 0,
+      "random_cases": 2368,
+      "directed_cases": 42,
+      "first_mismatch": null
+    },
+    "negative_control": {
+      "bug": "round half up instead of round half to even (RTL copy)",
+      "mismatching_steps": 55
+    },
+    "lint_warnings": 1,
+    "ppa": {
+      "mac_int8": {
+        "clock_period_ns": 1.25,
+        "wns_setup_ns": 0.00644129,
+        "tns_setup_ns": 0,
+        "wns_hold_ns": 0.118949,
+        "area_um2": 1676.07,
+        "stdcell_area_um2": 1676.07,
+        "synth_area_um2": 1387.19,
+        "stdcell_count": 948,
+        "utilization_frac": 0.367705,
+        "power_total_w": 0.0106965,
+        "power_internal_w": 0.0059503,
+        "power_switching_w": 0.0047093,
+        "power_leakage_w": 3.69246e-05,
+        "drc_errors": 0,
+        "wirelength": 7544,
+        "fmax_reported_by_flow_mhz": 927.7,
+        "flow_exit_code": 0,
+        "flow_variant": "p2_61",
+        "lock_holds": "one hold for the whole flow",
+        "flow_wall_s_incl_lock_wait": 235,
+        "flow_elapsed_s": 55.89,
+        "gds_sha256_timestamps_zeroed": "08791ff9f57628854fc2c1f4e97dac478a37e9a2440b0210aef12b20cee3dc44",
+        "metrics_missing": [
+          "clock_period_ns"
+        ],
+        "min_period_estimate_ns": 1.2436,
+        "max_clock_estimate_mhz": 804.1,
+        "timing_met_at_clock": true,
+        "flow_completes_with_metrics": true
+      },
+      "mac_bf16": {
+        "clock_period_ns": 1.25,
+        "wns_setup_ns": -2.84086,
+        "tns_setup_ns": -89.1441,
+        "wns_hold_ns": 0.141699,
+        "area_um2": 5063.84,
+        "stdcell_area_um2": 5063.84,
+        "synth_area_um2": 3477.95,
+        "stdcell_count": 4083,
+        "utilization_frac": 0.44334,
+        "power_total_w": 0.0641601,
+        "power_internal_w": 0.032263,
+        "power_switching_w": 0.0317663,
+        "power_leakage_w": 0.000130845,
+        "drc_errors": 0,
+        "wirelength": 36063,
+        "fmax_reported_by_flow_mhz": 330.7,
+        "flow_exit_code": 0,
+        "flow_variant": "p2_61s",
+        "lock_holds": {
+          "synth floorplan place": 149,
+          "cts": 129,
+          "route": 364,
+          "finish metadata-generate": 19
+        },
+        "flow_wall_s_incl_lock_wait": 2010,
+        "flow_elapsed_s": 507.73,
+        "gds_sha256_timestamps_zeroed": "c5b7c2f9e929489cf4271d73e088a002919d3a8eb0ec5ab147f36a95ba6d58ac",
+        "metrics_missing": [
+          "clock_period_ns"
+        ],
+        "min_period_estimate_ns": 4.0909,
+        "max_clock_estimate_mhz": 244.4,
+        "timing_met_at_clock": false,
+        "flow_completes_with_metrics": true
+      }
+    },
+    "ppa_clock": {
+      "period_ns": 1.25,
+      "why": "closure clock of the INT8 MAC array: sweep B frontier of systolic_os on nangate45 (results/sweeps/phys.jsonl: 1.25 ns closes at 30/40/50 % utilization, 1.20 ns does not)",
+      "fixed_before_first_run_in": "orfs/p2_designs/nangate45/*/constraint.sdc"
+    },
+    "ppa_max_clock_note": "max clock: fmax_reported_by_flow_mhz is OpenROAD's finish-stage fmax for core_clock in the single run at 1.25 ns (metadata finish__timing__fmax__clock__core_clock); max_clock_estimate_mhz = 1 / (period - setup WNS) of the same run. Both come from one run per design, not from a searched timing-closure frontier. wns_setup covers every constrained path including the input-to-register paths (inputs arrive 20 % into the cycle), which is why the WNS-based estimate is lower than the flow's fmax. Power is the flow's default vectorless estimate at 1.25 ns, where the bf16 MAC does not meet timing",
+    "ppa_ratio_bf16_over_int8": {
+      "area": 3.021,
+      "stdcell_count": 4.307,
+      "power_total": 5.998,
+      "min_period_estimate": 3.29,
+      "fmax_reported_by_flow": 0.356
+    },
+    "timing_at_int8_clock": {
+      "mac_bf16_wns_setup_ns": -2.84086,
+      "met": false,
+      "mac_int8_wns_setup_ns": 0.00644129,
+      "mac_int8_met": true
+    }
+  },
+  "verification_pass": false,
+  "config": {
+    "ncases": 10000,
+    "seed": 1234
+  },
+  "step_exit_codes": {
+    "lint": 1,
+    "oracle": 0,
+    "sim_verilator": 0,
+    "sim_icarus": 0,
+    "neg_control": 0
+  },
+  "runtimes_seconds": {
+    "lint": 1,
+    "oracle": 6,
+    "sim_verilator": 55,
+    "sim_icarus": 55,
+    "neg_control": 9,
+    "total_wall": 1099
+  },
+  "image": {
+    "ref": "lab-sim:20261012b",
+    "id": "sha256:c17110ff83f92b2b8da336ef44264f999d23a5fdedd4fc6f2c37588998fdcc3b"
+  },
+  "tool_versions": {
+    "verilator": "Verilator 5.053 devel rev v5.052-233-gf5f9ddef9 (mod)",
+    "iverilog": "Icarus Verilog version 14.0 (devel) (s20260301-500-g2e81fcccb-dirty)",
+    "python": "Python 3.12.15",
+    "numpy": "2.3.5",
+    "ml_dtypes": "0.6.0",
+    "cocotb": "2.1.0"
   }
 }

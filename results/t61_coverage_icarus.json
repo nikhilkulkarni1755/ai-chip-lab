@@ -1,0 +1,62 @@
+{
+  "bins": 101,
+  "bins_hit": 101,
+  "percent": 100.0,
+  "points": {
+    "bf16.acc.in": {
+      "bins": 4,
+      "bins_hit": 4,
+      "missed": []
+    },
+    "bf16.add.align": {
+      "bins": 7,
+      "bins_hit": 7,
+      "missed": []
+    },
+    "bf16.add.align_x_norm": {
+      "bins": 24,
+      "bins_hit": 24,
+      "missed": []
+    },
+    "bf16.add.kind": {
+      "bins": 5,
+      "bins_hit": 5,
+      "missed": []
+    },
+    "bf16.add.norm": {
+      "bins": 7,
+      "bins_hit": 7,
+      "missed": []
+    },
+    "bf16.operand.a": {
+      "bins": 5,
+      "bins_hit": 5,
+      "missed": []
+    },
+    "bf16.operand.b": {
+      "bins": 5,
+      "bins_hit": 5,
+      "missed": []
+    },
+    "bf16.operand.cross": {
+      "bins": 25,
+      "bins_hit": 25,
+      "missed": []
+    },
+    "bf16.product.kind": {
+      "bins": 6,
+      "bins_hit": 6,
+      "missed": []
+    },
+    "bf16.result.kind": {
+      "bins": 8,
+      "bins_hit": 8,
+      "missed": []
+    },
+    "bf16.round.kind": {
+      "bins": 5,
+      "bins_hit": 5,
+      "missed": []
+    }
+  }
+}

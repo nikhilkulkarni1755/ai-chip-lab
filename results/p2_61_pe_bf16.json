@@ -1,0 +1,200 @@
+{
+  "stage": "61_pe_bf16",
+  "pass": false,
+  "oracle": "tb/bf16_golden.py: bf16 bit patterns decoded with ml_dtypes.bfloat16, product formed exactly in float64, FP32 addition by NumPy float32 (IEEE round-to-nearest-even), then the same flush / NaN / overflow rules as the RTL; compared as uint32 bit patterns after every MAC step",
+  "criteria": [
+    {
+      "name": "bit_exact_verilator",
+      "threshold": "0 mismatching accumulator values over 10,000 random cases (seed 1234, case i = default_rng([1234, i]), each case = clear followed by 1..16 MAC steps, every step compared) plus all directed cases",
+      "written_before_run": "c0e5b87",
+      "measured": "10042 cases (10000 random), 84651 MAC steps, 0 mismatching",
+      "pass": true
+    },
+    {
+      "name": "bit_exact_icarus",
+      "threshold": "same cases, 0 mismatching accumulator values",
+      "written_before_run": "c0e5b87",
+      "measured": "10042 cases (10000 random), 84651 MAC steps, 0 mismatching",
+      "pass": true
+    },
+    {
+      "name": "csv_sha256_identical",
+      "threshold": "results CSV of the two simulators byte-identical",
+      "written_before_run": "c0e5b87",
+      "measured": "verilator d816086be6e4dae2df53660db44304f880195c92457e6893f37e7614c69dab16 / icarus d816086be6e4dae2df53660db44304f880195c92457e6893f37e7614c69dab16",
+      "pass": true
+    },
+    {
+      "name": "random_case_count",
+      "threshold": "exactly 10,000 random cases on each simulator",
+      "written_before_run": "c0e5b87",
+      "measured": "10000 / 10000 random cases",
+      "pass": true
+    },
+    {
+      "name": "directed_cases_present",
+      "threshold": "all of: +0/-0 operands and results, +inf/-inf, NaN operand propagation, inf x 0 = NaN, inf - inf = NaN, max normal, min normal, overflow to infinity (product and sum), rounding ties to even (round-up and round-down direction), subnormal bf16 inputs, product flushed to zero, sum flushed to zero, exact cancellation to +0",
+      "written_before_run": "c0e5b87",
+      "measured": "missing: none",
+      "pass": true
+    },
+    {
+      "name": "functional_coverage",
+      "threshold": "100 % of the bins defined in tb/test_mac_bf16.py before the run (operand classes x result classes, rounding decision incl. both tie directions, effective add / subtract, alignment-shift and normalisation-shift ranges)",
+      "written_before_run": "c0e5b87",
+      "measured": "verilator 101/101 bins; icarus 101/101 bins",
+      "pass": true
+    },
+    {
+      "name": "oracle_cross_check",
+      "threshold": "the golden model agrees bit-for-bit with an independent exact-rational (fractions.Fraction) reference on >= 20,000 randomly generated MAC steps (seed 1234)",
+      "written_before_run": "c0e5b87",
+      "measured": "{\"steps_compared\": 20002, \"mismatches\": 0, \"random_cases\": 2368, \"directed_cases\": 42, \"first_mismatch\": null}",
+      "pass": true
+    },
+    {
+      "name": "negative_control",
+      "threshold": "an RTL copy with the tie rule changed (round half up instead of half to even) must be reported as mismatching by the same test",
+      "written_before_run": "c0e5b87",
+      "measured": "55 mismatching steps",
+      "pass": true
+    },
+    {
+      "name": "lint_clean",
+      "threshold": "verilator --lint-only -Wall and verible-verilog-lint: 0 warnings",
+      "written_before_run": "c0e5b87",
+      "measured": "1 warnings; step exit code 1",
+      "pass": false
+    },
+    {
+      "name": "orfs_flow_completes",
+      "threshold": "nangate45 ORFS flow (synthesis to final) finishes for mac_bf16 and for mac_int8 at the same clock = the INT8 MAC's closure clock, metrics extracted for both",
+      "written_before_run": "c0e5b87",
+      "measured": "mac_int8 exit 0, mac_bf16 exit 0, both at 1.25 ns",
+      "pass": true
+    }
+  ],
+  "superseded": [
+    {
+      "name": "functional coverage bin set (106 bins as first written)",
+      "threshold": "100 % of 106 bins",
+      "measured": "99/106 hit in the first native 300-case run (the 5 unreachable bins plus 2 reachable ones that got directed cases: cancel_left_16_exponents_differ, carry_out_far_aligned)",
+      "pass": false,
+      "reason": "5 bins are mathematically unreachable, removed before any official run; see coverage_bins_amended in results/p2_61_pe_bf16_summary.json"
+    }
+  ],
+  "reported_not_gating": {
+    "timing_at_int8_clock": {
+      "mac_bf16_wns_setup_ns": -2.84086,
+      "met": false,
+      "mac_int8_wns_setup_ns": 0.00644129,
+      "mac_int8_met": true
+    },
+    "ppa": {
+      "mac_int8": {
+        "clock_period_ns": 1.25,
+        "wns_setup_ns": 0.00644129,
+        "tns_setup_ns": 0,
+        "wns_hold_ns": 0.118949,
+        "area_um2": 1676.07,
+        "stdcell_area_um2": 1676.07,
+        "synth_area_um2": 1387.19,
+        "stdcell_count": 948,
+        "utilization_frac": 0.367705,
+        "power_total_w": 0.0106965,
+        "power_internal_w": 0.0059503,
+        "power_switching_w": 0.0047093,
+        "power_leakage_w": 3.69246e-05,
+        "drc_errors": 0,
+        "wirelength": 7544,
+        "fmax_reported_by_flow_mhz": 927.7,
+        "flow_exit_code": 0,
+        "flow_variant": "p2_61",
+        "lock_holds": "one hold for the whole flow",
+        "flow_wall_s_incl_lock_wait": 235,
+        "flow_elapsed_s": 55.89,
+        "gds_sha256_timestamps_zeroed": "08791ff9f57628854fc2c1f4e97dac478a37e9a2440b0210aef12b20cee3dc44",
+        "metrics_missing": [
+          "clock_period_ns"
+        ],
+        "min_period_estimate_ns": 1.2436,
+        "max_clock_estimate_mhz": 804.1,
+        "timing_met_at_clock": true,
+        "flow_completes_with_metrics": true
+      },
+      "mac_bf16": {
+        "clock_period_ns": 1.25,
+        "wns_setup_ns": -2.84086,
+        "tns_setup_ns": -89.1441,
+        "wns_hold_ns": 0.141699,
+        "area_um2": 5063.84,
+        "stdcell_area_um2": 5063.84,
+        "synth_area_um2": 3477.95,
+        "stdcell_count": 4083,
+        "utilization_frac": 0.44334,
+        "power_total_w": 0.0641601,
+        "power_internal_w": 0.032263,
+        "power_switching_w": 0.0317663,
+        "power_leakage_w": 0.000130845,
+        "drc_errors": 0,
+        "wirelength": 36063,
+        "fmax_reported_by_flow_mhz": 330.7,
+        "flow_exit_code": 0,
+        "flow_variant": "p2_61s",
+        "lock_holds": {
+          "synth floorplan place": 149,
+          "cts": 129,
+          "route": 364,
+          "finish metadata-generate": 19
+        },
+        "flow_wall_s_incl_lock_wait": 2010,
+        "flow_elapsed_s": 507.73,
+        "gds_sha256_timestamps_zeroed": "c5b7c2f9e929489cf4271d73e088a002919d3a8eb0ec5ab147f36a95ba6d58ac",
+        "metrics_missing": [
+          "clock_period_ns"
+        ],
+        "min_period_estimate_ns": 4.0909,
+        "max_clock_estimate_mhz": 244.4,
+        "timing_met_at_clock": false,
+        "flow_completes_with_metrics": true
+      }
+    },
+    "ratio_bf16_over_int8": {
+      "area": 3.021,
+      "stdcell_count": 4.307,
+      "power_total": 5.998,
+      "min_period_estimate": 3.29,
+      "fmax_reported_by_flow": 0.356
+    },
+    "clock": {
+      "period_ns": 1.25,
+      "why": "closure clock of the INT8 MAC array: sweep B frontier of systolic_os on nangate45 (results/sweeps/phys.jsonl: 1.25 ns closes at 30/40/50 % utilization, 1.20 ns does not)",
+      "fixed_before_first_run_in": "orfs/p2_designs/nangate45/*/constraint.sdc"
+    },
+    "max_clock_note": "max clock: fmax_reported_by_flow_mhz is OpenROAD's finish-stage fmax for core_clock in the single run at 1.25 ns (metadata finish__timing__fmax__clock__core_clock); max_clock_estimate_mhz = 1 / (period - setup WNS) of the same run. Both come from one run per design, not from a searched timing-closure frontier. wns_setup covers every constrained path including the input-to-register paths (inputs arrive 20 % into the cycle), which is why the WNS-based estimate is lower than the flow's fmax. Power is the flow's default vectorless estimate at 1.25 ns, where the bf16 MAC does not meet timing"
+  },
+  "design": {
+    "module": "rtl/mac_bf16.sv",
+    "function": "acc(FP32) <= clear ? +0 : valid ? fp32_add(acc, bf16_mul(a, b)) : acc",
+    "rounding": "round-to-nearest-even (the bf16 x bf16 product is exact in FP32; only the addition rounds)",
+    "subnormals": "flush to zero: a subnormal bf16 input is read as zero of the same sign; a product or sum whose exact magnitude is below 2^-126 becomes zero with the sign of the exact result",
+    "nan": "any NaN operand, inf x 0 and inf - inf give the canonical quiet NaN 0x7FC00000 (payloads and NaN signs are not propagated)",
+    "overflow": "a product or rounded sum of magnitude >= 2^128 becomes infinity of the same sign",
+    "zero_signs": "IEEE 754 round-to-nearest rules: x + (-x) = +0, (-0) + (-0) = -0"
+  },
+  "commands": [
+    "scripts/t61_run.sh 10000 results",
+    "scripts/p2_61_orfs.sh mac_int8",
+    "scripts/p2_61_orfs_staged.sh mac_bf16",
+    "python3 scripts/p2_61_finish.py"
+  ],
+  "seeds": "1234",
+  "evidence": [
+    "results/evidence/61_bit_exact.txt",
+    "results/evidence/61_cocotb_verilator.txt",
+    "results/evidence/61_cocotb_icarus.txt",
+    "results/evidence/61_lint.txt",
+    "results/evidence/61_ppa.txt",
+    "results/p2_61_pe_bf16_summary.json"
+  ]
+}
