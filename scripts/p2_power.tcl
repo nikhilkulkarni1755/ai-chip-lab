@@ -1,5 +1,5 @@
 # P2.1 activity-based power on the ROUTED nangate45 systolic_os (pinned OpenROAD inside the pinned ORFS image).
-# Env: P2P_MODE = vectorless | vcd ; for vcd: P2P_VCD, P2P_SCOPE (VCD scope, '/'-separated), optional P2P_T0/P2P_T1 (seconds).
+# Env: P2P_MODE = vectorless | vcd ; for vcd: P2P_VCD, P2P_SCOPE (VCD scope, '/'-separated), optional P2P_T0/P2P_T1 (integer, VCD time units = ps; read_vcd takes int64).
 # Reads exactly what the ORFS finish stage reads: Liberty, 6_final.odb, 6_final.sdc, 6_final.spef.
 # Output markers on stdout are parsed by scripts/p2_power_summary.py.
 set base /lab/orfs/work/results/nangate45/systolic_os/base

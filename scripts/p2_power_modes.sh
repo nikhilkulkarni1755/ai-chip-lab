@@ -16,7 +16,7 @@ run() {  # run <tag> <mode> [vcd scope t0 t1]
   return $?
 }
 STEP=${1:?step}
-win() { python3 -c "import json;print(json.load(open('/lab/results/power_vcd/$1.json'))['active_window_ps'][$2]*1e-12)"; }
+win() { python3 -c "import json;print(int(json.load(open('/lab/results/power_vcd/$1.json'))['active_window_ps'][$2]))"; }
 wl_run() {  # wl_run <wl> <tag-suffix> <with-window 1|0> <scope-list...>
   local wl=$1 suf=$2 w=$3; shift 3
   for scope in "$@"; do
