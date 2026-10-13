@@ -1,0 +1,601 @@
+{
+ "design": "nangate45/systolic_os (routed, base run, clock 4.0 ns)",
+ "openroad": "pinned ORFS image (coord/images.env)",
+ "orfs_vectorless_total_w": 0.0285107,
+ "ratios_to_orfs_vectorless": {
+  "random": 0.274943291466011,
+  "sparse50": 0.18109108124318238,
+  "allmax": 0.15101864282532523
+ },
+ "criteria": [
+  {
+   "name": "setup_reproduces_orfs_vectorless",
+   "threshold": "our vectorless report_power on the routed design within 1% of ORFS finish__power__total",
+   "measured": "ours 0.0285107326 W, ORFS 0.0285107 W, deviation 1.1434303612880713e-06",
+   "pass": true
+  },
+  {
+   "name": "vcd_annotation_coverage",
+   "threshold": "annotated fraction of netlist pins >= 0.9 for every workload (VCD names map onto the routed flat netlist)",
+   "measured": "{\"random\": 1.0, \"sparse50\": 1.0, \"allmax\": 1.0}",
+   "pass": true
+  },
+  {
+   "name": "workloads_valid",
+   "threshold": "0 mismatches vs NumPy per workload; operand zero fraction sparse50 in [0.48,0.52], allmax = 0, random < 0.01",
+   "measured": "zero fractions {\"random\": 0.003662, \"sparse50\": 0.498535, \"allmax\": 0.0}, mismatches {\"random\": 0, \"sparse50\": 0, \"allmax\": 0}",
+   "pass": true
+  },
+  {
+   "name": "sparse_uses_less_dynamic_power_than_random",
+   "threshold": "dynamic (internal+switching) power sparse50 < random (spec sanity)",
+   "measured": "sparse50 0.00475571514 W vs random 0.007405362550000001 W, ratio 0.6421988265787203",
+   "pass": true
+  },
+  {
+   "name": "allmax_uses_less_dynamic_power_than_random",
+   "threshold": "additional expected ordering: constant all-max operands do not toggle operand registers, so dynamic power allmax < random",
+   "measured": "allmax 0.00388380349 W vs random 0.007405362550000001 W, ratio 0.5244582508657863",
+   "pass": true
+  },
+  {
+   "name": "leakage_roughly_constant",
+   "threshold": "(max-min)/mean of leakage over the three workloads <= 0.1",
+   "measured": "leakage {\"random\": 0.000433462788, \"sparse50\": 0.000407318614, \"allmax\": 0.000421843841}, spread 0.06211860758750894",
+   "pass": true
+  },
+  {
+   "name": "analysis_deterministic",
+   "threshold": "second identical analysis of the random workload gives identical internal/switching/leakage/total",
+   "measured": "{'internal_w': (0.0042588436, 0.0042588436), 'switching_w': (0.00314651895, 0.00314651895), 'leakage_w': (0.000433462788, 0.000433462788), 'total_w': (0.0078388257, 0.0078388257)}",
+   "pass": true
+  },
+  {
+   "name": "netlist_identity",
+   "threshold": "sha256 of the netlist OpenROAD analysed equals the one the VCD simulation used (results/part1_snapshot/systolic_os_routed/6_final.v)",
+   "measured": "analysed f4976d1a6b34, simulated f4976d1a6b34",
+   "pass": true
+  }
+ ],
+ "pass": true,
+ "raw": {
+  "vectorless": {
+   "log": "results/power_activity/raw/vectorless.log",
+   "total_pins": 39133,
+   "groups": {
+    "sequential": {
+     "internal_w": 0.00159869296,
+     "switching_w": 0.000286183698,
+     "leakage_w": 6.25515895e-05,
+     "total_w": 0.00194742822
+    },
+    "combinational": {
+     "internal_w": 0.0132354265,
+     "switching_w": 0.0118112955,
+     "leakage_w": 0.000348569942,
+     "total_w": 0.0253952909
+    },
+    "macro": {
+     "internal_w": 0.0,
+     "switching_w": 0.0,
+     "leakage_w": 0.0,
+     "total_w": 0.0
+    },
+    "pad": {
+     "internal_w": 0.0,
+     "switching_w": 0.0,
+     "leakage_w": 0.0,
+     "total_w": 0.0
+    },
+    "total": {
+     "internal_w": 0.0153812999,
+     "switching_w": 0.0127104688,
+     "leakage_w": 0.000418962969,
+     "total_w": 0.0285107326
+    }
+   },
+   "internal_w": 0.0153812999,
+   "switching_w": 0.0127104688,
+   "leakage_w": 0.000418962969,
+   "total_w": 0.0285107326,
+   "dynamic_w": 0.0280917687,
+   "annotation_report": null
+  },
+  "repeat": {
+   "log": "results/power_activity/raw/random.window.repeat.log",
+   "total_pins": 39133,
+   "groups": {
+    "sequential": {
+     "internal_w": 0.00128907326,
+     "switching_w": 0.000442194258,
+     "leakage_w": 6.37947669e-05,
+     "total_w": 0.00179506233
+    },
+    "combinational": {
+     "internal_w": 0.00242258236,
+     "switching_w": 0.00209134095,
+     "leakage_w": 0.000361823419,
+     "total_w": 0.00487574656
+    },
+    "macro": {
+     "internal_w": 0.0,
+     "switching_w": 0.0,
+     "leakage_w": 0.0,
+     "total_w": 0.0
+    },
+    "pad": {
+     "internal_w": 0.0,
+     "switching_w": 0.0,
+     "leakage_w": 0.0,
+     "total_w": 0.0
+    },
+    "total": {
+     "internal_w": 0.0042588436,
+     "switching_w": 0.00314651895,
+     "leakage_w": 0.000433462788,
+     "total_w": 0.0078388257
+    }
+   },
+   "internal_w": 0.0042588436,
+   "switching_w": 0.00314651895,
+   "leakage_w": 0.000433462788,
+   "total_w": 0.0078388257,
+   "dynamic_w": 0.007405362550000001,
+   "unannotated_pins": 0,
+   "annotated_fraction": 1.0,
+   "annotation_report": "vcd         39713\nunannotated     0"
+  },
+  "workloads": {
+   "random": {
+    "used": "active window",
+    "scope": "systolic_os",
+    "window_run": {
+     "log": "results/power_activity/raw/random.window.log",
+     "total_pins": 39133,
+     "groups": {
+      "sequential": {
+       "internal_w": 0.00128907326,
+       "switching_w": 0.000442194258,
+       "leakage_w": 6.37947669e-05,
+       "total_w": 0.00179506233
+      },
+      "combinational": {
+       "internal_w": 0.00242258236,
+       "switching_w": 0.00209134095,
+       "leakage_w": 0.000361823419,
+       "total_w": 0.00487574656
+      },
+      "macro": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "pad": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "total": {
+       "internal_w": 0.0042588436,
+       "switching_w": 0.00314651895,
+       "leakage_w": 0.000433462788,
+       "total_w": 0.0078388257
+      }
+     },
+     "internal_w": 0.0042588436,
+     "switching_w": 0.00314651895,
+     "leakage_w": 0.000433462788,
+     "total_w": 0.0078388257,
+     "dynamic_w": 0.007405362550000001,
+     "unannotated_pins": 0,
+     "annotated_fraction": 1.0,
+     "annotation_report": "vcd         39713\nunannotated     0"
+    },
+    "whole_run": {
+     "log": "results/power_activity/raw/random.whole.log",
+     "total_pins": 39133,
+     "groups": {
+      "sequential": {
+       "internal_w": 0.00128439348,
+       "switching_w": 0.000437939394,
+       "leakage_w": 6.3794083e-05,
+       "total_w": 0.00178612699
+      },
+      "combinational": {
+       "internal_w": 0.00239978498,
+       "switching_w": 0.00207193568,
+       "leakage_w": 0.000360882172,
+       "total_w": 0.00483260304
+      },
+      "macro": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "pad": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "total": {
+       "internal_w": 0.00423137238,
+       "switching_w": 0.00312285824,
+       "leakage_w": 0.000432519621,
+       "total_w": 0.00778675033
+      }
+     },
+     "internal_w": 0.00423137238,
+     "switching_w": 0.00312285824,
+     "leakage_w": 0.000432519621,
+     "total_w": 0.00778675033,
+     "dynamic_w": 0.00735423062,
+     "unannotated_pins": 0,
+     "annotated_fraction": 1.0,
+     "annotation_report": "vcd         39713\nunannotated     0"
+    },
+    "result": {
+     "log": "results/power_activity/raw/random.window.log",
+     "total_pins": 39133,
+     "groups": {
+      "sequential": {
+       "internal_w": 0.00128907326,
+       "switching_w": 0.000442194258,
+       "leakage_w": 6.37947669e-05,
+       "total_w": 0.00179506233
+      },
+      "combinational": {
+       "internal_w": 0.00242258236,
+       "switching_w": 0.00209134095,
+       "leakage_w": 0.000361823419,
+       "total_w": 0.00487574656
+      },
+      "macro": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "pad": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "total": {
+       "internal_w": 0.0042588436,
+       "switching_w": 0.00314651895,
+       "leakage_w": 0.000433462788,
+       "total_w": 0.0078388257
+      }
+     },
+     "internal_w": 0.0042588436,
+     "switching_w": 0.00314651895,
+     "leakage_w": 0.000433462788,
+     "total_w": 0.0078388257,
+     "dynamic_w": 0.007405362550000001,
+     "unannotated_pins": 0,
+     "annotated_fraction": 1.0,
+     "annotation_report": "vcd         39713\nunannotated     0"
+    },
+    "vcd_meta": {
+     "K": 32,
+     "active_window_ps": [
+      30000.0,
+      2526000.0
+     ],
+     "clock_cycles": 624,
+     "clock_period_ps": 4000,
+     "mismatching_elements_vs_numpy": 0,
+     "operand_zero_fraction": 0.003662,
+     "seed": 1234,
+     "tiles": 16,
+     "workload": "random"
+    }
+   },
+   "sparse50": {
+    "used": "active window",
+    "scope": "systolic_os",
+    "window_run": {
+     "log": "results/power_activity/raw/sparse50.window.log",
+     "total_pins": 39133,
+     "groups": {
+      "sequential": {
+       "internal_w": 0.00111811969,
+       "switching_w": 0.000268047996,
+       "leakage_w": 6.3703068e-05,
+       "total_w": 0.00144987076
+      },
+      "combinational": {
+       "internal_w": 0.00117086316,
+       "switching_w": 0.00103851384,
+       "leakage_w": 0.000335771649,
+       "total_w": 0.0025451486
+      },
+      "macro": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "pad": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "total": {
+       "internal_w": 0.00283617084,
+       "switching_w": 0.0019195443,
+       "leakage_w": 0.000407318614,
+       "total_w": 0.00516303349
+      }
+     },
+     "internal_w": 0.00283617084,
+     "switching_w": 0.0019195443,
+     "leakage_w": 0.000407318614,
+     "total_w": 0.00516303349,
+     "dynamic_w": 0.00475571514,
+     "unannotated_pins": 0,
+     "annotated_fraction": 1.0,
+     "annotation_report": "vcd         39713\nunannotated     0"
+    },
+    "whole_run": {
+     "log": "results/power_activity/raw/sparse50.whole.log",
+     "total_pins": 39133,
+     "groups": {
+      "sequential": {
+       "internal_w": 0.00111744122,
+       "switching_w": 0.000265862007,
+       "leakage_w": 6.36953919e-05,
+       "total_w": 0.00144699856
+      },
+      "combinational": {
+       "internal_w": 0.00116293249,
+       "switching_w": 0.00103161018,
+       "leakage_w": 0.000335172313,
+       "total_w": 0.00252971496
+      },
+      "macro": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "pad": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "total": {
+       "internal_w": 0.00282755913,
+       "switching_w": 0.00191045809,
+       "leakage_w": 0.000406710984,
+       "total_w": 0.00514472788
+      }
+     },
+     "internal_w": 0.00282755913,
+     "switching_w": 0.00191045809,
+     "leakage_w": 0.000406710984,
+     "total_w": 0.00514472788,
+     "dynamic_w": 0.00473801722,
+     "unannotated_pins": 0,
+     "annotated_fraction": 1.0,
+     "annotation_report": "vcd         39713\nunannotated     0"
+    },
+    "result": {
+     "log": "results/power_activity/raw/sparse50.window.log",
+     "total_pins": 39133,
+     "groups": {
+      "sequential": {
+       "internal_w": 0.00111811969,
+       "switching_w": 0.000268047996,
+       "leakage_w": 6.3703068e-05,
+       "total_w": 0.00144987076
+      },
+      "combinational": {
+       "internal_w": 0.00117086316,
+       "switching_w": 0.00103851384,
+       "leakage_w": 0.000335771649,
+       "total_w": 0.0025451486
+      },
+      "macro": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "pad": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "total": {
+       "internal_w": 0.00283617084,
+       "switching_w": 0.0019195443,
+       "leakage_w": 0.000407318614,
+       "total_w": 0.00516303349
+      }
+     },
+     "internal_w": 0.00283617084,
+     "switching_w": 0.0019195443,
+     "leakage_w": 0.000407318614,
+     "total_w": 0.00516303349,
+     "dynamic_w": 0.00475571514,
+     "unannotated_pins": 0,
+     "annotated_fraction": 1.0,
+     "annotation_report": "vcd         39713\nunannotated     0"
+    },
+    "vcd_meta": {
+     "K": 32,
+     "active_window_ps": [
+      30000.0,
+      2526000.0
+     ],
+     "clock_cycles": 624,
+     "clock_period_ps": 4000,
+     "mismatching_elements_vs_numpy": 0,
+     "operand_zero_fraction": 0.498535,
+     "seed": 1234,
+     "tiles": 16,
+     "workload": "sparse50"
+    }
+   },
+   "allmax": {
+    "used": "active window",
+    "scope": "systolic_os",
+    "window_run": {
+     "log": "results/power_activity/raw/allmax.window.log",
+     "total_pins": 39133,
+     "groups": {
+      "sequential": {
+       "internal_w": 0.00136124203,
+       "switching_w": 0.000104029277,
+       "leakage_w": 6.29175411e-05,
+       "total_w": 0.00152818894
+      },
+      "combinational": {
+       "internal_w": 0.000678779616,
+       "switching_w": 0.000579582527,
+       "leakage_w": 0.000351080438,
+       "total_w": 0.00160944252
+      },
+      "macro": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "pad": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "total": {
+       "internal_w": 0.00258720759,
+       "switching_w": 0.0012965959,
+       "leakage_w": 0.000421843841,
+       "total_w": 0.00430564722
+      }
+     },
+     "internal_w": 0.00258720759,
+     "switching_w": 0.0012965959,
+     "leakage_w": 0.000421843841,
+     "total_w": 0.00430564722,
+     "dynamic_w": 0.00388380349,
+     "unannotated_pins": 0,
+     "annotated_fraction": 1.0,
+     "annotation_report": "vcd         39713\nunannotated     0"
+    },
+    "whole_run": {
+     "log": "results/power_activity/raw/allmax.whole.log",
+     "total_pins": 39133,
+     "groups": {
+      "sequential": {
+       "internal_w": 0.00135117513,
+       "switching_w": 0.000103790902,
+       "leakage_w": 6.29002025e-05,
+       "total_w": 0.00151786627
+      },
+      "combinational": {
+       "internal_w": 0.000675897521,
+       "switching_w": 0.000578126404,
+       "leakage_w": 0.000350337272,
+       "total_w": 0.00160436123
+      },
+      "macro": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "pad": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "total": {
+       "internal_w": 0.00257425546,
+       "switching_w": 0.0012949009,
+       "leakage_w": 0.000421082514,
+       "total_w": 0.00429023895
+      }
+     },
+     "internal_w": 0.00257425546,
+     "switching_w": 0.0012949009,
+     "leakage_w": 0.000421082514,
+     "total_w": 0.00429023895,
+     "dynamic_w": 0.0038691563599999998,
+     "unannotated_pins": 0,
+     "annotated_fraction": 1.0,
+     "annotation_report": "vcd         39713\nunannotated     0"
+    },
+    "result": {
+     "log": "results/power_activity/raw/allmax.window.log",
+     "total_pins": 39133,
+     "groups": {
+      "sequential": {
+       "internal_w": 0.00136124203,
+       "switching_w": 0.000104029277,
+       "leakage_w": 6.29175411e-05,
+       "total_w": 0.00152818894
+      },
+      "combinational": {
+       "internal_w": 0.000678779616,
+       "switching_w": 0.000579582527,
+       "leakage_w": 0.000351080438,
+       "total_w": 0.00160944252
+      },
+      "macro": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "pad": {
+       "internal_w": 0.0,
+       "switching_w": 0.0,
+       "leakage_w": 0.0,
+       "total_w": 0.0
+      },
+      "total": {
+       "internal_w": 0.00258720759,
+       "switching_w": 0.0012965959,
+       "leakage_w": 0.000421843841,
+       "total_w": 0.00430564722
+      }
+     },
+     "internal_w": 0.00258720759,
+     "switching_w": 0.0012965959,
+     "leakage_w": 0.000421843841,
+     "total_w": 0.00430564722,
+     "dynamic_w": 0.00388380349,
+     "unannotated_pins": 0,
+     "annotated_fraction": 1.0,
+     "annotation_report": "vcd         39713\nunannotated     0"
+    },
+    "vcd_meta": {
+     "K": 32,
+     "active_window_ps": [
+      30000.0,
+      2526000.0
+     ],
+     "clock_cycles": 624,
+     "clock_period_ps": 4000,
+     "mismatching_elements_vs_numpy": 0,
+     "operand_zero_fraction": 0.0,
+     "seed": 1234,
+     "tiles": 16,
+     "workload": "allmax"
+    }
+   }
+  }
+ }
+}

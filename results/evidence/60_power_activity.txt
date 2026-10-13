@@ -1,0 +1,60 @@
+{
+ "design": "nangate45/systolic_os (routed, base run, clock 4.0 ns)",
+ "orfs_vectorless_total_w": 0.0285107,
+ "ratios_to_orfs_vectorless": {
+  "random": 0.274943291466011,
+  "sparse50": 0.18109108124318238,
+  "allmax": 0.15101864282532523
+ },
+ "criteria": [
+  {
+   "name": "setup_reproduces_orfs_vectorless",
+   "threshold": "our vectorless report_power on the routed design within 1% of ORFS finish__power__total",
+   "measured": "ours 0.0285107326 W, ORFS 0.0285107 W, deviation 1.1434303612880713e-06",
+   "pass": true
+  },
+  {
+   "name": "vcd_annotation_coverage",
+   "threshold": "annotated fraction of netlist pins >= 0.9 for every workload (VCD names map onto the routed flat netlist)",
+   "measured": "{\"random\": 1.0, \"sparse50\": 1.0, \"allmax\": 1.0}",
+   "pass": true
+  },
+  {
+   "name": "workloads_valid",
+   "threshold": "0 mismatches vs NumPy per workload; operand zero fraction sparse50 in [0.48,0.52], allmax = 0, random < 0.01",
+   "measured": "zero fractions {\"random\": 0.003662, \"sparse50\": 0.498535, \"allmax\": 0.0}, mismatches {\"random\": 0, \"sparse50\": 0, \"allmax\": 0}",
+   "pass": true
+  },
+  {
+   "name": "sparse_uses_less_dynamic_power_than_random",
+   "threshold": "dynamic (internal+switching) power sparse50 < random (spec sanity)",
+   "measured": "sparse50 0.00475571514 W vs random 0.007405362550000001 W, ratio 0.6421988265787203",
+   "pass": true
+  },
+  {
+   "name": "allmax_uses_less_dynamic_power_than_random",
+   "threshold": "additional expected ordering: constant all-max operands do not toggle operand registers, so dynamic power allmax < random",
+   "measured": "allmax 0.00388380349 W vs random 0.007405362550000001 W, ratio 0.5244582508657863",
+   "pass": true
+  },
+  {
+   "name": "leakage_roughly_constant",
+   "threshold": "(max-min)/mean of leakage over the three workloads <= 0.1",
+   "measured": "leakage {\"random\": 0.000433462788, \"sparse50\": 0.000407318614, \"allmax\": 0.000421843841}, spread 0.06211860758750894",
+   "pass": true
+  },
+  {
+   "name": "analysis_deterministic",
+   "threshold": "second identical analysis of the random workload gives identical internal/switching/leakage/total",
+   "measured": "{'internal_w': (0.0042588436, 0.0042588436), 'switching_w': (0.00314651895, 0.00314651895), 'leakage_w': (0.000433462788, 0.000433462788), 'total_w': (0.0078388257, 0.0078388257)}",
+   "pass": true
+  },
+  {
+   "name": "netlist_identity",
+   "threshold": "sha256 of the netlist OpenROAD analysed equals the one the VCD simulation used (results/part1_snapshot/systolic_os_routed/6_final.v)",
+   "measured": "analysed f4976d1a6b34, simulated f4976d1a6b34",
+   "pass": true
+  }
+ ],
+ "pass": true
+}

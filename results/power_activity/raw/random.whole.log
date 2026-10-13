@@ -1,0 +1,25 @@
+@@TOTALPINS 39133
+@@READ_VCD -scope systolic_os /lab/results/power_vcd/random.vcd
+Annotated 39713 pin activities.
+@@ANNOT-BEGIN
+vcd         39713
+unannotated     0
+@@ANNOT-END
+@@UNANNOT-BEGIN
+vcd         39713
+unannotated     0
+Unannotated pins:
+@@UNANNOT-END
+@@POWER-BEGIN
+Group                      Internal      Switching        Leakage          Total
+                              Power          Power          Power          Power (Watts)
+--------------------------------------------------------------------------------
+Sequential           1.28439348e-03 4.37939394e-04 6.37940830e-05 1.78612699e-03  22.9%
+Combinational        2.39978498e-03 2.07193568e-03 3.60882172e-04 4.83260304e-03  62.1%
+Clock                5.47185948e-04 6.12983829e-04 7.84391887e-06 1.16801367e-03  15.0%
+Macro                0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00   0.0%
+Pad                  0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00   0.0%
+--------------------------------------------------------------------------------
+Total                4.23137238e-03 3.12285824e-03 4.32519621e-04 7.78675033e-03 100.0%
+                              54.3%          40.1%           5.6%
+@@POWER-END

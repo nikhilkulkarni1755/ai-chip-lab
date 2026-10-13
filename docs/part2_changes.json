@@ -175,5 +175,16 @@
    "results/t1_summary.json"
   ],
   "what": "Summary no longer prints FAIL beside pass=True: checks needing a Verilator result are listed as not evaluated with the reason, the both-simulators criterion as superseded (not met), and the verdict definition and gls_routed_status (Icarus only) are written out"
+ },
+ {
+  "agent": "pnr",
+  "stage": "60_power_activity",
+  "files": [
+   "results/power_activity.json",
+   "results/evidence/60_power_activity.txt",
+   "demo/assets/power_activity.png",
+   "docs/power_explained.md"
+  ],
+  "what": "Activity-based power run: 8/8 registered criteria pass; simulated workloads 0.15-0.27x of ORFS vectorless"
  }
 ]
