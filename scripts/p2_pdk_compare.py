@@ -36,7 +36,7 @@ def lock_accounting(t0, tag):
             for l2 in L[i + 1:]:
                 m2 = re.match(r"\S+ \S+ FREE pnr rc=\S+ ran=(\d+)s", l2)
                 if m2:
-                    got = (int(m2.group(2)), int(m2.group(1))); break
+                    got = (int(m.group(2)), int(m2.group(1))); break
     return got
 
 OUT = os.path.join(LAB, "results", "pdk_compare", "sky130hd_points.jsonl")
@@ -64,7 +64,11 @@ def run(a):
         sdc = make_sdc(p)
         t0 = time.time()
         env = dict(os.environ, T2_TIMEOUT=str(TIMEOUT_S))
-        rc = subprocess.call([os.path.join(LAB, "scripts", "with_lock.sh"), "pnr", os.path.join(LAB, "scripts", "t2_run.sh"), PL, DES, var,
+        tj = os.path.join(LAB, "orfs/work/reports", PL, DES, var, "t2_run.json")
+        if a.reuse and os.path.exists(tj):   # row bookkeeping for a finished flow (no rerun)
+            j = json.load(open(tj)); rc = j["rc"]; t0 = j["start_epoch"]
+        else:
+          rc = subprocess.call([os.path.join(LAB, "scripts", "with_lock.sh"), "pnr", os.path.join(LAB, "scripts", "t2_run.sh"), PL, DES, var,
                               "--config", "/lab/orfs/pdk_compare/sky130hd/systolic_os/config.mk", f"CORE_UTILIZATION={UTIL}", f"SDC_FILE={sdc}"], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         rec = {"platform": PL, "design": DES, "clock_period_ns": p, "core_utilization": UTIL, "variant": var, "rc": rc,
                "wall_s": round(time.time() - t0), "finished_epoch": int(time.time())}
@@ -125,7 +129,7 @@ def summary(a):
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(); ap.add_argument("cmd", choices=["run", "summary"]); ap.add_argument("--go", action="store_true")
+    ap = argparse.ArgumentParser(); ap.add_argument("cmd", choices=["run", "summary"]); ap.add_argument("--go", action="store_true"); ap.add_argument("--reuse", action="store_true")
     ap.add_argument("--periods", default="8.0,5.5,4.0"); ap.add_argument("--deadline", default="20:45")
     a = ap.parse_args()
     run(a) if a.cmd == "run" else summary(a)
