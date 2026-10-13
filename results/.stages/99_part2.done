@@ -1,0 +1,1 @@
+2026-10-12 20:14:39 Part 2 finished: Phase 1 — Task 3 FAIL (criterion B), routed GLS PARTIAL, rest green or accounted; Phase 2 — P2.1, P2.3, P2.4 PASS, P2.2 FAIL on lint only; `make all` exit non-zero listing t3. Branch part2-green (not pushed). Open demo/index.html. VM stopped (results/vm_final_state.json).

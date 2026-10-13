@@ -1,12 +1,13 @@
 {
  "command": "bash demo/run_demo.sh",
- "finished": "2026-10-12 20:02:12",
+ "finished": "2026-10-12 20:13:57",
  "result": "PASS",
  "exit_code": 0,
- "total_s": 117,
- "lock_wait_s": 2,
+ "total_s": 115,
+ "wall_s_measured_by_recorder": 114,
+ "lock_wait_s": 0,
  "cases": 200,
- "load_average": "2.53 3.20 3.97",
+ "load_average": "2.11 1.93 2.73",
  "steps": [
   {
    "verdict": "PASS",
@@ -25,24 +26,24 @@
   },
   {
    "verdict": "PASS",
-   "seconds": 0,
+   "seconds": 1,
    "step": "Task 2: nangate45/gcd metadata within ORFS shipped thresholds (checkMetadata.py)"
   },
   {
    "verdict": "PASS",
-   "seconds": 31,
+   "seconds": 28,
    "step": "Task 1: routed-netlist gate-level sim, Icarus, 49 cases vs NumPy (CSV = first rows of the official CSV; Verilator not run)"
   },
   {
    "verdict": "PASS",
-   "seconds": 0,
-   "step": "Task 3: roofline criterion B recomputed from saved reports (verdict printed above; consistency with t3_summary.json)"
+   "seconds": 1,
+   "step": "Task 3: recorded verdict is consistent with saved reports (criterion B itself: NOT met)"
   }
  ],
  "longest_step_s": 41,
  "all_steps_under_60_s": true,
- "git_commit": "2405398",
- "log": "logs/part2/run_demo/run_demo_200015.log",
+ "git_commit": "a22bd69",
+ "log": "logs/part2/run_demo/run_demo_201202.log",
  "evidence": "results/evidence/final_run_demo.txt",
- "how": "one real run of the script as written, every container step through scripts/with_lock.sh; per-step times exclude lock wait (script's own accounting); parsed from the script's printed table and .cache/demo_run/timing.json"
+ "how": "one real run of the script as written (scripts/run_demo_record.py); per-step times exclude lock wait (the script's own accounting)"
 }

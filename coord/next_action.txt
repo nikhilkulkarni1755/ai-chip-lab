@@ -1,1 +1,1 @@
-Part 2 setup: agents starting P1.1 (roofline), P1.3 (routed EQY/GLS), P1.5 (ORFS cross-check), P1.2 (make recipes)
+DONE — Part 2 finished; open demo/index.html (branch part2-green, not pushed). VM stopped: source env.sh && colima start

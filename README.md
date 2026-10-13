@@ -71,7 +71,7 @@ State is computed from the files; diagnosis and next action are explanations wri
 | P2.3 systolic_os on sky130hd (new) | - | **PASS** |
 | P2.4 SRAM modelling with CACTI (new) | - | **PASS** |
 
-Part 2 is in progress or its end has not been recorded (the end time is read from results/.stages/99_part2.done, which does not exist yet); started 2026-10-12 09:03:34 PDT, budget 14h. Part 1's runtime stays as recorded in its own section.
+Part 2 runtime: 11h 11m, from 2026-10-12 09:03:34 PDT to 2026-10-12 20:14:39 PDT, budget 14h (Part 1's total runtime stays as recorded in its own section)
 
 Part 2 stage states:
 
@@ -144,7 +144,7 @@ make all                      # fail-soft loop over the above, always builds the
 bash demo/run_demo.sh         # short cut (cached images, scratch output dir); needs the VM running
 ```
 
-Timed run of `bash demo/run_demo.sh` (results/run_demo_last.json, results/evidence/final_run_demo.txt): **PASS** in 117 s (2 s of lock wait), 6 of 6 steps PASS. The Task 3 criterion-B step's PASS only means the recomputed verdict equals the recorded one; the criterion itself is **not met**. The routed gate-level step is Icarus only (Verilator not run).
+Timed run of `bash demo/run_demo.sh` (results/run_demo_last.json, results/evidence/final_run_demo.txt): **PASS** in 115 s (0 s of lock wait), 6 of 6 steps PASS. The Task 3 criterion-B step's PASS only means the recomputed verdict equals the recorded one; the criterion itself is **not met**. The routed gate-level step is Icarus only (Verilator not run).
 
 ### Make recipes: what was actually run
 

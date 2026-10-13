@@ -1,0 +1,15 @@
+{
+ "state": "stopped",
+ "time": "2026-10-12 20:14:39 PDT",
+ "verified_by": "`colima status` -> 'colima is not running'; `colima list` -> profile default status Stopped",
+ "stopped_by": "`source env.sh && colima stop` (infra, final packaging, on main's word; nothing was running in the VM, lock free, queue empty)",
+ "start_again": "source ~/ai-chip-lab/env.sh && colima start",
+ "then_check": "docker run --rm hello-world   # or: make runtime",
+ "kept_on_disk": {
+  "vm_and_images": "VM disk with all pulled/built images is kept under ~/ai-chip-lab/.colima and .lima (19G + 16K on the host): lab-sim:20261012b (4.67 GB), lab-sim:20261012 (older build, 4.68 GB), the pinned ORFS image (6.5 GB), lab-cacti:20261012 (523 MB)",
+  "orfs_work_tree": "orfs/work (2.3G) with every ORFS run of both parts is kept",
+  "vm_config": "vz, x86_64, 3 CPUs, 4GiB memory, 60GiB data disk (sparse)"
+ },
+ "host_free_disk_gb": 61,
+ "needed_for": "demo/run_demo.sh and every make recipe except `make demo` and `make preflight` need the VM running; the page (demo/index.html) and README do not"
+}

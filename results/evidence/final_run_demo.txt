@@ -1,4 +1,4 @@
-$ bash demo/run_demo.sh    (finished 2026-10-12 20:02:12, commit 2405398)
+$ bash demo/run_demo.sh    (finished 2026-10-12 20:13:57, commit a22bd69, exit 0)
 == Task 1: 200 cases, Verilator + Icarus
 == Task 1: formal MAC proof (sby tasks: prove + cover; the full bmc-20 runs in 'make t1')
 == Task 3: one SCALE-Sim run vs analytic model
@@ -8,13 +8,12 @@ $ bash demo/run_demo.sh    (finished 2026-10-12 20:02:12, commit 2405398)
 ws: 21 layers, rho(intensity, required bandwidth) = 0.366, threshold <= -0.6 -> criterion NOT met (recorded verdict False, equal)
 os: 21 layers, rho(intensity, required bandwidth) = -0.556, threshold <= -0.6 -> criterion NOT met (recorded verdict False, equal)
 is: 21 layers, rho(intensity, required bandwidth) = -0.509, threshold <= -0.6 -> criterion NOT met (recorded verdict False, equal)
-NOTE: the routed-netlist gate-level simulation is not in this cut: Icarus needs 67 s for the 229 cases (200 random + 29 directed), over the 1-minute rule. Run it with: scripts/t1_routed.sh (T1R_STEPS=
 ================ demo summary ================
 PASS    40s  Task 1: 200 cases vs NumPy, Verilator+Icarus, CSVs identical
 PASS    41s  Task 1: formal MAC proof, sby tasks prove (induction) + cover
 PASS     2s  Task 3: SCALE-Sim cycles == analytic model on 6 GEMMs (1 run; full ws/os/is stage is 'make t3')
-PASS     0s  Task 2: nangate45/gcd metadata within ORFS shipped thresholds (checkMetadata.py)
-PASS    31s  Task 1: routed-netlist gate-level sim, Icarus, 49 cases vs NumPy (CSV = first rows of the official CSV; Verilator not run)
-PASS     0s  Task 3: roofline criterion B recomputed from saved reports (verdict printed above; consistency with t3_summary.json)
-total: 117 s (of which 2 s waiting for the lock; steps above exclude that wait)   load average: 2.53 3.20 3.97   logs: .cache/demo_run/*.log
+PASS     1s  Task 2: nangate45/gcd metadata within ORFS shipped thresholds (checkMetadata.py)
+PASS    28s  Task 1: routed-netlist gate-level sim, Icarus, 49 cases vs NumPy (CSV = first rows of the official CSV; Verilator not run)
+PASS     1s  Task 3: recorded verdict is consistent with saved reports (criterion B itself: NOT met)
+total: 115 s (of which 0 s waiting for the lock; steps above exclude that wait)   load average: 2.11 1.93 2.73   logs: .cache/demo_run/*.log
 RESULT: PASS

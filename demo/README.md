@@ -36,7 +36,7 @@ RE-RUN THE SHORT DEMO
   Runs: Task 1 on 200 cases (Verilator + Icarus), the formal MAC proof restricted to the sby tasks "prove" (unbounded
   induction) and "cover", one SCALE-Sim run vs the analytic model, and ORFS's threshold check on the existing outputs.
   The full BMC-20 formal run is part of `make t1`, not of this cut (216 s in the official run).
-  Last measured run time of the short demo: 117 s with 200 cases (finished 2026-10-12 20:02:12, load average at the end: 2.53 3.20 3.97). The load average reflects other jobs on the same 2-core machine, so a quiet machine is faster.
+  Last measured run time of the short demo: 115 s with 200 cases (finished 2026-10-12 20:13:57, load average at the end: 2.11 1.93 2.73). The load average reflects other jobs on the same 2-core machine, so a quiet machine is faster.
 
 FREE DISK AFTERWARDS (all inside ~/ai-chip-lab; nothing outside the lab was changed)
   Safe to delete (re-creatable, results already saved under results/ and demo/):
