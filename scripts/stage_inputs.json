@@ -160,6 +160,22 @@
     "coord/images.env",
     "docker/requirements.lock"
    ]
+  },
+  "t3-clean-first": {
+   "markers": [
+    "30_arch_model",
+    "31_roofline_fix"
+   ],
+   "dry": false,
+   "inputs": [
+    "model/",
+    "arch/",
+    "scripts/t3_*",
+    "coord/images.env",
+    "docker/requirements.lock",
+    "scripts/t3_clean_first.sh"
+   ],
+   "note": "Decision P2-10 form of the Task 3 stage (clean single-pass cheap set on frozen inputs); used instead of t3 via ALL_STAGES when the repro verdict must refer to the files this stage writes"
   }
  }
 }

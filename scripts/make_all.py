@@ -10,6 +10,7 @@
   MAKE_ALL_FAIL=<stage>    TEST HOOK (scripts/make_all_failsoft_test.sh): do not run that stage's recipe, set its
                            stage marker to .failed ("forced by the fail-soft test") and count it as failed
   ALL_STAGES="a b c"       run only these stages (same order rules)
+  MAKE_ALL_FORCE="a b"     run these stages even if the resume rule would skip them (reason: MAKE_ALL_FORCE_REASON), logged
   MAKE_ALL_EXCLUDE="a b"   TEST HOOK: do not run these stages; logged as "excluded" with MAKE_ALL_EXCLUDE_REASON
 
 Rules: a failing stage (non-zero recipe, including an honest scientific FAIL) never stops later stages; `demo` is
@@ -129,6 +130,8 @@ def main():
             e.update(action="dry_skipped", reason="DRY_RUN=1 and the recipe has no dry mode", exit_code=None, runtime_s=0)
         else:
             skip, why = skip_reason(s, markers_only) if resume else (False, "full run" if not dry else "dry run")
+            if skip and s in env.get("MAKE_ALL_FORCE", "").split():
+                skip, why = False, "forced by MAKE_ALL_FORCE (%s); the resume rule alone would skip: %s" % (env.get("MAKE_ALL_FORCE_REASON", "no reason given"), why)
             if skip:
                 e.update(action="skipped", reason=why, exit_code=None, runtime_s=0)
             else:

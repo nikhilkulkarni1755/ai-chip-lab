@@ -88,6 +88,10 @@ RESUME=markers make all > out.K 2>&1
 ok "K marker-only mode ignores the changed input (t3 not rerun)" "$(ran)" "demo "
 ok "K reason says what the input-aware rule would do" "$(grep -c 'would say: RUN' out.K)" "2"
 
+RESUME=1 make all > /dev/null 2>&1; ran > /dev/null
+RESUME=1 MAKE_ALL_FORCE="repro" MAKE_ALL_FORCE_REASON="test" make all > out.L 2>&1
+ok "L MAKE_ALL_FORCE reruns a stage the resume rule would skip" "$(ran)" "repro demo "
+ok "L forced reason logged" "$(grep -c 'forced by MAKE_ALL_FORCE (test)' out.L)" "1"
 FAIL_demo=0 FAIL_t2=1 FAIL_repro=1 make all > out.J 2>&1
 ok "J two failures listed in order" "$(grep -c 'stages that failed: t2 repro$' out.J)" "1"; ran > /dev/null
 echo; echo "--- sample: resume log (case C) ---"; cat out.C
