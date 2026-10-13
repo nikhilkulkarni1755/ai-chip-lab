@@ -108,3 +108,11 @@ layers completed (`results/evidence/31_a_probe.txt`, `results/t3/roofline2/rl2_u
 layer of one criterion-A cell therefore does not fit in a 10-minute lock hold, SCALE-Sim cannot checkpoint inside a
 layer, and criterion A is **not evaluated (cost)**: ws B=256 `blocked` (probe), the other five cells `not_run`. It is
 neither a pass nor a fail. The stage verdict is FAIL because of criterion B alone.
+
+**Notes on the record.** (1) `model/t3_roofline2_criteria.json` still carries `"registered_before_any_new_run": true`; that flag predates the
+amendment of 12:05 (commit 69183b1, P2-A2, cost only, committed before any criterion-A run) and describes the original registration (commit
+6d2fc2f), not the amended design; the file is a frozen stage input and is not edited. (2) Byte identity of the cheap set is decided by
+`make repro` (`results/repro_report.json`, pass = true, 42 files identical, run-time measurements `timing.timing` excluded and listed), not by the
+stage summary's own identity block, which is a bookkeeping state after a resumed single-pass run (see `known_presentation_defects` in
+`results/p2_31_roofline_fix.json`). (3) The unevaluated criterion-A checks appear as `false` in `results/t3_summary.json`; they are not evaluated
+(`cell_status`), not failed.

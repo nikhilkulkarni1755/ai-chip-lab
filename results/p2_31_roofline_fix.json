@@ -3,7 +3,7 @@
  "pass": false,
  "verdict": "FAIL",
  "complete": false,
- "state": "A_incomplete(ws_mid=not_run,ws_high=blocked,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run)",
+ "state": "A_incomplete(ws_mid=not_run,ws_high=not_run,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run)",
  "oracle": "SCALE-Sim's own reports (COMPUTE_REPORT stall cycles, BANDWIDTH_REPORT required DRAM bandwidth) against arithmetic intensity computed from the layer shapes alone (2MNK / compulsory bytes); the two sides share no code.",
  "criteria": [
   {
@@ -59,7 +59,7 @@
    "name": "A_user_bw_stall_frac_vs_AI_ws_B256",
    "threshold": "rho(AI, stall fraction) <= -0.6 and < +0.3, >= 5 layers with stalls",
    "written_before_run": "69183b1",
-   "measured": "not evaluated (cost): blocked",
+   "measured": "not evaluated (cost): not_run",
    "pass": null
   },
   {
@@ -77,10 +77,10 @@
    "pass": true
   },
   {
-   "name": "reruns_byte_identical_in_stage",
-   "threshold": "bundled + fit + CALC reruns identical",
-   "written_before_run": "Part 1",
-   "measured": "in_stage_ok_pending_repro; pending repro: 3",
+   "name": "reruns_byte_identical (make repro)",
+   "threshold": "bundled ws/os/is + fit + CALC-mode runs byte-identical between the clean first pass and the repro rerun (time measurements excluded and listed)",
+   "written_before_run": "Part 1 / P2-6 (identity of the cheap set is decided by make repro)",
+   "measured": "repro report pass=True: t3 cheap-set result files byte-identical (42 files compared); identical; excluded: excluded: run-time measurements (3 files)",
    "pass": true
   }
  ],
@@ -95,15 +95,36 @@
  ],
  "commands": [
   "make t3",
-  "python3 scripts/t3_p2_json.py"
+  "make repro",
+  "python3 scripts/p2_31_finalize.py"
  ],
  "seeds": "none (SCALE-Sim is deterministic; PYTHONHASHSEED=0)",
  "evidence": [
-  "results/t3_summary.json",
-  "results/evidence/31_original_stalls.txt",
-  "results/evidence/31_neutrality_and_intensity_tests.txt",
-  "results/evidence/31_a_probe.txt",
   "demo/assets/t3_roofline.png",
-  "docs/t3_roofline_explained.md"
+  "docs/t3_roofline_explained.md",
+  "results/evidence/31_a_probe.txt",
+  "results/evidence/31_neutrality_and_intensity_tests.txt",
+  "results/evidence/31_original_stalls.txt",
+  "results/evidence/51_repro_t3_diagnosis.txt",
+  "results/repro_report.json",
+  "results/t3_summary.json"
+ ],
+ "identity": {
+  "source": "results/repro_report.json",
+  "repro_pass": true,
+  "repro_complete": false,
+  "counts": {
+   "different": 0,
+   "identical": 11,
+   "not_rerun_cost": 2,
+   "not_run": 0
+  },
+  "cheap_set_verdict": "identical",
+  "excluded": "excluded: run-time measurements (3 files)",
+  "note": "The repro verdict is the identity evidence. The stage summary's own identity block is not (see known_presentation_defects)."
+ },
+ "known_presentation_defects": [
+  "results/t3_summary.json lists the unevaluated criterion-A checks (user_bw_stalls_vs_ai_*, stall_cycles_monotone_in_B_*, roofline_agrees) as plain false; they are NOT FAILED, they were not evaluated (cell_status: {\"rl2_user_is_high\": \"not_run\", \"rl2_user_is_mid\": \"not_run\", \"rl2_user_os_high\": \"not_run\", \"rl2_user_os_mid\": \"not_run\", \"rl2_user_ws_high\": \"not_run\", \"rl2_user_ws_mid\": \"not_run\"}). Render NOT EVALUATED from cell_status. Fix deferred: model/ is frozen (Decision P2-12).",
+  "results/t3_summary.json identity.state reads 'mismatch' with 0 files compared in-stage and checks.reruns_byte_identical=False: the summary was last written by a stage invocation that resumed a finished single-pass run, so no in-stage comparison existed. This is a bookkeeping state, not a mismatch (repro compared 42 files byte-identical). verdict_failed_criteria in the summary therefore also lists reruns_byte_identical; the real failing criteria are the three criterion-B checks. Fix deferred."
  ]
 }
