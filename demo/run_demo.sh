@@ -97,7 +97,6 @@ python3 scripts/t3_criterion_b_recheck.py --lab "$LAB" > "$SCR/t3_critB.log" 2>&
 cat "$SCR/t3_critB.log"
 if [ $rcb -eq 0 ]; then r=PASS; elif [ $rcb -eq 2 ]; then r=SKIP; else r=FAIL; fi
 record "Task 3: roofline criterion B recomputed from saved reports (verdict printed above; consistency with t3_summary.json)" "$r" "$(( $(date +%s) - T5 ))"
-echo "NOTE: the routed-netlist gate-level simulation is not in this cut: Icarus needs 67 s for the 229 cases (200 random + 29 directed), over the 1-minute rule. Run it with: scripts/t1_routed.sh (T1R_STEPS=gls)."
 
 # ---- table
 echo

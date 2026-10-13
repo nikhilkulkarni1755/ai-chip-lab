@@ -336,8 +336,30 @@ def recipes_block(L):
             h.append("<tr><td><code>%s</code></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(str(st.get("stage"))), e(str(st.get("action"))), e(str(st.get("reason", ""))),
                      e(str(st.get("exit_code"))), e(str(st.get("runtime_s"))), e(str(st.get("lock_wait_s")))))
         h.append("</tbody></table></div>")
+        pr = ma.get("post_repro_identity_check")
+        if isinstance(pr, dict):
+            t1c = pr.get("task1") or {}
+            h.append("<p><b>Post-repro identity check</b> (recorded by the last <code>make all</code>; %s): %s Task 1 files byte-identical to what repro compared: %s (%s files, %s summary check booleans equal to the rerun); "
+                     "Task 2 runs compared by the stage itself: %s. Overall identical: %s.</p>" % (
+                         e(str(pr.get("generated"))), e(str(pr.get("why", ""))), e(str(t1c.get("identical"))), e(str(len(t1c.get("files") or []))), e(str(t1c.get("summary_check_booleans_compared"))),
+                         e("; ".join("%s %s runs, identical to all earlier: %s" % (x.get("design"), x.get("runs"), x.get("identical_to_all_earlier_runs")) for x in pr.get("task2_stage_own_comparison") or [])), e(str(pr.get("identical")))))
     else:
         h.append("<p class='sub'>results/make_all_last.json not written yet (the final <code>make all</code> has not run).</p>")
+    return "".join(h)
+
+
+def demo_run_block(L):
+    d = L.jload("results/run_demo_last.json")
+    if not isinstance(d, dict):
+        return "<p class='sub'><span class='b dim'>PENDING</span> results/run_demo_last.json (the timed run of demo/run_demo.sh) is not on disk.</p>"
+    h = ["<h3>The 5-minute demo, timed (results/run_demo_last.json, results/evidence/final_run_demo.txt)</h3>",
+         "<p><code>%s</code> finished %s: <b>%s</b> in %s s (%s s waiting for the lock), %s cases, %s of %s steps PASS.</p>" % (
+             e(str(d.get("command"))), e(str(d.get("finished"))), e(str(d.get("result"))), e(str(d.get("total_s"))), e(str(d.get("lock_wait_s"))), e(str(d.get("cases"))),
+             sum(1 for x in d.get("steps") or [] if x.get("verdict") == "PASS"), len(d.get("steps") or []))]
+    h.append("<div class='tw'><table><thead><tr><th>step</th><th>verdict</th><th>seconds</th></tr></thead><tbody>%s</tbody></table></div>" % "".join(
+        "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(str(x.get("step"))), e(str(x.get("verdict"))), e(str(x.get("seconds")))) for x in d.get("steps") or []))
+    h.append("<p><b>Reading the criterion-B step:</b> its PASS means only that the verdict recomputed from the saved reports equals the verdict recorded in results/t3_summary.json. "
+             "The criterion itself is <b>NOT met</b> (the step prints rho per dataflow against the -0.6 threshold; see Task 3). Likewise the routed gate-level step is Icarus only; Verilator was not run.</p>")
     return "".join(h)
 
 
@@ -486,7 +508,7 @@ def t3_roofline2_block(L, t3s):
 
 def how_tested(L):
     files = sorted(glob.glob(L.p("results/p2_*.json")))
-    h = [recipes_block(L), sweep_b_accounting(L)]
+    h = [demo_run_block(L), recipes_block(L), sweep_b_accounting(L)]
     if not files:
         h.append("<p class='sub'><span class='b dim'>PENDING</span> no <code>results/p2_&lt;stage&gt;.json</code> files yet; each Part 2 stage writes one (schema in COORDINATION.md, Interfaces (Part 2)).</p>")
     for f in files:
@@ -622,12 +644,26 @@ def not_green_html(L, rows):
     items = not_green_items(L, rows)
     h = ["<h3>What is not green yet, why, and the next action</h3><p class='sub'>The state is computed from the files; the diagnosis and next action are written by the demo agent from the decisions in COORDINATION.md.</p>"]
     if not items:
-        return "".join(h) + "<p>Every row is PASS or DONE.</p>"
+        return "".join(h) + "<p>Every row is PASS or DONE.</p>" + owner_box_html()
     h.append("<div class='tw'><table><thead><tr><th>Row</th><th>State now</th><th>Diagnosis</th><th>Next action</th></tr></thead><tbody>")
     for r, diag, act in items:
         h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(r.label), badge(r.state), e(diag), e(act)))
     h.append("</tbody></table></div>")
+    h.append(owner_box_html())
     return "".join(h)
+
+
+OWNER_ACTIONS = [
+    "Review and merge branch <code>part2-green</code> yourself. Nothing was pushed and <code>main</code> was not touched.",
+    "Keep branch <code>p2/rtl</code>: it holds the one-line bf16 lint fix (commit e21fd3b) that was deliberately not merged (Decision P2-12).",
+    "Optional bf16 lint fix: <code>git cherry-pick e21fd3b</code>, then <code>scripts/t61_run.sh 10000 results &amp;&amp; python3 scripts/p2_61_finish.py</code>. rtl/ is an input of the t1, t1-routed and repro stages, so those re-run afterwards.",
+    "Optional: decide whether Task 3 criterion A should be evaluated at all (several hours of exclusive machine time) or re-registered; criterion B's failure is a finding, not a bug.",
+    "Stop the VM when done: <code>source env.sh &amp;&amp; colima stop</code> (the demo needs it running).",
+]
+
+
+def owner_box_html():
+    return "<div class='note'><b>Owner actions</b><ul>%s</ul></div>" % "".join("<li>%s</li>" % x for x in OWNER_ACTIONS)
 
 
 def not_green_md(L, rows):
@@ -638,7 +674,12 @@ def not_green_md(L, rows):
     out += ["| Row | State now | Diagnosis | Next action |", "|---|---|---|---|"]
     for r, diag, act in items:
         out.append("| %s | **%s** | %s | %s |" % (r.label, r.state, diag, act))
-    return "\n".join(out) + "\n"
+    return "\n".join(out) + "\n" + owner_box_md()
+
+
+def owner_box_md():
+    import html as _h
+    return "\n**Owner actions**\n\n" + "\n".join("- " + _h.unescape(re.sub(r"</?code>", "`", x)) for x in OWNER_ACTIONS) + "\n"
 
 
 def md_to_html(md):

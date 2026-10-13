@@ -258,9 +258,10 @@ def sweep_accounting(L, name, asum):
     cnt = {}
     for r in pts:
         cnt[r.get("state")] = cnt.get(r.get("state"), 0) + 1
-    cut = sum(v for k, v in cnt.items() if k not in ("done", "failed", "timeout"))
-    return True, "Part 2 refinement plan: %d points, %d done, %d failed or timed out, %d cut at the gate (each listed with its state in section 12)" % (
-        len(pts), cnt.get("done", 0), cnt.get("failed", 0) + cnt.get("timeout", 0), cut)
+    deliberate = cnt.get("cut", 0) + cnt.get("not_run_cut", 0)
+    notreached = cnt.get("not_reached", 0)
+    return True, ("Part 2 refinement plan: %d points, %d done, %d failed or timed out, %d cut deliberately (the 30 %% frontier was already bracketed by 1.20 ns failing / 1.25 ns closing), "
+                  "%d not reached before the gate (each listed with its state and reason in section 12)") % (len(pts), cnt.get("done", 0), cnt.get("failed", 0) + cnt.get("timeout", 0), deliberate, notreached)
 
 
 def sweep_points(L, name):
