@@ -28,6 +28,18 @@ runtime:   # owner: infra, stage 01_runtime, recorded 2026-10-12 02:55:32 PDT
   verify:
     hello_world_digest: "hello-world@sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8"
     log: logs/01_runtime/start.log
+cacti:   # owner: infra, stage 63_sram_cacti (Part 2, P2.4), recorded 2026-10-12 17:37:04 PDT
+  image: "lab-cacti:20261012"   # local build; reference also in coord/images_cacti.env (CACTI_IMAGE)
+  image_id: "sha256:b1a896c8f9424f246985cc8758073f9338b25c3ae5872bfa42cd52110f7455a7"
+  size_bytes: 134119687
+  source_repo: "https://github.com/HewlettPackard/cacti"   # official CACTI repository (CACTI 7)
+  source_commit: 1ffd8dfb10303d306ecd8d215320aea07651e878   # master head, 2017-06-19; fetched by SHA, build fails if HEAD differs
+  base: "ubuntu:22.04@sha256:5ec03bb3441e8b0bf3b4f9cd4629a1ae763010dc3035bb8da3ae6cf026486401"
+  compiler: "g++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0"
+  dockerfile_sha256: fac2d4be807e9fbc5822f46ce4c63eecc3c85510afb9ed792341f4d815828dae
+  smoke: results/evidence/63_cacti_image_smoke.txt   # 64 kB direct-mapped cache at 90 nm: access time, energy, leakage, area reported
+  reason_for_new_image: "TASK2 P2.4 asks for CACTI built from the official source at a pinned SHA; kept out of lab-sim so the pinned lab-sim image (and every result made with it) is unchanged"
+
 images:   # owner: infra, stage 02_images, recorded 2026-10-12 10:08:07 PDT
   orfs:
     ref: "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6"

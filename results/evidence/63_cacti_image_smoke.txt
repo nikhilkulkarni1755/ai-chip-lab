@@ -1,0 +1,17 @@
+$ scripts/infra_build_cacti.sh   (image lab-cacti:20261012, id sha256:b1a896c8f9424f246985cc8758073f9338b25c3ae5872bfa42cd52110f7455a7)
+CACTI commit 1ffd8dfb10303d306ecd8d215320aea07651e878
+g++ (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0
+-size (bytes) 65536
+-block size (bytes) 64
+-associativity 1
+-technology (u) 0.090
+    Technology size (nm): 90
+    Access time (ns): 1.29467
+    Cycle time (ns):  1.23835
+    Total dynamic read energy per access (nJ): 0.153788
+    Total leakage power of a bank (mW): 32.2965
+    Cache height x width (mm): 1.57695 x 0.738202
+  Data array: Total dynamic read energy/access  (nJ): 0.144643
+	Total leakage power of a bank (mW): 30.1414
+  Tag array:  Total dynamic read energy/access (nJ): 0.00914439
+	Total leakage power of a bank (mW): 2.1551
