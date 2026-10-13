@@ -1,107 +1,107 @@
 {
  "Conv1": {
-  "how": "parallel",
-  "peak_rss_mb": 684,
-  "wall_s": 81.4
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 690,
+  "wall_s": 28.3
  },
  "Conv2_1a": {
-  "how": "parallel",
-  "peak_rss_mb": 453,
-  "wall_s": 56.2
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 460,
+  "wall_s": 20.2
  },
  "Conv2_1b": {
-  "how": "parallel",
-  "peak_rss_mb": 531,
-  "wall_s": 65.2
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 460,
+  "wall_s": 20.7
  },
  "Conv2_2a": {
-  "how": "parallel",
-  "peak_rss_mb": 684,
-  "wall_s": 68.7
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 460,
+  "wall_s": 19.4
  },
  "Conv2_2b": {
-  "how": "parallel",
-  "peak_rss_mb": 531,
-  "wall_s": 51.8
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 460,
+  "wall_s": 19.3
  },
  "Conv3_1a": {
-  "how": "parallel",
-  "peak_rss_mb": 531,
-  "wall_s": 39.7
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 203,
+  "wall_s": 8.1
  },
  "Conv3_1b": {
-  "how": "parallel",
-  "peak_rss_mb": 531,
-  "wall_s": 34.4
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 291,
+  "wall_s": 11.3
  },
  "Conv3_2a": {
-  "how": "parallel",
-  "peak_rss_mb": 684,
-  "wall_s": 33.2
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 291,
+  "wall_s": 11.3
  },
  "Conv3_2b": {
-  "how": "parallel",
-  "peak_rss_mb": 531,
-  "wall_s": 32.9
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 291,
+  "wall_s": 11.3
  },
  "Conv3_s": {
-  "how": "parallel",
-  "peak_rss_mb": 65,
-  "wall_s": 4.5
+  "how": "subprocess",
+  "peak_rss_mb": 69,
+  "wall_s": 1.3
  },
  "Conv4_1a": {
-  "how": "parallel",
-  "peak_rss_mb": 684,
-  "wall_s": 22.4
+  "how": "subprocess",
+  "peak_rss_mb": 161,
+  "wall_s": 6.2
  },
  "Conv4_1b": {
-  "how": "parallel",
-  "peak_rss_mb": 684,
-  "wall_s": 36.0
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 273,
+  "wall_s": 10.9
  },
  "Conv4_2a": {
-  "how": "parallel",
-  "peak_rss_mb": 531,
-  "wall_s": 35.5
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 273,
+  "wall_s": 10.9
  },
  "Conv4_2b": {
-  "how": "parallel",
-  "peak_rss_mb": 684,
-  "wall_s": 57.9
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 273,
+  "wall_s": 10.9
  },
  "Conv4_s": {
-  "how": "parallel",
-  "peak_rss_mb": 65,
-  "wall_s": 2.0
+  "how": "subprocess",
+  "peak_rss_mb": 57,
+  "wall_s": 0.9
  },
  "Conv5_1a": {
-  "how": "parallel",
-  "peak_rss_mb": 531,
-  "wall_s": 39.9
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 198,
+  "wall_s": 9.3
  },
  "Conv5_1b": {
-  "how": "parallel",
-  "peak_rss_mb": 684,
-  "wall_s": 51.5
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 369,
+  "wall_s": 18.6
  },
  "Conv5_2a": {
-  "how": "parallel",
-  "peak_rss_mb": 531,
-  "wall_s": 64.2
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 344,
+  "wall_s": 18.6
  },
  "Conv5_2b": {
-  "how": "parallel",
-  "peak_rss_mb": 684,
-  "wall_s": 68.4
+  "how": "subprocess-uncapped",
+  "peak_rss_mb": 344,
+  "wall_s": 18.7
  },
  "Conv5_s": {
-  "how": "parallel",
-  "peak_rss_mb": 65,
-  "wall_s": 3.6
+  "how": "subprocess",
+  "peak_rss_mb": 61,
+  "wall_s": 1.3
  },
  "FC": {
-  "how": "parallel",
-  "peak_rss_mb": 89,
-  "wall_s": 12.7
+  "how": "subprocess",
+  "peak_rss_mb": 93,
+  "wall_s": 4.1
  }
 }

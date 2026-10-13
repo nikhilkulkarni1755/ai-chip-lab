@@ -9,7 +9,7 @@
   "rl2_user_is_mid": "not_run",
   "rl2_user_os_high": "not_run",
   "rl2_user_os_mid": "not_run",
-  "rl2_user_ws_high": "blocked",
+  "rl2_user_ws_high": "not_run",
   "rl2_user_ws_mid": "not_run"
  },
  "checks": {
@@ -86,7 +86,7 @@
  "passed": false,
  "per_dataflow": {
   "is": {
-   "calc_mean_ifmap_reads_over_tensor": 1.8638209376012307,
+   "calc_mean_ifmap_reads_over_tensor": 1.863820937601231,
    "calc_rho_ai_vs_required_bw": -0.5085638998682477,
    "calc_rho_effective_ai": -0.6600790513833992,
    "calc_status": "evaluated",
@@ -124,7 +124,7 @@
    "user_all_levels_evaluated": false
   },
   "ws": {
-   "calc_mean_ifmap_reads_over_tensor": 4.846658492265955,
+   "calc_mean_ifmap_reads_over_tensor": 4.846658492265954,
    "calc_rho_ai_vs_required_bw": 0.3662714097496706,
    "calc_rho_effective_ai": 0.463768115942029,
    "calc_status": "evaluated",
@@ -132,7 +132,7 @@
     "high": {
      "B": 256,
      "satisfies": false,
-     "status": "blocked"
+     "status": "not_run"
     },
     "mid": {
      "B": 64,

@@ -32,7 +32,7 @@
   "calc_required_bw_inverse_to_ai_os": false,
   "calc_required_bw_inverse_to_ai_ws": false,
   "reports_saved": true,
-  "reruns_byte_identical": true,
+  "reruns_byte_identical": false,
   "roofline_agrees": false,
   "stall_cycles_monotone_in_B_is": false,
   "stall_cycles_monotone_in_B_os": false,
@@ -99,8 +99,12 @@
   }
  },
  "identity": {
-  "compared_in_stage": [
+  "compared_in_stage": [],
+  "files_compared_in_stage": 0,
+  "mismatches": [],
+  "pending_repro": [
    "fit.json",
+   "roofline.json",
    "roofline2/rl2_calc_is.json",
    "roofline2/rl2_calc_is/BANDWIDTH_REPORT.csv",
    "roofline2/rl2_calc_is/COMPUTE_REPORT.csv",
@@ -132,13 +136,6 @@
    "scalesim/ws/config.cfg",
    "scalesim/ws/layers.json"
   ],
-  "files_compared_in_stage": 31,
-  "mismatches": [],
-  "pending_repro": [
-   "roofline.json",
-   "roofline2/rl2_user_ws_high/blocked.json",
-   "roofline2/rl2_user_ws_high/config.cfg"
-  ],
   "pending_repro_note": "compared by make repro (51_repro_full), not yet in this summary",
   "scope_in_stage": "bundled ws/os/is runs + analytic fit + 3 CALC-mode roofline runs, pass 2 in the same stage; user-bandwidth runs: not rerun in-stage (cost)",
   "sha256": {
@@ -159,8 +156,6 @@
    "roofline2/rl2_calc_ws/COMPUTE_REPORT.csv": "3325f9bd92c1409b39e5b47f72c0262e6df2a8fe275f46fc0119d7c2b4d178a7",
    "roofline2/rl2_calc_ws/DETAILED_ACCESS_REPORT.csv": "597202c0c868302eed0ad877a3fe5c08e9c76dfa9895565d0065ba414f035646",
    "roofline2/rl2_calc_ws/config.cfg": "0bb6abd22cbeda288bfeed23aa64ae4b175c6486ab1ae47b5314542d629ef792",
-   "roofline2/rl2_user_ws_high/blocked.json": "ad2ff60a3bc0700d5d24d90ae930bc73878e98bbadc491c195c2697ae97fe0ba",
-   "roofline2/rl2_user_ws_high/config.cfg": "0f9dc1f09ccfe30712f4866807d7efc8cabcf3f11e596aa1249e7f02e645ee71",
    "scalesim/is/BANDWIDTH_REPORT.csv": "5c1b5303fc1a9ca68be34e2013ff7718e76d2591e77fa92902b5e39463c75965",
    "scalesim/is/COMPUTE_REPORT.csv": "6c9e45b1b151c12c3e79360a0d466d10063bf59afc81c4209902bdf0f80107d7",
    "scalesim/is/DETAILED_ACCESS_REPORT.csv": "bb571beb86893b1bc48bc3c8226caec6f9e63b43c5b13c5a340bf486b02d4f12",
@@ -177,35 +172,35 @@
    "scalesim/ws/config.cfg": "f8872219bff9d03f9b4f3fbe5962f4e9c794d2706be8baddd2cc041021214937",
    "scalesim/ws/layers.json": "17c69471cfa134eef0ac594a5f390e575ed04d9211702e6f404801fe9a90befd"
   },
-  "state": "in_stage_ok_pending_repro"
+  "state": "mismatch"
  },
  "jobs": {
   "bundled_is": {
-   "completed": "2026-10-12T09:52:00",
+   "completed": "2026-10-13T02:07:59",
    "rerun_in_stage": false
   },
   "bundled_os": {
-   "completed": "2026-10-12T09:50:19",
+   "completed": "2026-10-13T02:07:59",
    "rerun_in_stage": false
   },
   "bundled_ws": {
-   "completed": "2026-10-12T09:49:11",
+   "completed": "2026-10-13T02:07:59",
    "rerun_in_stage": false
   },
   "fit": {
-   "completed": "2026-10-12T10:08:02",
+   "completed": "2026-10-13T02:07:59",
    "rerun_in_stage": false
   },
   "rl2_calc_is": {
-   "completed": "2026-10-12T12:55:41",
+   "completed": "2026-10-13T02:07:59",
    "rerun_in_stage": false
   },
   "rl2_calc_os": {
-   "completed": "2026-10-12T12:47:49",
+   "completed": "2026-10-13T02:07:59",
    "rerun_in_stage": false
   },
   "rl2_calc_ws": {
-   "completed": "2026-10-12T12:42:28",
+   "completed": "2026-10-13T02:07:59",
    "rerun_in_stage": false
   },
   "rl2_user_is_high": {
@@ -225,26 +220,21 @@
    "state": "not_run"
   },
   "rl2_user_ws_high": {
-   "blocked": {
-    "finished_layers_this_hold": 0,
-    "layer": "Conv5_1b",
-    "reason": "layer Conv5_1b did not finish in 481 s although it had a whole 480 s lock hold alone (10-minute rule)"
-   },
    "completed": null,
-   "state": "blocked"
+   "state": "not_run"
   },
   "rl2_user_ws_mid": {
    "completed": null,
    "state": "not_run"
   },
   "roofline_synthetic": {
-   "completed": "2026-10-12T10:21:35",
+   "completed": "2026-10-13T02:07:59",
    "rerun_in_stage": false
   }
  },
  "pass": false,
  "pending": [
-  "repro byte-identity of 3 result files"
+  "repro byte-identity of 32 result files"
  ],
  "roofline": {
   "cell_status": {
@@ -255,7 +245,7 @@
    "rl2_user_is_mid": "not_run",
    "rl2_user_os_high": "not_run",
    "rl2_user_os_mid": "not_run",
-   "rl2_user_ws_high": "blocked",
+   "rl2_user_ws_high": "not_run",
    "rl2_user_ws_mid": "not_run"
   },
   "checks": {
@@ -331,7 +321,7 @@
   "passed": false,
   "per_dataflow": {
    "is": {
-    "calc_mean_ifmap_reads_over_tensor": 1.8638209376012307,
+    "calc_mean_ifmap_reads_over_tensor": 1.863820937601231,
     "calc_rho_ai_vs_required_bw": -0.5085638998682477,
     "calc_rho_effective_ai": -0.6600790513833992,
     "calc_status": "evaluated",
@@ -369,7 +359,7 @@
     "user_all_levels_evaluated": false
    },
    "ws": {
-    "calc_mean_ifmap_reads_over_tensor": 4.846658492265955,
+    "calc_mean_ifmap_reads_over_tensor": 4.846658492265954,
     "calc_rho_ai_vs_required_bw": 0.3662714097496706,
     "calc_rho_effective_ai": 0.463768115942029,
     "calc_status": "evaluated",
@@ -377,7 +367,7 @@
      "high": {
       "B": 256,
       "satisfies": false,
-      "status": "blocked"
+      "status": "not_run"
      },
      "mid": {
       "B": 64,
@@ -392,7 +382,7 @@
  },
  "scalesim_version": "3.0.0",
  "stage": "30_arch_model",
- "state": "A_incomplete(ws_mid=not_run,ws_high=blocked,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run)",
+ "state": "A_incomplete(ws_mid=not_run,ws_high=not_run,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run)",
  "superseded": {
   "roofline_part1": {
    "checks": {
@@ -478,6 +468,7 @@
  "verdict_failed_criteria": [
   "calc_required_bw_inverse_to_ai_ws",
   "calc_required_bw_inverse_to_ai_os",
-  "calc_required_bw_inverse_to_ai_is"
+  "calc_required_bw_inverse_to_ai_is",
+  "reruns_byte_identical"
  ]
 }
