@@ -177,6 +177,10 @@ def extra_rows(L, Row, t1, t2, t3):
             if state == "FAIL" and not bad:
                 state = st
             st = state
+    if isinstance(mr, dict) and mr.get("running"):
+        st = "RUNNING"
+        det += "; still running: %s (the row keeps reading RUNNING until that run has finished and results/make_all_last.json and the note say otherwise)" % ", ".join(
+            "%s (started %s)" % (v.get("command"), v.get("start")) for v in mr["running"].values() if isinstance(v, dict))
     rows.append(Row("Make recipes executed for real", st, det, "results/make_recipes.json" if isinstance(mr, dict) else None))
     return rows
 
@@ -534,13 +538,16 @@ def decisions(L):
         for ln in m.group(1).splitlines():
             if ln.startswith("| P2-"):
                 c = [x.strip() for x in ln.strip().strip("|").split(" | ")]
+                if len(c) == 4:   # rows without a time cell
+                    c = [c[0], "-"] + c[1:]
                 if len(c) >= 5:
+                    c = c[:4] + [" | ".join(c[4:])]
                     rows.append(c)
     h = ["<p>Full text and evidence: <a href=\"../COORDINATION.md\"><code>COORDINATION.md</code></a>, section &quot;Decisions (Part 2)&quot;.</p>"]
     if rows:
         h.append("<div class='tw'><table><thead><tr><th>#</th><th>time</th><th>agent</th><th>decision</th><th>evidence / reasoning</th></tr></thead><tbody>")
         for c in rows:
-            h.append("<tr>%s</tr>" % "".join("<td>%s</td>" % e(x[:700]) for x in c[:5]))
+            h.append("<tr>%s</tr>" % "".join("<td>%s</td>" % e(x[:1500]) for x in c[:5]))
         h.append("</tbody></table></div>")
     sup = []
     for f in sorted(glob.glob(L.p("results/p2_*.json"))):
@@ -584,18 +591,18 @@ NOT_GREEN = [
      "Build the Verilator gate-level model in a bounded way (a smaller or pre-built model, or a longer hold approved by the owner), then `T1R_STEPS=gls scripts/t1_routed.sh`. Until then the page keeps saying Icarus only."),
     ("Task 3", "FAIL on the pre-registered criterion B: in CALC mode the intensity versus required-bandwidth rank correlation does not reach -0.6 for ws, os or is (values in the row and section 6). Criterion A (stalls at a fixed user bandwidth) is NOT EVALUATED, neither pass nor fail: a probe showed the largest ResNet-18 layer alone needs more than 481 s, over the 10-minute lock-hold rule, and SCALE-Sim cannot checkpoint inside a layer. The original hypothesis (default bandwidth mode hides stalls) was wrong: the bundled config uses user bandwidth and its stalls are all zero.",
      "Thresholds are final and were not retuned. To finish criterion A the owner can approve long holds (several hours of exclusive machine time) or a smaller layer set registered as a new amendment before running; criterion B's failure needs a diagnosis of the analytic intensity (see docs/t3_roofline_explained.md)."),
-    ("Sweep A", "A completion status: points never reached before the sweep deadline (cut because sweeps run at low priority behind stage jobs in the one-job-at-a-time queue; cheapest points ran first).",
-     "`make sweeps` resumes where it stopped; each unreached point is accounted for in the sweep section of the page."),
-    ("Sweep B", "A completion status. The systolic_os frontier at 30 % utilization is bracketed by a failing and a closing period (see the row); 40 and 50 % utilization points are listed with their state in section 12.",
-     "`make sweeps` (or `python3 sweeps/phys_sweep.py --plan part2`) runs the remaining planned points."),
+    ("Sweep A", "Accounted for, not complete: every planned point is done, errored, or cut with a stated reason, but the cut points were not run; points never reached before the sweep deadline (cut because sweeps run at low priority behind stage jobs in the one-job-at-a-time queue; cheapest points ran first).",
+     "Nothing is hidden: the cut points are listed in the sweep section with the reason. A later `make sweeps` with a later deadline would run them."),
+    ("Sweep B", "Accounted for, not complete: every planned point is done, failed, or cut at the gate with its state listed in section 12; the cut points were not run. The systolic_os frontier at 30 % utilization is bracketed by a failing and a closing period (see the row).",
+     "Running the cut points (`python3 sweeps/phys_sweep.py --plan part2`, low priority) would extend the plan; nothing is claimed for them now."),
     ("Repeatability", "The comparison says FAIL: Task 1 and Task 2 are identical, but three Task 3 checks differ (bookkeeping, provenance, and one 1-ulp float difference from a different Python version). Diagnosis (results/evidence/51_repro_t3_diagnosis.txt, arch): no SCALE-Sim report differs; the differences are scheduling bookkeeping files, a summary file regenerated on another Python version (1-ulp float differences) plus the probe state, and provenance (Task 3 inputs were committed while the rerun was running). The user-bandwidth Task 3 runs are not rerun (cost) and are reported as such, never as identical. The only excluded file class is the per-layer run-time measurements (timing.timing).",
      "Right after the gate a clean Task 3 first pass and rerun on frozen inputs is run (Decision P2-10): `REPRO_PART=t3 scripts/repro.sh` keeps the Task 1 rerun if its inputs are verified unchanged, else the full `scripts/repro.sh` runs. Until the new verdict exists this row stays FAIL."),
     ("P2.1", "Open caveats only: zero-delay simulation has no glitch power (simulated switching power is a lower bound) and the workloads are small synthetic ones.", "Optional: glitch-aware power needs a timing-annotated (SDF) simulation; not planned."),
-    ("P2.2", "Verification is bit-exact on both simulators; the stage fails on the single check `lint_clean` (one comment line over the 100-character limit). The PPA table is from one flow run per design at a clock the bf16 MAC does not meet.", "Shorten the comment line (comment-only change), re-run the verification once, regenerate the summary; then search the bf16 frontier clock if its power is to be quoted."),
+    ("P2.2", "Verification is bit-exact on both simulators; the stage fails on the single check `lint_clean` (one comment line over the 100-character limit). The PPA table is from one flow run per design at a clock the bf16 MAC does not meet.", "`git cherry-pick e21fd3b` (from branch p2/rtl; shortens one comment line, no logic change), then `scripts/t61_run.sh 10000 results && python3 scripts/p2_61_finish.py` (about 4 minutes of lock). Decision P2-12 deferred it because rtl/ is an input of the t1 stages. Search the bf16 frontier clock before quoting its power."),
     ("P2.3", "The sky130hd search is coarse and runs in the low-priority queue with a hard per-point timeout; until a failing point exists below a closing point the result is an upper bound, not a frontier.", "Let the remaining planned points finish (`python3 scripts/p2_pdk_compare.py run --go`, then `summary`)."),
     ("P2.4", "Passes its registered criteria; CACTI is analytical, 45 nm only matches nangate45 in feature size, no SRAM macro exists to check absolute numbers.", "Compare against a real SRAM macro (e.g. OpenRAM or a vendor compiler) in a later round."),
-    ("Make recipes", "Each recipe is executed for real by the recorder in queue order; the ones still running or not run yet are listed in the note on the page.",
-     "`make all` (fail-soft, always builds the demo, exits non-zero naming failed stages)."),
+    ("Make recipes", "Each recipe is executed for real by the recorder in queue order. `make t3` exits non-zero because the Task 3 stage verdict is FAIL (criterion B; criterion A not evaluated), so `make all` exits non-zero and lists t3 as the failed stage; the fail-soft test of that behaviour ran in the reduced form its note describes. The row reads RUNNING while the real `make all` is still running.",
+     "No fix for the exit code is intended: it is the honest result of the Task 3 verdict. It changes only if Task 3's criteria are re-registered or criterion A is evaluated and criterion B passes."),
 ]
 
 
@@ -714,7 +721,7 @@ def phase2_state(L, stage):
     elif stage == "61_pe_bf16":
         sm = L.jload("results/p2_61_pe_bf16_summary.json") or {}
         v = (sm.get("values") or {}).get("verilator") or {}
-        base = ("%s; failing checks: %s; verification bit-exact on both simulators over %s cases if the two flags say true (bit_exact_verilator=%s, bit_exact_icarus=%s). INT8 vs bf16 MAC PPA table in section 16: "
+        base = ("%s; failing checks: %s; bit-exact checks over %s cases: Verilator %s, Icarus %s. INT8 vs bf16 MAC PPA table in section 16: "
                 "bf16 power is at a clock it does not meet and fmax comes from one run per design, not a frontier" % (
                     cnt, ", ".join(str(x) for x in [k for k, vv in (sm.get("checks") or {}).items() if vv is False]) or "none", v.get("cases_total", "?"),
                     (sm.get("checks") or {}).get("bit_exact_verilator"), (sm.get("checks") or {}).get("bit_exact_icarus")))
@@ -725,7 +732,7 @@ def phase2_state(L, stage):
     if stage == "62_pdk_compare":
         pts = pdk_points(L)
         lab = pdk_label(pts)
-        base = "%d of 3+ planned sky130hd points recorded so far; result label by the file's rule: %s; %s" % (len(pts), lab, cnt)
+        base = "%d sky130hd points recorded (planned 8.0 / 5.5 / 4.0 ns plus one refinement, Decision P2-11a); result label by the file's rule: %s; %s. Clock ratio is an upper bound on the slowdown; power is at clocks 5.4x apart, so energy per cycle is shown too" % (len(pts), lab, cnt)
         if j.get("pass") is True and st == "done":
             return "PASS", base, evf
         if st == "failed" or j.get("pass") is False:
@@ -818,19 +825,46 @@ def phase2_html(L):
         d = sm.get("design") or {}
         if d:
             h.append("<p><b>Design choices (documented):</b> rounding: %s; subnormals: %s.</p>" % (e(str(d.get("rounding"))), e(str(d.get("subnormals")))))
+        na = j.get("next_action")
+        if isinstance(na, dict):
+            h.append("<p><b>Why it stays FAIL and what to do (%s; the result file's next_action):</b> %s. Apply: <code>%s</code>; re-verify: <code>%s</code>; cost: %s</p>" % (
+                e(str(na.get("decision"))), e(str(na.get("why_failed"))), e(str(na.get("apply"))), e(str(na.get("then_reverify"))), e(str(na.get("cost")))))
+            h.append("<p>The fix is a comment-only change on branch %s (commit %s): %s.</p>" % (e(str(na.get("branch"))), e(str(na.get("commit"))), e(str(na.get("what")))))
+        h.append("<p>Full explanation: <a href='../docs/pe_bf16_explained.md'><code>docs/pe_bf16_explained.md</code></a>.</p>")
         h.append("<p>Why floating point costs area: a bf16 MAC adds an exponent adder, a mantissa multiplier plus a 24-bit alignment shifter, a wide adder, leading-zero detection, a normalisation shifter and rounding on top of the integer datapath that an INT8 MAC needs; the table above shows the measured cost. Evidence: %s</p>" % ev_links(L, j.get("evidence")))
     else:
         h.append("<p class='sub'><span class='b dim'>PENDING</span> results/p2_61_pe_bf16_summary.json not written yet.</p>")
     # ---- P2.3
     st, det, evf = phase2_state(L, "62_pdk_compare")
+    pj = p2json(L, "62_pdk_compare") or {}
     h.append("<h3>P2.3 systolic_os on sky130hd (stage 62_pdk_compare) %s</h3><p>%s</p>" % (badge(st), e(det)))
     pts = pdk_points(L)
     if pts:
-        h.append("<div class='tw'><table><thead><tr><th>sky130hd clock (ns)</th><th>utilization</th><th>status</th><th>setup WNS (ns)</th><th>area (um2)</th><th>total power (W)</th><th>DRC</th></tr></thead><tbody>")
-        for p in pts:
+        h.append("<div class='tw'><table><thead><tr><th>sky130hd clock (ns)</th><th>utilization (%)</th><th>status</th><th>setup WNS (ns)</th><th>area (um2)</th><th>total power (W)</th><th>DRC</th></tr></thead><tbody>")
+        for p in sorted(pts, key=lambda q: -float(q.get("clock_period_ns", 0))):
             h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % tuple(e(str(p.get(k, "-"))) for k in ("clock_period_ns", "core_utilization", "status", "wns_setup_ns", "area_um2", "power_total_w", "drc_errors")))
         h.append("</tbody></table></div>")
-    h.append("<p class='sub'>The nangate45 side is the sweep B closing point (1.25 ns at 30 %, bracketed by 1.20 ns failing). A lone closing sky130hd point is an upper bound, a failing point below a closing one makes it a coarse bracket (rule registered in results/p2_62_pdk_compare.json). Why sky130 is slower and larger is explained once the comparison has its numbers: a 130 nm process has longer gate delays and larger cells than a 45 nm library.</p>")
+    if isinstance(pj.get("plan_change"), dict):
+        pc = pj["plan_change"]
+        h.append("<p><b>Plan change (%s, %s):</b> %s</p>" % (e(str(pc.get("decision"))), e(str(pc.get("when"))), e(str(pc.get("what")))))
+    pc2 = L.jload("results/pdk_compare/pdk_compare.json") or {}
+    cmpd = pc2.get("comparison_at_each_pdks_fastest_closing_period")
+    if isinstance(cmpd, dict):
+        h.append("<div class='tw'><table><thead><tr><th>metric</th><th>nangate45 (45 nm, 1.25 ns, sweep B)</th><th>sky130hd (130 nm, fastest closing tested point)</th><th>sky130hd / nangate45</th></tr></thead><tbody>")
+        for k, v in cmpd.items():
+            if isinstance(v, dict):
+                r_ = v.get("ratio_sky_over_nangate")
+                h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(k), e("%.6g" % v["nangate45"]), e("%.6g" % v["sky130hd"]), e("%.4g" % r_) if isinstance(r_, (int, float)) else "-"))
+        h.append("</tbody></table></div>")
+        h.append("<p><b>Caveats.</b> The clock ratio (5.4x) is an upper bound on the true slowdown at the frontier: the sky130hd closing point is 6.75 ns and the failing point is 5.5 ns, so the true frontier lies in between. Total power is compared at clocks that differ by 5.4x, so energy per cycle is shown as well (power x period). "
+                 "The sky130hd leakage is tiny because the Liberty file's leakage values are tiny, not because the cells are efficient. Area and cell counts are at the tested periods. 130 nm is a coarser process, so cells are larger and gates slower; the table shows the measured ratios.</p>")
+    md = L.read("docs/pdk_compare_explained.md")
+    sec = md_section(md, "Why sky130 is slower and larger")
+    if sec:
+        h.append("<h4>Why sky130 is slower and larger</h4>" + md_to_html(sec))
+    if os.path.exists(L.p("demo/assets/pdk_compare.png")):
+        h.append('<p><img src="assets/pdk_compare.png" alt="sky130hd versus nangate45 comparison" style="max-width:100%"></p>')
+    h.append("<p>Full explanation: <a href='../docs/pdk_compare_explained.md'><code>docs/pdk_compare_explained.md</code></a>. Evidence: %s</p>" % ev_links(L, pj.get("evidence")))
     # ---- P2.4
     sc = L.jload("results/sram_cacti.json")
     em = L.jload("results/sram_energy_model.json")

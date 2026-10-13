@@ -339,9 +339,11 @@ def build_rows(L):
         cs = t3s.get("cell_status") or {}
         d3 = ("FAIL: criteria that fail: %s (criterion B, CALC mode: rho(intensity, required bandwidth) must be <= -0.6 for every dataflow). Criterion A (stalls at a fixed user bandwidth) is "
               "NOT EVALUATED (cost), neither pass nor fail: %s; the probe showed the largest layer alone needs more than 481 s, over the 10-minute lock-hold rule (results/evidence/31_a_probe.txt). "
-              "Open items: %s. Pre-registered thresholds were not changed (model/t3_roofline2_criteria.json, P2-A1/P2-A2/P2-7); the Part 2 hypothesis was wrong in its mechanism (the bundled google.cfg already uses USER bandwidth and its stalls are all zero, results/evidence/31_original_stalls.txt). "
+              "%sPre-registered thresholds were not changed (model/t3_roofline2_criteria.json, P2-A1/P2-A2/P2-7); the Part 2 hypothesis was wrong in its mechanism (the bundled google.cfg already uses USER bandwidth and its stalls are all zero, results/evidence/31_original_stalls.txt). "
               "Explainer: docs/t3_roofline_explained.md") % (
-            ", ".join(t3s.get("verdict_failed_criteria") or []) or "see the table in section 6", t3s.get("state"), fmt_val(t3s.get("pending")))
+            (", ".join(x for x in (t3s.get("verdict_failed_criteria") or []) if x != "reruns_byte_identical") or "see the table in section 6")
+            + ("; reruns_byte_identical also appears in the file's failed list but is a bookkeeping state, not a failed criterion (repro compared the files byte-identical; see the known presentation defects in section 6)" if "reruns_byte_identical" in (t3s.get("verdict_failed_criteria") or []) else ""),
+            t3s.get("state"), ("Open items in the summary file: %s (resolved by the repro report when it says pass). " % fmt_val(t3s.get("pending"))) if (L.jload("results/repro_report.json") or {}).get("pass") is not True and t3s.get("pending") else "")
         s3 = "FAIL"
     elif isinstance(t3s, dict) and (t3s.get("complete") is False or str(t3s.get("state", "")).startswith("A_incomplete")) and s3 not in ("RUNNING",):
         cs = t3s.get("cell_status") or (t3s.get("roofline") or {}).get("cell_status")
@@ -430,6 +432,10 @@ def build_rows(L):
             dr += "; %s (file class %s, per-layer wall time and memory, not results); hidden files excluded: %s" % (ex.get("label"), ex.get("name"), ", ".join(str(f.get("files_excluded")) for f in (ex.get("filters") or [])[1:]) or "not recorded")
         if rrep.get("task1_rerun_kept"):
             dr += "; " + str((rrep["task1_rerun_kept"] or {}).get("note"))
+        if rrep.get("pass") is True:
+            nr = [c for c in (rrep.get("checks") or []) if c.get("verdict") == "not_rerun_cost"]
+            dr += ("; PASS with a stated scope: complete=%s because %d check(s) were not rerun (cost): the criterion-A user-bandwidth Task 3 runs are NOT claimed identical; "
+                   "Task 1 (full), Task 2 (4/4/3 clean runs) and the Task 3 cheap set (bundled, fit, CALC-mode runs) were compared" % (rrep.get("complete"), len(nr)))
         if rrep.get("pass") is False and os.path.exists(L.p("results/evidence/51_repro_t3_diagnosis.txt")):
             dr += ("; diagnosis (results/evidence/51_repro_t3_diagnosis.txt): Task 1 and Task 2 identical; the Task 3 differences are scheduler bookkeeping (attempts.json), "
                    "a summary regenerated on another Python version (1-ulp float differences) plus the probe state, and provenance (Task 3 inputs committed during the rerun); no SCALE-Sim report differs. "
@@ -878,6 +884,15 @@ def t1_routed_block(L, s1):
                 if isinstance(v, dict):
                     h.append("<tr><th>EQY negative control: %s</th><td>%s &mdash; %s (solver %s; base case %s, induction %s)</td></tr>" % (
                         e(k), e(str(v.get("bug") or v.get("what") or "")), e(str(v.get("rejected_as") or v.get("result") or "")), e(str(v.get("solver_status"))), e(str(v.get("basecase"))), e(str(v.get("induction")))))
+        for nf, lab_ in (("results/p2_11_negcone.json", "default proof depth"), ("results/p2_11_negcone_depth4.json", "4 cycles")):
+            nj = L.jload(nf)
+            if isinstance(nj, dict):
+                mu = nj.get("mutation") or {}
+                h.append("<tr><th>EQY negative control, one cell changed inside a per-PE cone (%s)</th><td>%s %s to %s on output bit %s (depth %s before the flop); solver status %s, base case %s, induction %s, message: %s. (%s)</td></tr>" % (
+                    e(lab_), e(str(mu.get("mutated_cell"))), e(str(mu.get("cell_type_before"))), e(str(mu.get("cell_type_after"))), e(str(mu.get("output_bit"))), e(str(mu.get("combinational_depth_before_flop_D"))),
+                    e(str(nj.get("solver_status"))), e(str(nj.get("basecase"))), e(str(nj.get("induction"))), e(str(nj.get("eqy_message"))), e(nf)))
+        if isinstance(L.jload("results/p2_11_negcone.json"), dict) and isinstance(L.jload("results/p2_11_negcone_depth4.json"), dict):
+            h.append("<tr><th>reading of the per-PE negative control</th><td>not proven equivalent at the proof depth (the bug is not shown equivalent, the solver reports UNKNOWN); a concrete counterexample is found at 4 cycles</td></tr>")
         for k in ("eqy_scope", "gls_scope", "note", "routed_netlist", "routed_netlist_sha256"):
             if r.get(k):
                 h.append("<tr><th>%s</th><td>%s</td></tr>" % (e(k), e(str(r[k]))))
@@ -900,10 +915,11 @@ def repro_table(L, rr):
         note = c.get("note") or ""
         if "t2 " in c.get("check", "") and "reused" in note:
             note = "REUSED from the original Task 2 two-clean-run check, not re-run here. " + note
-        h.append("<tr><td>%s</td><td class='%s'>%s</td><td>%s</td></tr>" % (e(c.get("check", "")), "okt" if c.get("verdict") == "identical" else "badt",
+        h.append("<tr><td>%s</td><td class='%s'>%s</td><td>%s</td></tr>" % (e(c.get("check", "")), "okt" if c.get("verdict") == "identical" else ("" if c.get("verdict") == "not_rerun_cost" else "badt"),
                                                                        e(c.get("verdict", "")), e(note)))
     t2 = L.jload("results/t2_summary.json") or {}
-    for dn, dd in (t2.get("designs") or {}).items():
+    has_t2_runs = any(str(c.get("check", "")).startswith("t2 ") and "runs" in c for c in rr.get("checks", []))
+    for dn, dd in ({} if has_t2_runs else (t2.get("designs") or {})).items():
         det = dd.get("determinism")
         if det and dn != "nangate45/gcd":
             h.append("<tr><td>t2 %s two clean runs (metrics + GDS with timestamps zeroed)</td><td class='%s'>%s</td><td>REUSED from t2_summary.json (original two clean runs); "
@@ -1011,10 +1027,21 @@ def t3_block(L, s3):
             " (this is still the Part 1 file: its roofline_* criteria are the superseded ones)" if "complete" not in s3 and demo_part2.active(L) else ""))
         csr = ((s3.get("roofline") or {}).get("cell_status")) or {}
         for k, v in sorted(chk.items()):
-            ne = v is None or (k.startswith(("user_bw_stalls_vs_ai_", "stall_cycles_monotone_in_B_")) and any(
+            ne = v is None or (k == "roofline_agrees" and any(stt != "evaluated" for stt in csr.values())) or (k.startswith(("user_bw_stalls_vs_ai_", "stall_cycles_monotone_in_B_")) and any(
                 stt != "evaluated" for jb, stt in csr.items() if jb.startswith("rl2_user_" + k.rsplit("_", 1)[-1] + "_")))
             if k == "reruns_byte_identical":
-                rp = (L.jload("results/repro_report.json") or {}).get("pass")
+                rrp = L.jload("results/repro_report.json") or {}
+                rp = rrp.get("pass")
+                if rp is True:
+                    idt = s3.get("identity") if isinstance(s3.get("identity"), dict) else {}
+                    nfiles = ""
+                    for c_ in rrp.get("checks") or []:
+                        if str(c_.get("check", "")).startswith("t3 cheap-set result files") and c_.get("verdict") == "identical":
+                            nfiles = c_.get("check")
+                    h.append("<tr><td><code>%s</code></td><td><span class='b ok'>identical per the repro report</span> (%s; results/repro_report.json, repro verdict pass). results/t3_summary.json itself says <code>%s</code> with identity state <code>%s</code> and %s files compared in-stage: "
+                             "a bookkeeping state of a short resume of a finished run, not a mismatch (see the known presentation defects below)</td></tr>" % (
+                                 e(k), e(nfiles or "no Task 3 identity line in the report"), e(fmt_val(v)), e(str(idt.get("state"))), e(str(len(idt.get("compared_in_stage") or [])))))
+                    continue
                 if rp is not True:
                     h.append("<tr><td><code>%s</code></td><td><span class='b warn'>PENDING REPRO</span> the in-stage part says %s, but the byte-identity evidence also includes the repro rerun, whose verdict is %s (see Repeatability)</td></tr>" % (
                         e(k), "pass" if v else "FAIL", "FAIL" if rp is False else "not available yet"))
@@ -1024,6 +1051,10 @@ def t3_block(L, s3):
             else:
                 h.append("<tr><td><code>%s</code></td><td class='%s'>%s</td></tr>" % (e(k), "okt" if v else "badt", "pass" if v else "FAIL"))
         h.append("</tbody></table></div>")
+    kd = (L.jload("results/p2_31_roofline_fix.json") or {}).get("known_presentation_defects")
+    if kd:
+        h.append("<p><b>Known presentation defects of results/t3_summary.json (stated by arch in results/p2_31_roofline_fix.json, not hidden):</b></p><ul>%s</ul><p class='sub'>The stage verdict FAIL on criterion B is unaffected by these.</p>" % "".join(
+            "<li>%s</li>" % e(str(x)) for x in (kd if isinstance(kd, list) else [kd])))
     fit = s3.get("fit") or {}
     if fit:
         h.append("<p><b>Analytic model.</b> Each fold takes <code>T + a*R + b*C + c</code> cycles and the total is "
@@ -1155,6 +1186,8 @@ def build_html(L, rows, vm):
     h.append("</tbody></table></div>")
     h.append("<p class='sub'>PASS needs the stage's .done marker, no input file committed or edited after the result (else it shows RUNNING), and <code>\"pass\": true</code> in its summary JSON; "
              "a missing piece is shown as PENDING, RUNNING, BLOCKED or UNKNOWN, never assumed.</p>")
+    if demo_part2.active(L):
+        h.append(demo_part2.not_green_html(L, rows))
     route = ""
     m = re.search(r'route:\s*"([^"]+)"', L.read("versions.lock"))
     if m:
@@ -1259,8 +1292,16 @@ def build_html(L, rows, vm):
     sr, dr, _ = task_state(L, "50_repro", "results/repro_report.json")
     h.append("<p>%s %s</p>" % (badge(sr), e(dr)))
     if isinstance(rr, dict):
-        h.append("<p>What was re-run: Task 1 (all 10,000 random + directed cases, formal and equivalence) and Task 3 (one fresh pass) in clean directories with the pinned images; "
-                 "Task 2 is <b>not</b> re-run: its verdicts reuse the two original clean runs of each gcd design. systolic_os has a single run.</p>" + repro_table(L, rr))
+        exf = rr.get("excluded_file_class") or {}
+        if any("runs" in c for c in rr.get("checks", [])):
+            h.append("<p>What was re-run (Part 2 repro, results/repro_report.json, pass=%s, complete=%s): Task 1 in full (all 10,000 random + directed cases, formal and equivalence) and the Task 3 cheap set (bundled ws/os/is, fit, the CALC-mode roofline runs) in clean directories with the pinned images; "
+                     "Task 2 comes from results/t2_reruns.json (gcd: 4 clean runs on each PDK, systolic_os: 3). The criterion-A user-bandwidth Task 3 runs were <b>not rerun (cost)</b> and are not claimed identical. "
+                     "Excluded from the byte comparison: %s (rule: %s); hidden files excluded: %s.</p>" % (
+                         e(str(rr.get("pass"))), e(str(rr.get("complete"))), e(str(exf.get("label", "none declared"))), e(str(exf.get("name", "-"))),
+                         e(", ".join(str(f.get("files_excluded")) for f in (exf.get("filters") or [])[1:]) or "not recorded")) + repro_table(L, rr))
+        else:
+            h.append("<p>What was re-run: Task 1 (all 10,000 random + directed cases, formal and equivalence) and Task 3 (one fresh pass) in clean directories with the pinned images; "
+                     "Task 2 is <b>not</b> re-run: its verdicts reuse the two original clean runs of each gcd design. systolic_os has a single run.</p>" + repro_table(L, rr))
     else:
         h.append("<p class='sub'>The clean-directory rerun of Tasks 1-3 with the pinned images runs late in the budget; "
                  "until then there is no repro report and none is invented.</p>")
