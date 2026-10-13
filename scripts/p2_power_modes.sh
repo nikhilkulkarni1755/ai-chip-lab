@@ -4,7 +4,8 @@
 #   vectorless                       ORFS default (input activity 0.1, duty 0.5) with our own load of the routed design
 #   <wl>.window  / <wl>.whole        VCD of workload <wl>, restricted to the active window / whole file
 #   random.window.repeat             determinism check (second identical analysis)
-# VCD scope candidates are tried in order; the first for which read_vcd succeeds is used (recorded in the log).
+# Usage: p2_power_modes.sh <step>   step = vectorless | random | sparse50 | allmax | repeat   (one lock hold per step)
+# VCD scope: `systolic_os` (Icarus, per rtl's manifest) first, `TOP/systolic_os` (Verilator) as fallback; the one used is recorded in <wl>.scope.
 set -u
 source /OpenROAD-flow-scripts/env.sh >/dev/null 2>&1 || true
 OUT=/lab/results/power_activity/raw; mkdir -p "$OUT"
@@ -14,18 +15,20 @@ run() {  # run <tag> <mode> [vcd scope t0 t1]
     openroad -no_splash -exit /lab/scripts/p2_power.tcl > "$OUT/$tag.log" 2>&1
   return $?
 }
-run vectorless vectorless
-for wl in random sparse50 allmax; do
-  J=/lab/results/power_vcd/$wl.json
-  T0=$(python3 -c "import json;print(json.load(open('$J'))['active_window_ps'][0]*1e-12)")
-  T1=$(python3 -c "import json;print(json.load(open('$J'))['active_window_ps'][1]*1e-12)")
-  for scope in TOP/systolic_os systolic_os; do
-    run $wl.window vcd /lab/results/power_vcd/$wl.vcd $scope $T0 $T1 && grep -q "@@POWER-END" "$OUT/$wl.window.log" && { echo "$scope" > "$OUT/$wl.scope"; break; }
+STEP=${1:?step}
+win() { python3 -c "import json;print(json.load(open('/lab/results/power_vcd/$1.json'))['active_window_ps'][$2]*1e-12)"; }
+wl_run() {  # wl_run <wl> <tag-suffix> <with-window 1|0> <scope-list...>
+  local wl=$1 suf=$2 w=$3; shift 3
+  for scope in "$@"; do
+    if [ "$w" = 1 ]; then run $wl.$suf vcd /lab/results/power_vcd/$wl.vcd $scope "$(win $wl 0)" "$(win $wl 1)"
+    else run $wl.$suf vcd /lab/results/power_vcd/$wl.vcd $scope; fi
+    grep -q "@@POWER-END" "$OUT/$wl.$suf.log" && { echo "$scope" > "$OUT/$wl.scope"; return 0; }
   done
-  [ -f "$OUT/$wl.scope" ] || { echo "no usable VCD scope for $wl" >&2; continue; }
-  run $wl.whole vcd /lab/results/power_vcd/$wl.vcd "$(cat $OUT/$wl.scope)"
-done
-[ -f "$OUT/random.scope" ] && run random.window.repeat vcd /lab/results/power_vcd/random.vcd "$(cat $OUT/random.scope)" \
-  "$(python3 -c "import json;print(json.load(open('/lab/results/power_vcd/random.json'))['active_window_ps'][0]*1e-12)")" \
-  "$(python3 -c "import json;print(json.load(open('/lab/results/power_vcd/random.json'))['active_window_ps'][1]*1e-12)")"
-echo done
+  return 1
+}
+case $STEP in
+  vectorless) run vectorless vectorless ;;
+  random|sparse50|allmax) wl_run $STEP window 1 systolic_os TOP/systolic_os && wl_run $STEP whole 0 "$(cat $OUT/$STEP.scope)" ;;
+  repeat) wl_run random window.repeat 1 "$(cat $OUT/random.scope)" ;;
+esac
+echo "step $STEP done"
