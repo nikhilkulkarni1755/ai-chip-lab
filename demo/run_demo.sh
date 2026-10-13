@@ -96,7 +96,7 @@ T5=$(date +%s)
 python3 scripts/t3_criterion_b_recheck.py --lab "$LAB" > "$SCR/t3_critB.log" 2>&1; rcb=$?
 cat "$SCR/t3_critB.log"
 if [ $rcb -eq 0 ]; then r=PASS; elif [ $rcb -eq 2 ]; then r=SKIP; else r=FAIL; fi
-record "Task 3: roofline criterion B recomputed from saved reports (verdict printed above; consistency with t3_summary.json)" "$r" "$(( $(date +%s) - T5 ))"
+record "Task 3: recorded verdict is consistent with saved reports (criterion B itself: NOT met)" "$r" "$(( $(date +%s) - T5 ))"
 
 # ---- table
 echo

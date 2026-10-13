@@ -16,7 +16,7 @@ P2_STAGES = [("31_roofline_fix", "P1.1 Task 3 roofline check"), ("32_make_recipe
              ("21_orfs_crosscheck", "P1.5 Task 2 against ORFS's published results"), ("41_sweeps_finish", "P1.6 finish and refine the sweeps"),
              ("60_power_activity", "P2.1 activity-based power"), ("61_pe_bf16", "P2.2 bf16 processing element"), ("62_pdk_compare", "P2.3 systolic_os on sky130hd"),
              ("63_sram_cacti", "P2.4 SRAM modelling (CACTI)"), ("64_roadmap", "P2.5 roadmap")]
-BADGE = {"PARTIAL": "warn", "INCOMPLETE": "warn", "PASS": "ok", "DONE": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
+BADGE = {"CUT": "warn", "PARTIAL": "warn", "INCOMPLETE": "warn", "PASS": "ok", "DONE": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
 
 
 def badge(s):
@@ -188,6 +188,43 @@ def extra_rows(L, Row, t1, t2, t3):
     return rows
 
 
+def sweep_now(L, which):
+    """Text for the 'Now' cell of the sweep rows in the before/after table, from the summaries."""
+    if which == "sweepA":
+        a = L.jload("results/sweeps/arch_summary.json") or {}
+        acc = a.get("accounting") or {}
+        n = 0
+        try:
+            last = {}
+            for ln in open(L.p("results/sweeps/arch.jsonl"), encoding="utf-8", errors="replace"):
+                ln = ln.strip()
+                if ln:
+                    try:
+                        r = json.loads(ln)
+                        last[r.get("key")] = r.get("status")
+                    except ValueError:
+                        pass
+            n = sum(1 for v in last.values() if v == "ok")
+        except OSError:
+            pass
+        if a.get("planned_points"):
+            return "Incomplete \u2192 %d of %s done, %s cut at gate" % (n, a.get("planned_points"), acc.get("cut_not_reached", "?"))
+    if which == "sweepB":
+        d = L.jload("results/sweeps/phys_plan_status.json") or {}
+        pts = d.get("points") or []
+        if pts:
+            c = {}
+            for r in pts:
+                c[r.get("state")] = c.get(r.get("state"), 0) + 1
+            return "Coarse \u2192 %d of %d refinement points done, %d cut deliberately, %d not reached" % (c.get("done", 0), len(pts), c.get("cut", 0) + c.get("not_run_cut", 0), c.get("not_reached", 0))
+    return None
+
+
+NEW_ROWS = [("Task 1: RTL = ROUTED", "Task 1: routed netlist equivalence (new in Part 2)"), ("Task 1: routed gate-level", "Task 1: routed gate-level simulation (new in Part 2)"),
+            ("Task 2: matches", "Task 2: matches ORFS's published results (new in Part 2)"), ("P2.1", "P2.1 activity-based power (new)"), ("P2.2", "P2.2 bf16 processing element (new)"),
+            ("P2.3", "P2.3 systolic_os on sky130hd (new)"), ("P2.4", "P2.4 SRAM modelling with CACTI (new)")]
+
+
 def render_before_after(L, rows, before):
     """Table: every TASK2 start-of-Part-2 row next to its state now; every PASS cites evidence (checked on disk)."""
     by = {}
@@ -198,7 +235,7 @@ def render_before_after(L, rows, before):
         return [r for r in rows if any(r.label.startswith(p) for p in prefixes)]
     spec = {"runtime": (["Container runtime"], ["results/evidence/01_runtime_docker.txt"]),
             "images": (["Lab images"], ["results/evidence/02_images_smoke.txt"]),
-            "task1": (["Task 1:"], ["results/t1_summary.json", "results/evidence/10_eqy.txt", "results/evidence/10_sby.txt", "results/evidence/10_sha256.txt"]),
+            "task1": (["Task 1: INT8", "Task 1: formal", "Task 1: RTL = netlist"], ["results/t1_summary.json", "results/evidence/10_eqy.txt", "results/evidence/10_sby.txt", "results/evidence/10_sha256.txt"]),
             "task2": (["Task 2:"], ["results/t2_summary.json", "results/evidence/20_threshold_check_nangate45_gcd.txt", "docs/t2_timing_explained.md"]),
             "task3": (["Task 3:"], ["results/t3_summary.json", "results/evidence/30_roofline.txt", "docs/t3_roofline_explained.md"]),
             "sweepA": (["Sweep A"], ["results/sweeps/arch_summary.json", "results/evidence/40_sweepA_summary.txt"]),
@@ -213,7 +250,7 @@ def render_before_after(L, rows, before):
         if not rs:
             now, det = "PENDING", "no matching row"
         else:
-            order = ["FAIL", "BLOCKED", "INCOMPLETE", "PARTIAL", "RUNNING", "PENDING", "UNKNOWN", "DONE", "PASS"]
+            order = ["FAIL", "BLOCKED", "INCOMPLETE", "PARTIAL", "CUT", "RUNNING", "PENDING", "UNKNOWN", "DONE", "PASS"]
             now = sorted((r.state for r in rs), key=lambda x: order.index(x) if x in order else 3)[0]
             det = "; ".join("%s: %s" % (r.label.replace("Task 1: ", "").replace("Task 2: ", ""), r.state) for r in rs) if len(rs) > 1 else rs[0].detail
         has_ev = [f for f in evf if os.path.exists(L.p(f))]
@@ -221,8 +258,14 @@ def render_before_after(L, rows, before):
         if now == "PASS" and not has_ev:
             flag = " <b class='badt'>(PASS without an evidence file on disk)</b>"
             missing_ev += 1
-        h.append("<tr><td>%s<div class='sub'>%s</div></td><td>%s</td><td>%s</td><td>%s</td><td>%s%s</td></tr>" % (
-            e(b["check"]), e(b.get("note", "")), e(b["before"]), badge(now), e(det[:600]), ev_links(L, has_ev or evf), flag))
+        sn = sweep_now(L, b["id"]) if b["id"] in ("sweepA", "sweepB") else None
+        h.append("<tr><td>%s<div class='sub'>%s</div></td><td>%s</td><td>%s%s</td><td>%s</td><td>%s%s</td></tr>" % (
+            e(b["check"]), e(b.get("note", "")), e(b["before"]), badge(now), (" " + e(sn)) if sn else "", e(det[:600]), ev_links(L, has_ev or evf), flag))
+    for pfx_, nm_ in NEW_ROWS:
+        rs_ = pick([pfx_])
+        if rs_:
+            ev_ = [r.link for r in rs_ if r.link and os.path.exists(L.p(r.link))]
+            h.append("<tr><td>%s</td><td>-</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(nm_), badge(rs_[0].state), e(rs_[0].detail[:600]), ev_links(L, ev_)))
     h.append("</tbody></table></div>")
     return "".join(h), missing_ev
 
@@ -243,14 +286,21 @@ def runtime_line(L):
     if not se:
         return "Part 2 runtime: budget_part2.json missing"
     fin = None
-    try:
-        fin = int(L.read("results/.stages/99_part2.done").split()[0])
-    except Exception:
-        pass
-    el = (fin or time.time()) - se
-    return "%s: %dh %02dm, from %s to %s, budget %sh (Part 1's total runtime stays as recorded in its own section)" % (
-        "Part 2 runtime" if fin else "Part 2 elapsed so far (not finished)", int(el // 3600), int(el % 3600 // 60), b.get("start", "?"),
-        time.strftime("%H:%M", time.localtime(fin)) if fin else "now", b.get("total_budget_h", "?"))
+    raw = L.read("results/.stages/99_part2.done").strip()
+    if raw:
+        tok = raw.split()[0]
+        try:
+            fin = int(tok)
+        except ValueError:
+            try:
+                fin = int(time.mktime(time.strptime(" ".join(raw.split()[:2]), "%Y-%m-%d %H:%M:%S")))
+            except ValueError:
+                fin = None
+    if not fin:
+        return "Part 2 is in progress or its end has not been recorded (the end time is read from results/.stages/99_part2.done, which does not exist yet); started %s, budget %sh. Part 1's runtime stays as recorded in its own section." % (b.get("start", "?"), b.get("total_budget_h", "?"))
+    el = fin - se
+    return "Part 2 runtime: %dh %02dm, from %s to %s, budget %sh (Part 1's total runtime stays as recorded in its own section)" % (
+        int(el // 3600), int(el % 3600 // 60), b.get("start", "?"), time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime(fin)), b.get("total_budget_h", "?"))
 
 
 def _git(L, *a):
@@ -339,6 +389,17 @@ def recipes_block(L):
             h.append("<tr><td><code>%s</code></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(str(st.get("stage"))), e(str(st.get("action"))), e(str(st.get("reason", ""))),
                      e(str(st.get("exit_code"))), e(str(st.get("runtime_s"))), e(str(st.get("lock_wait_s")))))
         h.append("</tbody></table></div>")
+        notes = []
+        names = set(r.get("name") for r in ((L.jload("results/make_recipes.json") or {}).get("recipes") or []) if isinstance(r, dict))
+        for st in ma.get("stages") or []:
+            if st.get("action") == "ran" and isinstance(st.get("runtime_s"), (int, float)) and st["runtime_s"] < 30 and st.get("stage") not in ("demo",):
+                notes.append("<code>%s</code> shows as run, but for only %s s with exit %s: that is a resume of already-finished jobs (reason: %s), not a fresh run of the stage" % (
+                    e(str(st.get("stage"))), e(str(st["runtime_s"])), e(str(st.get("exit_code"))), e(str(st.get("reason")))))
+            if st.get("action") == "skipped" and st.get("stage") not in names and st.get("stage") not in ("preflight", "runtime"):
+                notes.append("<code>%s</code> was skipped on the strength of a <code>make %s</code> at the time named in its reason, which is not among the recorded recipes above: it only started the detached sweep drivers (a start of about 0.1 s); the sweeps themselves ran under the low-priority queue and are accounted in their own rows" % (
+                    e(str(st.get("stage"))), e(str(st.get("stage")))))
+        if notes:
+            h.append("<ul>%s</ul>" % "".join("<li>%s</li>" % x for x in notes))
         pr = ma.get("post_repro_identity_check")
         if isinstance(pr, dict):
             t1c = pr.get("task1") or {}
@@ -530,7 +591,8 @@ def how_tested(L):
                 known = commit_exists(L, cid)
                 h.append("<tr><td>%s</td><td>%s</td><td><code>%s</code>%s</td><td>%s</td><td class='%s'>%s</td></tr>" % (
                     e(str(c.get("name", ""))), e(str(c.get("threshold", ""))), e(cid[:12]), "" if known else " <b class='badt'>(commit not found)</b>",
-                    e(str(c.get("measured", ""))), "okt" if c.get("pass") else "badt", "pass" if c.get("pass") else "FAIL"))
+                    e(str(c.get("measured", ""))), "okt" if c.get("pass") else ("" if c.get("pass") is None else "badt"),
+                    "pass" if c.get("pass") else ("reported only (no pass/fail threshold)" if c.get("pass") is None else "FAIL")))
             h.append("</tbody></table></div>")
         sup = sup_items(j)
         if sup:
@@ -866,6 +928,9 @@ def phase2_html(L):
             rat = (j.get("reported_not_gating") or {}).get("ratio_bf16_over_int8") or {}
             h.append("<p>bf16 / INT8: %s. <b>Caveats:</b> the bf16 power is measured at 1.25 ns, a clock the bf16 MAC does not meet (WNS %s ns), so it is not a power at its own operating point; fmax comes from a single run per design, not from a timing-closure frontier search. "
                      "</p>" % (e(", ".join("%s %s" % (k, v) for k, v in rat.items())), e(str(b.get("wns_setup_ns")))))
+        h.append("<p><b>Which INT8 fmax to trust.</b> docs/pe_bf16_explained.md quotes the flow-reported figure (927.7 MHz INT8, 330.7 MHz bf16) and does not rank the two. Both are shown: <i>fmax reported by the flow</i> is OpenROAD's finish-stage figure for register-to-register paths at the single 1.25 ns run; "
+                 "<i>max clock estimate</i> = 1/(period - setup WNS) of the same run also covers the input-to-register paths (inputs arrive 20 % into the cycle), so it is the lower, more conservative number (804.1 vs 927.7 MHz for INT8). "
+                 "Neither is a searched timing-closure frontier (one run per design); read the bf16/INT8 ratio, not the absolute MHz.</p>")
         d = sm.get("design") or {}
         if d:
             h.append("<p><b>Design choices (documented):</b> rounding: %s; subnormals: %s.</p>" % (e(str(d.get("rounding"))), e(str(d.get("subnormals")))))
@@ -956,12 +1021,17 @@ def part2_md(L, rows, before):
     out = [not_green_md(L, rows), "## Part 2: before and after\n", "| Check | At the start of Part 2 | Now |", "|---|---|---|"]
     ba = {}
     for b in before.get("rows", []):
-        pfx = {"runtime": ["Container runtime"], "images": ["Lab images"], "task1": ["Task 1:"], "task2": ["Task 2:"], "task3": ["Task 3:"], "sweepA": ["Sweep A"],
+        pfx = {"runtime": ["Container runtime"], "images": ["Lab images"], "task1": ["Task 1: INT8", "Task 1: formal", "Task 1: RTL = netlist"], "task2": ["Task 2:"], "task3": ["Task 3:"], "sweepA": ["Sweep A"],
                "sweepB": ["Sweep B"], "repro": ["Repeatability"], "recipes": ["Make recipes"]}.get(b["id"], [b["check"]])
         rs = [r for r in rows if any(r.label.startswith(p) for p in pfx)]
-        order = ["FAIL", "BLOCKED", "INCOMPLETE", "PARTIAL", "RUNNING", "PENDING", "UNKNOWN", "DONE", "PASS"]
+        order = ["FAIL", "BLOCKED", "INCOMPLETE", "PARTIAL", "CUT", "RUNNING", "PENDING", "UNKNOWN", "DONE", "PASS"]
         now = sorted((r.state for r in rs), key=lambda x: order.index(x) if x in order else 3)[0] if rs else "PENDING"
-        out.append("| %s | %s | **%s** |" % (b["check"], b["before"], now))
+        sn = sweep_now(L, b["id"]) if b["id"] in ("sweepA", "sweepB") else None
+        out.append("| %s | %s | **%s**%s |" % (b["check"], b["before"], now, (" " + sn) if sn else ""))
+    for pfx_, nm_ in NEW_ROWS:
+        rs_ = [r for r in rows if r.label.startswith(pfx_)]
+        if rs_:
+            out.append("| %s | - | **%s** |" % (nm_, rs_[0].state))
     out.append("\n%s\n" % runtime_line(L))
     out.append("Part 2 stage states:\n\n| Stage | State |\n|---|---|")
     for stage, what in P2_STAGES:

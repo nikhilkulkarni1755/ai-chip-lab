@@ -384,7 +384,7 @@ def build_rows(L):
         elif st == "running":
             state, why = "RUNNING", gate + " in progress"
         elif st == "done" and acc:
-            state, why = "DONE", "cut at gate (%s): all planned points accounted for (not 'complete'); %s" % (gate, accnote)
+            state, why = "CUT", "cut at gate (%s): all planned points accounted for (not 'complete'); %s" % (gate, accnote)
         elif st == "done":
             state, why = "INCOMPLETE", "%s is done but not every planned point is accounted for: %s" % (gate, accnote)
         elif pts and pts[0] > 0:
@@ -478,7 +478,7 @@ def phys_frontier_live(L):
 
 
 # ----------------------------------------------------------------------------- html helpers
-BADGE = {"PARTIAL": "warn", "INCOMPLETE": "warn", "DONE": "ok", "PASS": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
+BADGE = {"CUT": "warn", "PARTIAL": "warn", "INCOMPLETE": "warn", "DONE": "ok", "PASS": "ok", "FAIL": "bad", "BLOCKED": "warn", "RUNNING": "run", "PENDING": "dim", "UNKNOWN": "dim"}
 
 
 def badge(state):
@@ -1163,6 +1163,13 @@ def sweep_audit(L):
     return out
 
 
+def vm_final_text(L, vm):
+    j = L.jload("results/vm_final_state.json")
+    if isinstance(j, dict):
+        return "%s (recorded %s in results/vm_final_state.json)" % (j.get("state") or j.get("vm") or json.dumps(j, sort_keys=True)[:80], j.get("time") or j.get("recorded") or "")
+    return "not recorded: results/vm_final_state.json does not exist yet (infra writes it after colima stop)"
+
+
 def build_html(L, rows, vm):
     el_s, _ = elapsed_str(L)
     h = ["<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
@@ -1198,7 +1205,7 @@ def build_html(L, rows, vm):
              '<div class="card"><span class="sub">Machine</span><b>%s</b></div>'
              '<div class="card"><span class="sub">VM at end of run</span><b>%s</b></div></div>' % (
                  e(el_s), e(route or "not recorded yet"), e(machine_str(L)),
-                 e({"running": "left running", "stopped": "stopped"}.get(vm, "not stated yet (set at final packaging)"))))
+                 e(vm_final_text(L, vm))))
     h.append("<h3>Proof that it builds and runs</h3><p class='sub'>Real terminal output saved by the stage that produced it, "
              "rendered as an image (not an OS screenshot).</p>")
     evidence_blocks(L, h)
