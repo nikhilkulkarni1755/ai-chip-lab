@@ -27,8 +27,17 @@ def make_sdc(period):
 
 
 def lock_accounting(t0, tag):
-    sys.path.insert(0, os.path.join(LAB, "sweeps")); import phys_sweep
-    return phys_sweep.lock_accounting(t0, time.time(), tag)
+    """(waited_s, held_s) of this point from logs/part2/lock.log (any priority)."""
+    L = open(os.path.join(LAB, "logs", "part2", "lock.log")).read().splitlines()
+    got = (None, None)
+    for i, l in enumerate(L):
+        m = re.match(r"(\S+ \S+) LOCK pnr \S+ waited=(\d+)s .*t2_run\.sh \S+ \S+ " + re.escape(tag) + r"( |$)", l)
+        if m:
+            for l2 in L[i + 1:]:
+                m2 = re.match(r"\S+ \S+ FREE pnr rc=\S+ ran=(\d+)s", l2)
+                if m2:
+                    got = (int(m2.group(2)), int(m2.group(1))); break
+    return got
 
 OUT = os.path.join(LAB, "results", "pdk_compare", "sky130hd_points.jsonl")
 TIMEOUT_S = 2100
@@ -104,6 +113,11 @@ def summary(a):
             cmp_[k] = {"nangate45": ng.get(k), "sky130hd": best.get(k), "ratio_sky_over_nangate": (best[k] / ng[k]) if ng.get(k) and best.get(k) is not None else None}
         cmp_["clock_period_ns"] = {"nangate45": ng["clock_period_ns"], "sky130hd": best["clock_period_ns"], "ratio_sky_over_nangate": best["clock_period_ns"] / ng["clock_period_ns"]}
         cmp_["energy_per_cycle_pj"] = {"nangate45": ng["power_total_w"] * ng["clock_period_ns"] * 1e3, "sky130hd": best["power_total_w"] * best["clock_period_ns"] * 1e3}
+    for r in R:   # backfill lock accounting (the in-run match missed high-priority lines)
+        if r.get("lock_hold_s") is None:
+            r["lock_wait_s"], r["lock_hold_s"] = lock_accounting(0, r["variant"])
+    with open(OUT, "w") as f:
+        f.write("".join(json.dumps(r) + "\n" for r in R))
     S = {"label": label, "points": R, "nangate45_reference_point": {k: ng.get(k) for k in ("clock_period_ns", "core_utilization", "wns_setup_ns", "area_um2", "power_total_w", "stdcell_count", "variant")},
          "comparison_at_each_pdks_fastest_closing_period": cmp_}
     json.dump(S, open(os.path.join(LAB, "results", "pdk_compare", "pdk_compare.json"), "w"), indent=1)
