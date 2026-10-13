@@ -118,9 +118,25 @@ def main():
     if al:
         L.append("")
         L.append("**`make all` (%s):** exit %d; failed stages: %s; per stage: %s." % (al.get("mode"), al["exit_code"], ", ".join(al["failed_stages"]) or "none",
-                 "; ".join("%s %s%s%s" % (s["stage"], s["action"], (" exit %s" % s["exit_code"]) if s.get("exit_code") not in (None, 0) else "", (" — " + s["reason"]) if s["action"] == "skipped" else "") for s in al["stages"])))
+                 "; ".join("%s %s%s%s" % (s["stage"], s["action"] + ((" %.0f s, of which lock wait %s s" % (s["runtime_s"], s.get("lock_wait_s", 0))) if s["action"] == "ran" else ""), (" exit %s" % s["exit_code"]) if s.get("exit_code") not in (None, 0) else "", (" — " + s["reason"]) if s["action"] == "skipped" else "") for s in al["stages"])))
     if not al:
         L += ["", "**`make all` run for real once (TASK2 P1.7 / Final steps): not run yet.**"]
+    pr = (al or {}).get("post_repro_identity_check")
+    if pr:
+        t1c = pr["task1"]
+        L += ["", "**Why the repro verdict still covers the files on HEAD.** `make all` re-executed stages whose first-run files `make repro` had already compared. "
+              "Checked afterwards by `scripts/post_repro_identity_check.py`: Task 1 files on HEAD vs the rerun copies repro compared — %s; "
+              "summary check booleans equal to the rerun's (%d compared): %s; Task 2 (the stage's own comparison against every earlier run): %s. Overall: **%s**."
+              % ("; ".join("`%s` %s" % (f["file"], "identical" if f["identical"] else "DIFFERENT") for f in t1c["files"]), t1c["summary_check_booleans_compared"],
+                 "yes" if t1c["summary_check_booleans_equal_to_rerun"] else "NO (%s)" % ", ".join(t1c["differing_summary_checks"]),
+                 "; ".join("%s run %s %s" % (x["design"], x["runs"], "identical" if x["identical_to_all_earlier_runs"] else "DIFFERENT") for x in pr["task2_stage_own_comparison"]) or "no record",
+                 "identical" if pr["identical"] else "DIFFERENCE FOUND — a determinism finding, see results/make_all_last.json")]
+    ce = os.path.join(ROOT, "coord", "images_cacti.env")
+    if os.path.exists(ce):
+        ref = [l.split("=", 1)[1].strip() for l in open(ce) if l.startswith("CACTI_IMAGE=")]
+        L += ["", "**Image pins.** `coord/images.env` holds the two images every baseline stage uses (lab-sim, ORFS) and is an input of those stages. The CACTI image of "
+              "stage 63 (`%s`) is pinned separately in `coord/images_cacti.env` and in the `cacti:` section of `versions.lock`, on purpose: adding it to `coord/images.env` "
+              "would change an input of Task 1 and of the repro stage and force their rerun (Decision P2-12)." % (ref[0] if ref else "?")]
     d["pass"] = (not missing) and (not failed) and bool(ft and ft["pass"])
     d["missing_recipes"] = missing; d["failed_recipes"] = failed
     text = "\n".join(L) + "\n"
