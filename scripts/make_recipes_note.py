@@ -125,7 +125,7 @@ def main():
         st_ = {x["stage"]: x for x in al["stages"]}
         caveats = []
         if st_.get("t3", {}).get("action") == "ran" and st_["t3"].get("runtime_s", 999) < 60:
-            caveats.append("the `t3` entry was a %.0f-second resume of jobs already finished (`T3_RESUME=1`: no SCALE-Sim job was re-executed, only the verdict was recomputed and the summary rewritten); "
+            caveats.append("the `t3` entry was a resume of jobs already finished, lasting %.0f s (`T3_RESUME=1`: no SCALE-Sim job was re-executed, only the verdict was recomputed and the summary rewritten); "
                            "Task 3's real executions are the recorded `make t3`, `make t3-clean-first` and `make repro` runs above" % st_["t3"]["runtime_s"])
         if st_.get("sweeps", {}).get("action") == "skipped":
             sw = [h for h in [d.get("failsoft_test")] + d.get("failsoft_history", []) if h and "sweeps" in h.get("executed_for_real", [])]
