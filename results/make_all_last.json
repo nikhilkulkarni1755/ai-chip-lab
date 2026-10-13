@@ -216,7 +216,7 @@
   }
  ],
  "post_repro_identity_check": {
-  "generated": "2026-10-12 19:58:43 PDT",
+  "generated": "2026-10-12 20:10:54 PDT",
   "repro_report_generated_epoch": 1791857247,
   "repro_pass": true,
   "why": "make all re-executed stages whose first-run files `make repro` had already compared; this block shows whether the files on HEAD are byte-identical to what repro compared, which is the reason its verdict still applies",
@@ -302,6 +302,15 @@
     "identical_to_all_earlier_runs": true
    }
   ],
+  "task3": {
+   "files_compared": 42,
+   "identical_count": 42,
+   "differing_files": [],
+   "compared": "sha256 of results/t3/<file> on HEAD == first-run hash == rerun hash recorded in results/repro_report.json",
+   "newest_file_mtime_on_head": "2026-10-12 19:57:54",
+   "excluded_by_repro": "excluded: run-time measurements (3 files)",
+   "identical": true
+  },
   "identical": true
  }
 }
