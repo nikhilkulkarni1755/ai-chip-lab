@@ -238,5 +238,16 @@
    "results/evidence/63_sram_cacti_results.txt"
   ],
   "what": "CACTI 7 45 nm scratchpad model for 16/64/1024/2048/6144 kB, order-of-magnitude SRAM energy for ViT-S from sweep A; 7 pre-registered criteria pass"
+ },
+ {
+  "agent": "rtl",
+  "stage": "61_pe_bf16",
+  "files": [
+   "docs/pe_bf16_explained.md",
+   "results/p2_61_pe_bf16.json",
+   "results/p2_61_pe_bf16_summary.json",
+   "scripts/p2_61_finish.py"
+  ],
+  "what": "bf16 stage explained (design, tests, PPA table, why FP costs more); next_action names the unmerged one-line lint fix (p2/rtl e21fd3b) and the two commands to re-verify (Decision P2-12)"
  }
 ]

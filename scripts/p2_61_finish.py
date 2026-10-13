@@ -21,6 +21,16 @@ CRITERIA_COMMIT = "c0e5b87"    # results/p2_61_pe_bf16_summary.json pass criteri
 # with one hold per ORFS stage group (scripts/p2_61_orfs_staged.sh, fresh variant p2_61s).
 VARIANT = {"mac_int8": "p2_61", "mac_bf16": "p2_61s"}
 CLOCK_NS = 1.25
+# Decision P2-12 (COORDINATION.md): the one-line lint fix is NOT merged, because rtl/ is a stage
+# input of t1, t1-routed and repro.  Where it is and how to re-verify after merging:
+LINT_FIX = {"branch": "p2/rtl", "commit": "e21fd3b",
+            "what": "rtl/mac_bf16.sv line 91: a comment shortened from 104 to 100 characters, no logic change",
+            "apply": "git cherry-pick e21fd3b",
+            "then_reverify": "scripts/t61_run.sh 10000 results && python3 scripts/p2_61_finish.py",
+            "cost": "about 4 minutes of lock for the re-verification; note that rtl/ is also an input of the stages "
+                    "t1 and t1-routed and of the repro provenance check, so `RESUME=1 make all` will then re-execute "
+                    "those (pass T1R_RESUME=1 T1R_SKIP=gls_verilator to `make t1-routed` to keep the proven partitions)",
+            "decision": "COORDINATION.md Decisions (Part 2) P2-12"}
 SUMMARY = "results/p2_61_pe_bf16_summary.json"
 
 
@@ -159,6 +169,14 @@ def main():
           "design": d.get("design"),
           "commands": ["scripts/t61_run.sh 10000 results", "scripts/p2_61_orfs.sh mac_int8", "scripts/p2_61_orfs_staged.sh mac_bf16", "python3 scripts/p2_61_finish.py"],
           "seeds": "1234", "evidence": [e for e in ev if os.path.exists(e)]}
+    failed_now = [k for k in crit if not c.get(k)]
+    if failed_now == ["lint_clean"]:
+        p2["next_action"] = dict(LINT_FIX, why_failed="lint_clean is the only failing criterion: verible-verilog-lint "
+                                 "reports one line over 100 characters (a comment); see results/evidence/61_lint.txt")
+        d["next_action"] = p2["next_action"]
+        with open(SUMMARY, "w") as f:
+            json.dump(d, f, indent=2)
+            f.write("\n")
     with open("results/p2_61_pe_bf16.json", "w") as f:
         json.dump(p2, f, indent=2)
         f.write("\n")

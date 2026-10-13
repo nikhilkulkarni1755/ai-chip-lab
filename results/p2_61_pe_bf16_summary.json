@@ -267,5 +267,15 @@
     "numpy": "2.3.5",
     "ml_dtypes": "0.6.0",
     "cocotb": "2.1.0"
+  },
+  "next_action": {
+    "branch": "p2/rtl",
+    "commit": "e21fd3b",
+    "what": "rtl/mac_bf16.sv line 91: a comment shortened from 104 to 100 characters, no logic change",
+    "apply": "git cherry-pick e21fd3b",
+    "then_reverify": "scripts/t61_run.sh 10000 results && python3 scripts/p2_61_finish.py",
+    "cost": "about 4 minutes of lock for the re-verification; note that rtl/ is also an input of the stages t1 and t1-routed and of the repro provenance check, so `RESUME=1 make all` will then re-execute those (pass T1R_RESUME=1 T1R_SKIP=gls_verilator to `make t1-routed` to keep the proven partitions)",
+    "decision": "COORDINATION.md Decisions (Part 2) P2-12",
+    "why_failed": "lint_clean is the only failing criterion: verible-verilog-lint reports one line over 100 characters (a comment); see results/evidence/61_lint.txt"
   }
 }
