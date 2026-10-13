@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-12 15:42:02 PDT",
+ "generated": "2026-10-12 19:08:50 PDT",
  "pass": true,
  "checks": {
   "exit_status_nonzero": true,
@@ -12,34 +12,35 @@
   "demo_rebuilt_after_restore": true
  },
  "command": "MAKE_ALL_FAIL=preflight RESUME=markers SWEEPS_DETACH=1 T3_USER_DEADLINE=1 make all   (then marker restored and `make demo` rerun)",
- "other_stages_that_failed_for_their_own_reasons": [],
+ "other_stages_that_failed_for_their_own_reasons": [
+  "t3"
+ ],
  "forced_stage": "preflight",
  "make_all_exit_code": 2,
- "runtime_s": 60,
- "log": "logs/part2/32_make_recipes/failsoft_test_154101.log",
+ "runtime_s": 51,
+ "log": "logs/part2/32_make_recipes/failsoft_test_190759.log",
  "executed_for_real": [
-  "sweeps",
+  "t3",
   "demo"
  ],
  "skipped_with_reason": {
   "runtime": "marker-only test mode: succeeded before (01_runtime.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (3 git-tracked files) byte-identical to the last successful `make runtime` at 2026-10-12 09:27:41",
-  "images": "marker-only test mode: succeeded before (02_images.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (17 git-tracked files) byte-identical to the last successful `make images` at 2026-10-12 10:21:40",
+  "images": "marker-only test mode: succeeded before (02_images.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: RUN, inputs changed since the last successful `make images` at 2026-10-12 10:21:40",
   "t1": "marker-only test mode: succeeded before (10_rtl_verify.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: RUN, inputs changed since the last successful `make t1` at 2026-10-12 15:18:46",
   "t2": "marker-only test mode: succeeded before (20_pnr_ref.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: RUN, inputs changed since the last successful `make t2` at 2026-10-12 11:36:27",
   "t2-stretch": "marker-only test mode: succeeded before (recorded successful make run); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: RUN, inputs changed since the last successful `make t2-stretch` at 2026-10-12 12:14:39",
-  "t1-routed": "marker-only test mode: succeeded before (11_eqy_routed.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: RUN, inputs changed since the last successful `make t1-routed` at 2026-10-12 15:19:55",
-  "repro": "marker-only test mode: succeeded before (51_repro_full.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (64 git-tracked files) unchanged since 51_repro_full.done at 2026-10-12 15:40:27"
+  "t1-routed": "marker-only test mode: succeeded before (11_eqy_routed.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (23 git-tracked files) byte-identical to the last successful `make t1-routed` at 2026-10-12 19:07:59",
+  "sweeps": "marker-only test mode: succeeded before (recorded successful make run); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (8 git-tracked files) byte-identical to the last successful `make sweeps` at 2026-10-12 15:41:01",
+  "repro": "marker-only test mode: succeeded before (51_repro_full.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (65 git-tracked files) byte-identical to the last successful `make repro` at 2026-10-12 19:07:27"
  },
  "not_run_forced_failure": [
   "preflight"
  ],
- "excluded_from_this_test": {
-  "t3": "MAKE_ALL_EXCLUDE (test hook): make t3 has a .failed marker and would re-execute its second pass (7 container jobs, about 25 min of lock) plus the summary; its real runs are recorded as recipe attempts"
- },
+ "excluded_from_this_test": {},
  "stages": [
   {
    "stage": "preflight",
-   "start_epoch": 1791844861,
+   "start_epoch": 1791857279,
    "action": "forced_fail",
    "reason": "MAKE_ALL_FAIL test hook: recipe not run, marker set to .failed",
    "exit_code": 1,
@@ -54,7 +55,7 @@
   },
   {
    "stage": "runtime",
-   "start_epoch": 1791844861,
+   "start_epoch": 1791857279,
    "action": "skipped",
    "reason": "marker-only test mode: succeeded before (01_runtime.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (3 git-tracked files) byte-identical to the last successful `make runtime` at 2026-10-12 09:27:41",
    "exit_code": null,
@@ -70,9 +71,9 @@
   },
   {
    "stage": "images",
-   "start_epoch": 1791844861,
+   "start_epoch": 1791857279,
    "action": "skipped",
-   "reason": "marker-only test mode: succeeded before (02_images.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (17 git-tracked files) byte-identical to the last successful `make images` at 2026-10-12 10:21:40",
+   "reason": "marker-only test mode: succeeded before (02_images.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: RUN, inputs changed since the last successful `make images` at 2026-10-12 10:21:40",
    "exit_code": null,
    "runtime_s": 0,
    "inputs": [
@@ -88,7 +89,7 @@
   },
   {
    "stage": "t1",
-   "start_epoch": 1791844861,
+   "start_epoch": 1791857279,
    "action": "skipped",
    "reason": "marker-only test mode: succeeded before (10_rtl_verify.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: RUN, inputs changed since the last successful `make t1` at 2026-10-12 15:18:46",
    "exit_code": null,
@@ -108,7 +109,7 @@
   },
   {
    "stage": "t2",
-   "start_epoch": 1791844861,
+   "start_epoch": 1791857279,
    "action": "skipped",
    "reason": "marker-only test mode: succeeded before (20_pnr_ref.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: RUN, inputs changed since the last successful `make t2` at 2026-10-12 11:36:27",
    "exit_code": null,
@@ -125,7 +126,7 @@
   },
   {
    "stage": "t2-stretch",
-   "start_epoch": 1791844861,
+   "start_epoch": 1791857279,
    "action": "skipped",
    "reason": "marker-only test mode: succeeded before (recorded successful make run); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: RUN, inputs changed since the last successful `make t2-stretch` at 2026-10-12 12:14:39",
    "exit_code": null,
@@ -142,9 +143,9 @@
   },
   {
    "stage": "t1-routed",
-   "start_epoch": 1791844861,
+   "start_epoch": 1791857279,
    "action": "skipped",
-   "reason": "marker-only test mode: succeeded before (11_eqy_routed.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: RUN, inputs changed since the last successful `make t1-routed` at 2026-10-12 15:19:55",
+   "reason": "marker-only test mode: succeeded before (11_eqy_routed.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (23 git-tracked files) byte-identical to the last successful `make t1-routed` at 2026-10-12 19:07:59",
    "exit_code": null,
    "runtime_s": 0,
    "inputs": [
@@ -163,11 +164,12 @@
   },
   {
    "stage": "t3",
-   "start_epoch": 1791844861,
-   "action": "excluded",
-   "reason": "MAKE_ALL_EXCLUDE (test hook): make t3 has a .failed marker and would re-execute its second pass (7 container jobs, about 25 min of lock) plus the summary; its real runs are recorded as recipe attempts",
-   "exit_code": null,
-   "runtime_s": 0,
+   "start_epoch": 1791857279,
+   "action": "ran",
+   "reason": "stage marker 30_arch_model.failed present",
+   "exit_code": 2,
+   "runtime_s": 9.2,
+   "lock_wait_s": 0,
    "inputs": [
     "model/",
     "arch/",
@@ -182,12 +184,11 @@
   },
   {
    "stage": "sweeps",
-   "start_epoch": 1791844861,
-   "action": "ran",
-   "reason": "no .done marker and no record of a successful run",
-   "exit_code": 0,
-   "runtime_s": 0.1,
-   "lock_wait_s": 0,
+   "start_epoch": 1791857288,
+   "action": "skipped",
+   "reason": "marker-only test mode: succeeded before (recorded successful make run); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (8 git-tracked files) byte-identical to the last successful `make sweeps` at 2026-10-12 15:41:01",
+   "exit_code": null,
+   "runtime_s": 0,
    "inputs": [
     "sweeps/arch_sweep.py",
     "sweeps/phys_sweep.py",
@@ -204,9 +205,9 @@
   },
   {
    "stage": "repro",
-   "start_epoch": 1791844861,
+   "start_epoch": 1791857288,
    "action": "skipped",
-   "reason": "marker-only test mode: succeeded before (51_repro_full.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (64 git-tracked files) unchanged since 51_repro_full.done at 2026-10-12 15:40:27",
+   "reason": "marker-only test mode: succeeded before (51_repro_full.done); input changes since then are NOT checked in this mode \u2014 the input-aware rule would say: skip, inputs (65 git-tracked files) byte-identical to the last successful `make repro` at 2026-10-12 19:07:27",
    "exit_code": null,
    "runtime_s": 0,
    "inputs": [
@@ -229,11 +230,11 @@
   },
   {
    "stage": "demo",
-   "start_epoch": 1791844861,
+   "start_epoch": 1791857288,
    "action": "ran",
    "reason": "always runs",
    "exit_code": 0,
-   "runtime_s": 28.9,
+   "runtime_s": 21.5,
    "lock_wait_s": 0,
    "inputs": [],
    "markers": [

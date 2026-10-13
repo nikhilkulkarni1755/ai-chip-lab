@@ -5,6 +5,7 @@
       "first_run": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
       "note": "",
       "rerun": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+      "runs": 2,
       "verdict": "identical"
     },
     {
@@ -12,6 +13,7 @@
       "first_run": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
       "note": "",
       "rerun": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+      "runs": 2,
       "verdict": "identical"
     },
     {
@@ -53,6 +55,7 @@
         "zero_mismatches_icarus": true,
         "zero_mismatches_verilator": true
       },
+      "runs": 2,
       "verdict": "identical"
     },
     {
@@ -276,88 +279,124 @@
         "tiles": 39849,
         "waveform_png_bytes": 110068
       },
+      "runs": 2,
       "verdict": "identical"
     },
     {
-      "check": "t3 result files byte-identical (15 files)",
+      "check": "t3 cheap-set result files byte-identical (42 files compared)",
       "first_run": {
-        "bundled_runs.json": "2637860baba5eec3326292ba3560bef0a28756be4245da95d1f0b57c2dcb4a34",
+        ".jobs/bundled_is.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/bundled_os.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/bundled_ws.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/fit.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/rl2_calc_is.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/rl2_calc_os.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/rl2_calc_ws.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
         "fit.json": "62d0b35e390d89f0b533dc3b64d81b206ab451194d94a0708f2a25738cf53e4c",
-        "roofline.json": "7b9acf9953e899e29ce52e805b86490a01fd21286129e61d6210b8f946930f03",
+        "roofline2.json": "6377c2a39d457fbc14df8637f1be26d9e1075fa0f078a35876c8e75adedb4345",
+        "roofline2/rl2_calc_is.json": "7bf0a698c98d22e8b53f87e9af5b839834581fc08edb4fb8499dd61e45f18351",
+        "roofline2/rl2_calc_is/BANDWIDTH_REPORT.csv": "07ae3cf146fc61e5d7331f9a29eab801c7e3a195ceb9303121d84c3ee1671669",
+        "roofline2/rl2_calc_is/COMPUTE_REPORT.csv": "931ca4856dbf459a42914e2d5868774677a587929bb402b4745d129b5bb5f05d",
+        "roofline2/rl2_calc_is/DETAILED_ACCESS_REPORT.csv": "2b10de14f0eda21756b5e5cb25d7c3cc8d70aab4b50787e2b5fdb5ed412ce7c2",
+        "roofline2/rl2_calc_is/attempts.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "roofline2/rl2_calc_is/config.cfg": "863e86a267b08bb43e7fa79fd75289b3b578aaaf053378fb5c63a9a8339ef067",
+        "roofline2/rl2_calc_os.json": "72f28c7b1171be9555c89a3d3d878722cd71665adc280f4f7165092540e4dbc5",
+        "roofline2/rl2_calc_os/BANDWIDTH_REPORT.csv": "a897a9bb268074a2f0fd47ded3e3b504ff0914c670a5a6c63e26c07b63471998",
+        "roofline2/rl2_calc_os/COMPUTE_REPORT.csv": "26d06450a0f20a39560eed8dd38d1eaa0fb55bf07ec81bdcf38b2ae3dfe635f9",
+        "roofline2/rl2_calc_os/DETAILED_ACCESS_REPORT.csv": "6a74db3471e5bd1c6167fec199d7c26281f090eaaae9dd44fba1e14f10ab01ff",
+        "roofline2/rl2_calc_os/attempts.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "roofline2/rl2_calc_os/config.cfg": "6e5989d1a27df4b51b6db8ca87dc36dbc5e72ed06304b4f88c7c71b9a62cb14f",
+        "roofline2/rl2_calc_ws.json": "6e318d5e5dd09ad31305e5acea65fdc5ede4db276c0728a128488217ff1d44e0",
+        "roofline2/rl2_calc_ws/BANDWIDTH_REPORT.csv": "c42c5924331202241c74612193d2af2e4073f7daa7ddb7d85aedec2a1b600536",
+        "roofline2/rl2_calc_ws/COMPUTE_REPORT.csv": "3325f9bd92c1409b39e5b47f72c0262e6df2a8fe275f46fc0119d7c2b4d178a7",
+        "roofline2/rl2_calc_ws/DETAILED_ACCESS_REPORT.csv": "597202c0c868302eed0ad877a3fe5c08e9c76dfa9895565d0065ba414f035646",
+        "roofline2/rl2_calc_ws/attempts.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "roofline2/rl2_calc_ws/config.cfg": "0bb6abd22cbeda288bfeed23aa64ae4b175c6486ab1ae47b5314542d629ef792",
         "scalesim/is/BANDWIDTH_REPORT.csv": "5c1b5303fc1a9ca68be34e2013ff7718e76d2591e77fa92902b5e39463c75965",
         "scalesim/is/COMPUTE_REPORT.csv": "6c9e45b1b151c12c3e79360a0d466d10063bf59afc81c4209902bdf0f80107d7",
         "scalesim/is/DETAILED_ACCESS_REPORT.csv": "bb571beb86893b1bc48bc3c8226caec6f9e63b43c5b13c5a340bf486b02d4f12",
         "scalesim/is/config.cfg": "9d1fad1b9414662cbcf37e568ceed3f02bfc4ba6cb50201ccf46b824f2fbb775",
+        "scalesim/is/layers.json": "885c793082ef4240840ff8911eff2d159a9d6a4e9d038227dae936778f9b6114",
         "scalesim/os/BANDWIDTH_REPORT.csv": "5e4f7f7022f4a5d573ebdafa614a642915d7aeb3aaa82c3e035d313118eda6e5",
         "scalesim/os/COMPUTE_REPORT.csv": "68e667f9f364b44e22d910d9b8c73ae54b7b9699da46c82f923a238f3915d1df",
         "scalesim/os/DETAILED_ACCESS_REPORT.csv": "bd85915afcb2003d1f1bb31a2780fbc08b019b025767f2a7222b5f62e6503a74",
         "scalesim/os/config.cfg": "8be3cb24654ac25b07dc1025eb6c17b225b6403fdb1cee8fe986bc612ee89da7",
+        "scalesim/os/layers.json": "35b6b99643e07d0bcce873723127933cfe5a74ee34aaee2971d09622f75f9529",
         "scalesim/ws/BANDWIDTH_REPORT.csv": "585d2634bcaf3001ecb4da04a05103966a1e347767598eccc4eb2ac31a1ca9d2",
         "scalesim/ws/COMPUTE_REPORT.csv": "660a8fdccc072bc46f65f85b79dcc3f992950389cdff7b8be3f2233b2fcc6c07",
         "scalesim/ws/DETAILED_ACCESS_REPORT.csv": "1540abaa974a0467b84391859581b633671a002256fd2ae5a4a1ae8faa9209eb",
-        "scalesim/ws/config.cfg": "f8872219bff9d03f9b4f3fbe5962f4e9c794d2706be8baddd2cc041021214937"
+        "scalesim/ws/config.cfg": "f8872219bff9d03f9b4f3fbe5962f4e9c794d2706be8baddd2cc041021214937",
+        "scalesim/ws/layers.json": "17c69471cfa134eef0ac594a5f390e575ed04d9211702e6f404801fe9a90befd"
       },
-      "note": "",
+      "note": "first run = the stage's own passes plus this fresh pass; compared files: bundled ws/os/is reports, fit, CALC-mode roofline runs",
       "rerun": {
-        "bundled_runs.json": "2637860baba5eec3326292ba3560bef0a28756be4245da95d1f0b57c2dcb4a34",
+        ".jobs/bundled_is.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/bundled_os.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/bundled_ws.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/fit.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/rl2_calc_is.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/rl2_calc_os.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+        ".jobs/rl2_calc_ws.done": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
         "fit.json": "62d0b35e390d89f0b533dc3b64d81b206ab451194d94a0708f2a25738cf53e4c",
-        "roofline.json": "7b9acf9953e899e29ce52e805b86490a01fd21286129e61d6210b8f946930f03",
+        "roofline2.json": "6377c2a39d457fbc14df8637f1be26d9e1075fa0f078a35876c8e75adedb4345",
+        "roofline2/rl2_calc_is.json": "7bf0a698c98d22e8b53f87e9af5b839834581fc08edb4fb8499dd61e45f18351",
+        "roofline2/rl2_calc_is/BANDWIDTH_REPORT.csv": "07ae3cf146fc61e5d7331f9a29eab801c7e3a195ceb9303121d84c3ee1671669",
+        "roofline2/rl2_calc_is/COMPUTE_REPORT.csv": "931ca4856dbf459a42914e2d5868774677a587929bb402b4745d129b5bb5f05d",
+        "roofline2/rl2_calc_is/DETAILED_ACCESS_REPORT.csv": "2b10de14f0eda21756b5e5cb25d7c3cc8d70aab4b50787e2b5fdb5ed412ce7c2",
+        "roofline2/rl2_calc_is/attempts.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "roofline2/rl2_calc_is/config.cfg": "863e86a267b08bb43e7fa79fd75289b3b578aaaf053378fb5c63a9a8339ef067",
+        "roofline2/rl2_calc_os.json": "72f28c7b1171be9555c89a3d3d878722cd71665adc280f4f7165092540e4dbc5",
+        "roofline2/rl2_calc_os/BANDWIDTH_REPORT.csv": "a897a9bb268074a2f0fd47ded3e3b504ff0914c670a5a6c63e26c07b63471998",
+        "roofline2/rl2_calc_os/COMPUTE_REPORT.csv": "26d06450a0f20a39560eed8dd38d1eaa0fb55bf07ec81bdcf38b2ae3dfe635f9",
+        "roofline2/rl2_calc_os/DETAILED_ACCESS_REPORT.csv": "6a74db3471e5bd1c6167fec199d7c26281f090eaaae9dd44fba1e14f10ab01ff",
+        "roofline2/rl2_calc_os/attempts.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "roofline2/rl2_calc_os/config.cfg": "6e5989d1a27df4b51b6db8ca87dc36dbc5e72ed06304b4f88c7c71b9a62cb14f",
+        "roofline2/rl2_calc_ws.json": "6e318d5e5dd09ad31305e5acea65fdc5ede4db276c0728a128488217ff1d44e0",
+        "roofline2/rl2_calc_ws/BANDWIDTH_REPORT.csv": "c42c5924331202241c74612193d2af2e4073f7daa7ddb7d85aedec2a1b600536",
+        "roofline2/rl2_calc_ws/COMPUTE_REPORT.csv": "3325f9bd92c1409b39e5b47f72c0262e6df2a8fe275f46fc0119d7c2b4d178a7",
+        "roofline2/rl2_calc_ws/DETAILED_ACCESS_REPORT.csv": "597202c0c868302eed0ad877a3fe5c08e9c76dfa9895565d0065ba414f035646",
+        "roofline2/rl2_calc_ws/attempts.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "roofline2/rl2_calc_ws/config.cfg": "0bb6abd22cbeda288bfeed23aa64ae4b175c6486ab1ae47b5314542d629ef792",
         "scalesim/is/BANDWIDTH_REPORT.csv": "5c1b5303fc1a9ca68be34e2013ff7718e76d2591e77fa92902b5e39463c75965",
         "scalesim/is/COMPUTE_REPORT.csv": "6c9e45b1b151c12c3e79360a0d466d10063bf59afc81c4209902bdf0f80107d7",
         "scalesim/is/DETAILED_ACCESS_REPORT.csv": "bb571beb86893b1bc48bc3c8226caec6f9e63b43c5b13c5a340bf486b02d4f12",
         "scalesim/is/config.cfg": "9d1fad1b9414662cbcf37e568ceed3f02bfc4ba6cb50201ccf46b824f2fbb775",
+        "scalesim/is/layers.json": "885c793082ef4240840ff8911eff2d159a9d6a4e9d038227dae936778f9b6114",
         "scalesim/os/BANDWIDTH_REPORT.csv": "5e4f7f7022f4a5d573ebdafa614a642915d7aeb3aaa82c3e035d313118eda6e5",
         "scalesim/os/COMPUTE_REPORT.csv": "68e667f9f364b44e22d910d9b8c73ae54b7b9699da46c82f923a238f3915d1df",
         "scalesim/os/DETAILED_ACCESS_REPORT.csv": "bd85915afcb2003d1f1bb31a2780fbc08b019b025767f2a7222b5f62e6503a74",
         "scalesim/os/config.cfg": "8be3cb24654ac25b07dc1025eb6c17b225b6403fdb1cee8fe986bc612ee89da7",
+        "scalesim/os/layers.json": "35b6b99643e07d0bcce873723127933cfe5a74ee34aaee2971d09622f75f9529",
         "scalesim/ws/BANDWIDTH_REPORT.csv": "585d2634bcaf3001ecb4da04a05103966a1e347767598eccc4eb2ac31a1ca9d2",
         "scalesim/ws/COMPUTE_REPORT.csv": "660a8fdccc072bc46f65f85b79dcc3f992950389cdff7b8be3f2233b2fcc6c07",
         "scalesim/ws/DETAILED_ACCESS_REPORT.csv": "1540abaa974a0467b84391859581b633671a002256fd2ae5a4a1ae8faa9209eb",
-        "scalesim/ws/config.cfg": "f8872219bff9d03f9b4f3fbe5962f4e9c794d2706be8baddd2cc041021214937"
+        "scalesim/ws/config.cfg": "f8872219bff9d03f9b4f3fbe5962f4e9c794d2706be8baddd2cc041021214937",
+        "scalesim/ws/layers.json": "17c69471cfa134eef0ac594a5f390e575ed04d9211702e6f404801fe9a90befd"
       },
+      "runs": 3,
       "verdict": "identical"
     },
     {
-      "check": "t3 same set of files",
+      "check": "t3 user-bandwidth roofline runs (criterion A): 0 files",
+      "first_run": "absent",
+      "note": "NOT rerun (cost): each run holds the lock for minutes; these files are not claimed byte-identical",
+      "rerun": null,
+      "runs": 1,
+      "verdict": "not_rerun_cost"
+    },
+    {
+      "check": "t3 other first-run files not in the rerun (2)",
       "first_run": [
-        "bundled_runs.json",
-        "fit.json",
-        "roofline.json",
-        "scalesim/is/BANDWIDTH_REPORT.csv",
-        "scalesim/is/COMPUTE_REPORT.csv",
-        "scalesim/is/DETAILED_ACCESS_REPORT.csv",
-        "scalesim/is/config.cfg",
-        "scalesim/os/BANDWIDTH_REPORT.csv",
-        "scalesim/os/COMPUTE_REPORT.csv",
-        "scalesim/os/DETAILED_ACCESS_REPORT.csv",
-        "scalesim/os/config.cfg",
-        "scalesim/ws/BANDWIDTH_REPORT.csv",
-        "scalesim/ws/COMPUTE_REPORT.csv",
-        "scalesim/ws/DETAILED_ACCESS_REPORT.csv",
-        "scalesim/ws/config.cfg"
+        ".jobs/roofline_synthetic.done",
+        "roofline.json"
       ],
-      "note": "",
-      "rerun": [
-        "bundled_runs.json",
-        "fit.json",
-        "roofline.json",
-        "scalesim/is/BANDWIDTH_REPORT.csv",
-        "scalesim/is/COMPUTE_REPORT.csv",
-        "scalesim/is/DETAILED_ACCESS_REPORT.csv",
-        "scalesim/is/config.cfg",
-        "scalesim/os/BANDWIDTH_REPORT.csv",
-        "scalesim/os/COMPUTE_REPORT.csv",
-        "scalesim/os/DETAILED_ACCESS_REPORT.csv",
-        "scalesim/os/config.cfg",
-        "scalesim/ws/BANDWIDTH_REPORT.csv",
-        "scalesim/ws/COMPUTE_REPORT.csv",
-        "scalesim/ws/DETAILED_ACCESS_REPORT.csv",
-        "scalesim/ws/config.cfg"
-      ],
-      "verdict": "identical"
+      "note": "not part of the cheap set",
+      "rerun": null,
+      "runs": 1,
+      "verdict": "not_rerun_cost"
     },
     {
-      "check": "t3 summary (checks and fitted values)",
+      "check": "t3 summary: fit, bundled runs (compared subtree)",
       "first_run": {
         "bundled": {
           "array": "256x256",
@@ -384,23 +423,6 @@
             "total_cycles": 73747.0
           }
         },
-        "checks": {
-          "analytic_constants_match_derivation": true,
-          "analytic_residuals_stable": true,
-          "bundled_runs_ok": true,
-          "reports_saved": true,
-          "reruns_byte_identical": true,
-          "roofline_agreement_is": false,
-          "roofline_agreement_os": false,
-          "roofline_agreement_ws": false,
-          "roofline_agrees": false,
-          "roofline_both_classes_is": true,
-          "roofline_both_classes_os": true,
-          "roofline_both_classes_ws": true,
-          "roofline_rank_corr_is": false,
-          "roofline_rank_corr_os": true,
-          "roofline_rank_corr_ws": false
-        },
         "fit": {
           "is": {
             "derived": {
@@ -456,99 +478,9 @@
             "naive_heldout_max_rel_residual": 0.7516840124109679,
             "naive_single_constant_k": 3.111707445409103
           }
-        },
-        "identity": {
-          "files_compared": 15,
-          "mismatches": [],
-          "same_file_set": true,
-          "sha256": {
-            "bundled_runs.json": "2637860baba5eec3326292ba3560bef0a28756be4245da95d1f0b57c2dcb4a34",
-            "fit.json": "62d0b35e390d89f0b533dc3b64d81b206ab451194d94a0708f2a25738cf53e4c",
-            "roofline.json": "7b9acf9953e899e29ce52e805b86490a01fd21286129e61d6210b8f946930f03",
-            "scalesim/is/BANDWIDTH_REPORT.csv": "5c1b5303fc1a9ca68be34e2013ff7718e76d2591e77fa92902b5e39463c75965",
-            "scalesim/is/COMPUTE_REPORT.csv": "6c9e45b1b151c12c3e79360a0d466d10063bf59afc81c4209902bdf0f80107d7",
-            "scalesim/is/DETAILED_ACCESS_REPORT.csv": "bb571beb86893b1bc48bc3c8226caec6f9e63b43c5b13c5a340bf486b02d4f12",
-            "scalesim/is/config.cfg": "9d1fad1b9414662cbcf37e568ceed3f02bfc4ba6cb50201ccf46b824f2fbb775",
-            "scalesim/os/BANDWIDTH_REPORT.csv": "5e4f7f7022f4a5d573ebdafa614a642915d7aeb3aaa82c3e035d313118eda6e5",
-            "scalesim/os/COMPUTE_REPORT.csv": "68e667f9f364b44e22d910d9b8c73ae54b7b9699da46c82f923a238f3915d1df",
-            "scalesim/os/DETAILED_ACCESS_REPORT.csv": "bd85915afcb2003d1f1bb31a2780fbc08b019b025767f2a7222b5f62e6503a74",
-            "scalesim/os/config.cfg": "8be3cb24654ac25b07dc1025eb6c17b225b6403fdb1cee8fe986bc612ee89da7",
-            "scalesim/ws/BANDWIDTH_REPORT.csv": "585d2634bcaf3001ecb4da04a05103966a1e347767598eccc4eb2ac31a1ca9d2",
-            "scalesim/ws/COMPUTE_REPORT.csv": "660a8fdccc072bc46f65f85b79dcc3f992950389cdff7b8be3f2233b2fcc6c07",
-            "scalesim/ws/DETAILED_ACCESS_REPORT.csv": "1540abaa974a0467b84391859581b633671a002256fd2ae5a4a1ae8faa9209eb",
-            "scalesim/ws/config.cfg": "f8872219bff9d03f9b4f3fbe5962f4e9c794d2706be8baddd2cc041021214937"
-          }
-        },
-        "pass": false,
-        "roofline": {
-          "is": {
-            "agreement_compulsory": 0.4375,
-            "agreement_compulsory_vs_memory_added": 0.875,
-            "agreement_effective": 0.625,
-            "disagreements": [
-              "sq96",
-              "sq64",
-              "sq32",
-              "skinny256x16x16",
-              "skinny16x256x16",
-              "kdeep16x16x256"
-            ],
-            "layers_with_stall_cycles": 9,
-            "n_obs_bound": 9,
-            "n_pred_bound": 15,
-            "ridge_ai": 128.0,
-            "spearman_compulsory": 0.1427264302605202,
-            "spearman_effective": -0.30874813127985057
-          },
-          "os": {
-            "agreement_compulsory": 0.1875,
-            "agreement_compulsory_vs_memory_added": 0.875,
-            "agreement_effective": 0.3125,
-            "disagreements": [
-              "sq128",
-              "sq96",
-              "sq64",
-              "sq32",
-              "tall512x64x64",
-              "wide64x512x64",
-              "kheavy64x64x512",
-              "skinny256x16x16",
-              "skinny16x256x16",
-              "kdeep16x16x256",
-              "rowvec1x1x4096"
-            ],
-            "layers_with_stall_cycles": 5,
-            "n_obs_bound": 5,
-            "n_pred_bound": 16,
-            "ridge_ai": 128.0,
-            "spearman_compulsory": -0.07946174581222,
-            "spearman_effective": -0.6612999066508835
-          },
-          "rule": "Roofline study: arithmetic intensity vs SCALE-Sim's memory-added cycles.\n\nRULES (fixed here, before any result was looked at; the experiment came after the design):\n  workload  : 16 synthetic GEMMs (M,N,K) spanning ~2..170 FLOP/byte (square, skinny, GEMV, K-heavy).\n  machine   : R x C = 16 x 16 array, 1 byte/word (SCALE-Sim word_size=1), 64 kB SRAM per buffer,\n              DRAM interface B = 4 words/cycle. Set through the bundled scale.cfg: InterfaceBandwidth=USER,\n              Bandwidth = IfmapSRAMBankBandwidth = FilterSRAMBankBandwidth = B, SRAM banks = 1.\n              (In the bundled google.cfg SCALE-Sim reports 0 stall cycles for every layer of every\n              dataflow: interface 10 words/cycle with 6 MiB buffers hides everything, so B is lowered.)\n  Two roofline variants are reported:\n   (a) compulsory:  AI = FLOPs / (M*K + K*N + M*N bytes);  peak = 2*R*C FLOP/cycle; ridge = peak / B;\n       predicted bandwidth-bound  <=>  AI < ridge.\n   (b) effective:   traffic = DRAM words actually moved in the SCALE-Sim run (DETAILED_ACCESS_REPORT\n       ifmap+filter reads + ofmap writes, i.e. including re-fetch when 64 kB cannot hold the working set);\n       AI_eff = FLOPs / traffic;  predicted bandwidth-bound  <=>  traffic / B > compute_only cycles\n       (memory time exceeds compute time = AI_eff below the layer's attainable-compute ridge).\n  compute_only = stall-free cycles of the layer from model/analytic.py (validated exact by the fit).\n  SCALE-Sim signal (observed): stall_frac = Stall Cycles / Total Cycles; bandwidth-bound <=> stall_frac > 5 %.\n  Also reported: memory_added = (Total Cycles incl. prefetch - compute_only) / Total Cycles incl. prefetch.\n  CHRONOLOGY (disclosed): the first rule written down used memory_added > 10 % as the observed signal; the\n  first run flagged all 16 layers (the exposed initial prefetch alone exceeds 10 % everywhere), so it could\n  not discriminate, and variant (a) turned out to ignore re-fetch traffic. The stall-based observed signal\n  and variant (b) were therefore adopted afterwards (post-hoc); all variants are kept in roofline.json.\n  Gating checks (variant b): agreement >= 80 % of layers, both classes >= 3 layers,\n  Spearman(AI_eff, stall_frac) <= -0.5, for each dataflow.",
-          "ws": {
-            "agreement_compulsory": 0.4375,
-            "agreement_compulsory_vs_memory_added": 0.875,
-            "agreement_effective": 0.625,
-            "disagreements": [
-              "sq96",
-              "sq64",
-              "sq32",
-              "skinny256x16x16",
-              "skinny16x256x16",
-              "kdeep16x16x256"
-            ],
-            "layers_with_stall_cycles": 9,
-            "n_obs_bound": 9,
-            "n_pred_bound": 15,
-            "ridge_ai": 128.0,
-            "spearman_compulsory": 0.1426118365605834,
-            "spearman_effective": -0.3069615857623519
-          }
-        },
-        "scalesim_version": "3.0.0",
-        "stage": "30_arch_model"
+        }
       },
-      "note": "",
+      "note": "identity as recorded by the stage: \"single_pass_pending_repro\"",
       "rerun": {
         "bundled": {
           "array": "256x256",
@@ -575,23 +507,6 @@
             "total_cycles": 73747.0
           }
         },
-        "checks": {
-          "analytic_constants_match_derivation": true,
-          "analytic_residuals_stable": true,
-          "bundled_runs_ok": true,
-          "reports_saved": true,
-          "reruns_byte_identical": true,
-          "roofline_agreement_is": false,
-          "roofline_agreement_os": false,
-          "roofline_agreement_ws": false,
-          "roofline_agrees": false,
-          "roofline_both_classes_is": true,
-          "roofline_both_classes_os": true,
-          "roofline_both_classes_ws": true,
-          "roofline_rank_corr_is": false,
-          "roofline_rank_corr_os": true,
-          "roofline_rank_corr_ws": false
-        },
         "fit": {
           "is": {
             "derived": {
@@ -647,172 +562,126 @@
             "naive_heldout_max_rel_residual": 0.7516840124109679,
             "naive_single_constant_k": 3.111707445409103
           }
-        },
-        "identity": {
-          "files_compared": 15,
-          "mismatches": [],
-          "same_file_set": true,
-          "sha256": {
-            "bundled_runs.json": "2637860baba5eec3326292ba3560bef0a28756be4245da95d1f0b57c2dcb4a34",
-            "fit.json": "62d0b35e390d89f0b533dc3b64d81b206ab451194d94a0708f2a25738cf53e4c",
-            "roofline.json": "7b9acf9953e899e29ce52e805b86490a01fd21286129e61d6210b8f946930f03",
-            "scalesim/is/BANDWIDTH_REPORT.csv": "5c1b5303fc1a9ca68be34e2013ff7718e76d2591e77fa92902b5e39463c75965",
-            "scalesim/is/COMPUTE_REPORT.csv": "6c9e45b1b151c12c3e79360a0d466d10063bf59afc81c4209902bdf0f80107d7",
-            "scalesim/is/DETAILED_ACCESS_REPORT.csv": "bb571beb86893b1bc48bc3c8226caec6f9e63b43c5b13c5a340bf486b02d4f12",
-            "scalesim/is/config.cfg": "9d1fad1b9414662cbcf37e568ceed3f02bfc4ba6cb50201ccf46b824f2fbb775",
-            "scalesim/os/BANDWIDTH_REPORT.csv": "5e4f7f7022f4a5d573ebdafa614a642915d7aeb3aaa82c3e035d313118eda6e5",
-            "scalesim/os/COMPUTE_REPORT.csv": "68e667f9f364b44e22d910d9b8c73ae54b7b9699da46c82f923a238f3915d1df",
-            "scalesim/os/DETAILED_ACCESS_REPORT.csv": "bd85915afcb2003d1f1bb31a2780fbc08b019b025767f2a7222b5f62e6503a74",
-            "scalesim/os/config.cfg": "8be3cb24654ac25b07dc1025eb6c17b225b6403fdb1cee8fe986bc612ee89da7",
-            "scalesim/ws/BANDWIDTH_REPORT.csv": "585d2634bcaf3001ecb4da04a05103966a1e347767598eccc4eb2ac31a1ca9d2",
-            "scalesim/ws/COMPUTE_REPORT.csv": "660a8fdccc072bc46f65f85b79dcc3f992950389cdff7b8be3f2233b2fcc6c07",
-            "scalesim/ws/DETAILED_ACCESS_REPORT.csv": "1540abaa974a0467b84391859581b633671a002256fd2ae5a4a1ae8faa9209eb",
-            "scalesim/ws/config.cfg": "f8872219bff9d03f9b4f3fbe5962f4e9c794d2706be8baddd2cc041021214937"
-          }
-        },
-        "pass": false,
-        "roofline": {
-          "is": {
-            "agreement_compulsory": 0.4375,
-            "agreement_compulsory_vs_memory_added": 0.875,
-            "agreement_effective": 0.625,
-            "disagreements": [
-              "sq96",
-              "sq64",
-              "sq32",
-              "skinny256x16x16",
-              "skinny16x256x16",
-              "kdeep16x16x256"
-            ],
-            "layers_with_stall_cycles": 9,
-            "n_obs_bound": 9,
-            "n_pred_bound": 15,
-            "ridge_ai": 128.0,
-            "spearman_compulsory": 0.1427264302605202,
-            "spearman_effective": -0.30874813127985057
-          },
-          "os": {
-            "agreement_compulsory": 0.1875,
-            "agreement_compulsory_vs_memory_added": 0.875,
-            "agreement_effective": 0.3125,
-            "disagreements": [
-              "sq128",
-              "sq96",
-              "sq64",
-              "sq32",
-              "tall512x64x64",
-              "wide64x512x64",
-              "kheavy64x64x512",
-              "skinny256x16x16",
-              "skinny16x256x16",
-              "kdeep16x16x256",
-              "rowvec1x1x4096"
-            ],
-            "layers_with_stall_cycles": 5,
-            "n_obs_bound": 5,
-            "n_pred_bound": 16,
-            "ridge_ai": 128.0,
-            "spearman_compulsory": -0.07946174581222,
-            "spearman_effective": -0.6612999066508835
-          },
-          "rule": "Roofline study: arithmetic intensity vs SCALE-Sim's memory-added cycles.\n\nRULES (fixed here, before any result was looked at; the experiment came after the design):\n  workload  : 16 synthetic GEMMs (M,N,K) spanning ~2..170 FLOP/byte (square, skinny, GEMV, K-heavy).\n  machine   : R x C = 16 x 16 array, 1 byte/word (SCALE-Sim word_size=1), 64 kB SRAM per buffer,\n              DRAM interface B = 4 words/cycle. Set through the bundled scale.cfg: InterfaceBandwidth=USER,\n              Bandwidth = IfmapSRAMBankBandwidth = FilterSRAMBankBandwidth = B, SRAM banks = 1.\n              (In the bundled google.cfg SCALE-Sim reports 0 stall cycles for every layer of every\n              dataflow: interface 10 words/cycle with 6 MiB buffers hides everything, so B is lowered.)\n  Two roofline variants are reported:\n   (a) compulsory:  AI = FLOPs / (M*K + K*N + M*N bytes);  peak = 2*R*C FLOP/cycle; ridge = peak / B;\n       predicted bandwidth-bound  <=>  AI < ridge.\n   (b) effective:   traffic = DRAM words actually moved in the SCALE-Sim run (DETAILED_ACCESS_REPORT\n       ifmap+filter reads + ofmap writes, i.e. including re-fetch when 64 kB cannot hold the working set);\n       AI_eff = FLOPs / traffic;  predicted bandwidth-bound  <=>  traffic / B > compute_only cycles\n       (memory time exceeds compute time = AI_eff below the layer's attainable-compute ridge).\n  compute_only = stall-free cycles of the layer from model/analytic.py (validated exact by the fit).\n  SCALE-Sim signal (observed): stall_frac = Stall Cycles / Total Cycles; bandwidth-bound <=> stall_frac > 5 %.\n  Also reported: memory_added = (Total Cycles incl. prefetch - compute_only) / Total Cycles incl. prefetch.\n  CHRONOLOGY (disclosed): the first rule written down used memory_added > 10 % as the observed signal; the\n  first run flagged all 16 layers (the exposed initial prefetch alone exceeds 10 % everywhere), so it could\n  not discriminate, and variant (a) turned out to ignore re-fetch traffic. The stall-based observed signal\n  and variant (b) were therefore adopted afterwards (post-hoc); all variants are kept in roofline.json.\n  Gating checks (variant b): agreement >= 80 % of layers, both classes >= 3 layers,\n  Spearman(AI_eff, stall_frac) <= -0.5, for each dataflow.",
-          "ws": {
-            "agreement_compulsory": 0.4375,
-            "agreement_compulsory_vs_memory_added": 0.875,
-            "agreement_effective": 0.625,
-            "disagreements": [
-              "sq96",
-              "sq64",
-              "sq32",
-              "skinny256x16x16",
-              "skinny16x256x16",
-              "kdeep16x16x256"
-            ],
-            "layers_with_stall_cycles": 9,
-            "n_obs_bound": 9,
-            "n_pred_bound": 15,
-            "ridge_ai": 128.0,
-            "spearman_compulsory": 0.1426118365605834,
-            "spearman_effective": -0.3069615857623519
-          }
-        },
-        "scalesim_version": "3.0.0",
-        "stage": "30_arch_model"
+        }
       },
+      "runs": 2,
       "verdict": "identical"
     },
     {
-      "check": "t2 nangate45/gcd two clean runs (metrics + GDS with timestamps zeroed)",
+      "check": "t2 nangate45/gcd: 4 clean runs, metrics + GDS with timestamps zeroed",
       "first_run": "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d",
-      "note": "reused from pnr's two-run determinism check (no third P&R run)",
+      "note": "run1/run2 = Part 1 (first/second clean run; systolic_os: the single final-RTL run); p2_<epoch> = Part 2 clean reruns, same image digest, NUM_CORES=3 rtl_sha256 is null for gcd: it is ORFS's own stock source inside the pinned image, not built from rtl/.",
       "rerun": "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d",
+      "runs": 4,
+      "verdict": "identical"
+    },
+    {
+      "check": "t2 sky130hd/gcd: 4 clean runs, metrics + GDS with timestamps zeroed",
+      "first_run": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809",
+      "note": "run1/run2 = Part 1 (first/second clean run; systolic_os: the single final-RTL run); p2_<epoch> = Part 2 clean reruns, same image digest, NUM_CORES=3 rtl_sha256 is null for gcd: it is ORFS's own stock source inside the pinned image, not built from rtl/.",
+      "rerun": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809",
+      "runs": 4,
+      "verdict": "identical"
+    },
+    {
+      "check": "t2 nangate45/systolic_os: 3 clean runs, metrics + GDS with timestamps zeroed",
+      "first_run": "1d676f34b49e776753de3d8b905700f1ef26de9f63f6f0f8830b30603b14a68c",
+      "note": "run1/run2 = Part 1 (first/second clean run; systolic_os: the single final-RTL run); p2_<epoch> = Part 2 clean reruns, same image digest, NUM_CORES=3",
+      "rerun": "1d676f34b49e776753de3d8b905700f1ef26de9f63f6f0f8830b30603b14a68c",
+      "runs": 3,
       "verdict": "identical"
     },
     {
       "check": "provenance t1: rerun inputs unchanged during the run, committed, and first run newer than the last input commit",
       "first_run": {
-        "last_input_commit_epoch": 1791809131,
-        "summary_mtime_epoch": 1791810596
+        "last_input_commit_epoch": 1791836850,
+        "summary_mtime_epoch": 1791844157
       },
       "note": "git object SHAs of the input paths at HEAD; see provenance block",
       "rerun": {
-        "head": "59c83fd317907d36ea9d96481aa91fad7602cc5b",
+        "head": "73daca99d057945cb277835dfff14075cad14aba",
         "inputs_unchanged_start_to_end": true,
         "no_uncommitted_changes": true,
         "object_shas": {
+          "coord/images.env": "ad63472c635ca53cbcaf508e712a5e3763af34af",
           "docker/requirements.lock": "d8008ae06d54c2e7d67cd7cb57117b6aa04075a1",
-          "eqy": "9d66ee339d6ff9fcd31b35098b20812af0cd50db",
+          "eqy": "22c3ef68b2c33b7b7258c72f8922ac0c564a410b",
           "formal": "6ca0e3508c73e06029ff5dd2ae18afa0c0dd0c45",
-          "rtl": "b85efa950ef016e1798462c95350670915c70011",
-          "scripts/t1_run.sh": "2a8c70ae97a522300c8190c085778dd5cccb0e73",
-          "scripts/t1_summary.py": "4c53b385e01f8236befddd0025a4ac94d566d850",
+          "rtl": "62280ad55efa4895a3442421d7fe5debe73d2e70",
+          "scripts/t1_run.sh": "976cc9b9e38148d112e159f785fb24428089d58e",
+          "scripts/t1_summary.py": "47c5b6f7239b58f45afc74d15a00f54a0b2fe54e",
           "scripts/t1_waveform.py": "a66ddbd0b13c91501b6ef22a624e70bf0960622d",
-          "tb": "c910811e3306f413e49e4cd91ba73c25e47f385f"
+          "tb": "af043b4570f4f1006473594b001e049d81b908e6"
         }
       },
+      "runs": 2,
       "verdict": "identical"
     },
     {
       "check": "provenance t3: rerun inputs unchanged during the run, committed, and first run newer than the last input commit",
       "first_run": {
-        "last_input_commit_epoch": 1791805671,
-        "summary_mtime_epoch": 1791808147
+        "last_input_commit_epoch": 1791845966,
+        "summary_mtime_epoch": 1791849711
       },
       "note": "git object SHAs of the input paths at HEAD; see provenance block",
       "rerun": {
-        "head": "eec6222a7e17569e1550d5a5bd958985b629e8e1",
+        "head": "e4344f50081a940a0ee257e6a415832a60375f15",
         "inputs_unchanged_start_to_end": true,
         "no_uncommitted_changes": true,
         "object_shas": {
           "arch": "96fc0608c69b89b457b8450bd8e04f34e868f639",
           "docker/requirements.lock": "d8008ae06d54c2e7d67cd7cb57117b6aa04075a1",
-          "model": "f0d1653a28192e46899a2d759fb6013fa1eaafae",
-          "scripts/t3_run.sh": "3252918487bc986db821c0dc25d08f1c83286417"
+          "model": "47a1c9d42d37a493c17ee8a8f5535446176996e7",
+          "scripts/t3_run.sh": "88727de7abfba85839ba81cb843f7de057dd948d"
         }
       },
+      "runs": 2,
       "verdict": "identical"
     }
   ],
+  "complete": false,
   "counts": {
     "different": 0,
-    "identical": 10,
+    "identical": 11,
+    "not_rerun_cost": 2,
     "not_run": 0
   },
-  "generated_epoch": 1791811807,
+  "excluded_file_class": {
+    "files": 3,
+    "filters": [
+      {
+        "files_excluded": 3,
+        "rule": "basename == timing.timing"
+      },
+      {
+        "files_excluded": 0,
+        "rule": "basename starts with '.' (hidden files)"
+      }
+    ],
+    "label": "excluded: run-time measurements (3 files)",
+    "name": "timing.timing",
+    "reason": "run-time measurements (wall seconds and peak memory per layer), not results"
+  },
+  "generated_epoch": 1791857247,
   "pass": true,
   "provenance": {
     "t1": {
       "end": {
-        "head": "576531fa1a582b043a5240d3c719728fbe4f03de",
+        "head": "a75e2a8ab73abd235437c159bfbb8f1c180eafc9",
         "paths": {
+          "coord/images.env": {
+            "git_object_sha": "ad63472c635ca53cbcaf508e712a5e3763af34af",
+            "last_commit_epoch": 1791801496,
+            "uncommitted_changes": false
+          },
           "docker/requirements.lock": {
             "git_object_sha": "d8008ae06d54c2e7d67cd7cb57117b6aa04075a1",
             "last_commit_epoch": 1791801002,
             "uncommitted_changes": false
           },
           "eqy": {
-            "git_object_sha": "9d66ee339d6ff9fcd31b35098b20812af0cd50db",
-            "last_commit_epoch": 1791809131,
+            "git_object_sha": "22c3ef68b2c33b7b7258c72f8922ac0c564a410b",
+            "last_commit_epoch": 1791823762,
             "uncommitted_changes": false
           },
           "formal": {
@@ -821,18 +690,18 @@
             "uncommitted_changes": false
           },
           "rtl": {
-            "git_object_sha": "b85efa950ef016e1798462c95350670915c70011",
-            "last_commit_epoch": 1791803434,
+            "git_object_sha": "62280ad55efa4895a3442421d7fe5debe73d2e70",
+            "last_commit_epoch": 1791836850,
             "uncommitted_changes": false
           },
           "scripts/t1_run.sh": {
-            "git_object_sha": "2a8c70ae97a522300c8190c085778dd5cccb0e73",
-            "last_commit_epoch": 1791809131,
+            "git_object_sha": "976cc9b9e38148d112e159f785fb24428089d58e",
+            "last_commit_epoch": 1791836850,
             "uncommitted_changes": false
           },
           "scripts/t1_summary.py": {
-            "git_object_sha": "4c53b385e01f8236befddd0025a4ac94d566d850",
-            "last_commit_epoch": 1791809131,
+            "git_object_sha": "47c5b6f7239b58f45afc74d15a00f54a0b2fe54e",
+            "last_commit_epoch": 1791823762,
             "uncommitted_changes": false
           },
           "scripts/t1_waveform.py": {
@@ -841,24 +710,29 @@
             "uncommitted_changes": false
           },
           "tb": {
-            "git_object_sha": "c910811e3306f413e49e4cd91ba73c25e47f385f",
-            "last_commit_epoch": 1791801999,
+            "git_object_sha": "af043b4570f4f1006473594b001e049d81b908e6",
+            "last_commit_epoch": 1791823762,
             "uncommitted_changes": false
           }
         },
-        "time": "2026-10-12 06:30:06"
+        "time": "2026-10-12 19:07:26"
       },
       "start": {
-        "head": "59c83fd317907d36ea9d96481aa91fad7602cc5b",
+        "head": "73daca99d057945cb277835dfff14075cad14aba",
         "paths": {
+          "coord/images.env": {
+            "git_object_sha": "ad63472c635ca53cbcaf508e712a5e3763af34af",
+            "last_commit_epoch": 1791801496,
+            "uncommitted_changes": false
+          },
           "docker/requirements.lock": {
             "git_object_sha": "d8008ae06d54c2e7d67cd7cb57117b6aa04075a1",
             "last_commit_epoch": 1791801002,
             "uncommitted_changes": false
           },
           "eqy": {
-            "git_object_sha": "9d66ee339d6ff9fcd31b35098b20812af0cd50db",
-            "last_commit_epoch": 1791809131,
+            "git_object_sha": "22c3ef68b2c33b7b7258c72f8922ac0c564a410b",
+            "last_commit_epoch": 1791823762,
             "uncommitted_changes": false
           },
           "formal": {
@@ -867,18 +741,18 @@
             "uncommitted_changes": false
           },
           "rtl": {
-            "git_object_sha": "b85efa950ef016e1798462c95350670915c70011",
-            "last_commit_epoch": 1791803434,
+            "git_object_sha": "62280ad55efa4895a3442421d7fe5debe73d2e70",
+            "last_commit_epoch": 1791836850,
             "uncommitted_changes": false
           },
           "scripts/t1_run.sh": {
-            "git_object_sha": "2a8c70ae97a522300c8190c085778dd5cccb0e73",
-            "last_commit_epoch": 1791809131,
+            "git_object_sha": "976cc9b9e38148d112e159f785fb24428089d58e",
+            "last_commit_epoch": 1791836850,
             "uncommitted_changes": false
           },
           "scripts/t1_summary.py": {
-            "git_object_sha": "4c53b385e01f8236befddd0025a4ac94d566d850",
-            "last_commit_epoch": 1791809131,
+            "git_object_sha": "47c5b6f7239b58f45afc74d15a00f54a0b2fe54e",
+            "last_commit_epoch": 1791823762,
             "uncommitted_changes": false
           },
           "scripts/t1_waveform.py": {
@@ -887,17 +761,17 @@
             "uncommitted_changes": false
           },
           "tb": {
-            "git_object_sha": "c910811e3306f413e49e4cd91ba73c25e47f385f",
-            "last_commit_epoch": 1791801999,
+            "git_object_sha": "af043b4570f4f1006473594b001e049d81b908e6",
+            "last_commit_epoch": 1791823762,
             "uncommitted_changes": false
           }
         },
-        "time": "2026-10-12 06:10:21"
+        "time": "2026-10-12 17:36:59"
       }
     },
     "t3": {
       "end": {
-        "head": "eec6222a7e17569e1550d5a5bd958985b629e8e1",
+        "head": "73daca99d057945cb277835dfff14075cad14aba",
         "paths": {
           "arch": {
             "git_object_sha": "96fc0608c69b89b457b8450bd8e04f34e868f639",
@@ -910,20 +784,20 @@
             "uncommitted_changes": false
           },
           "model": {
-            "git_object_sha": "f0d1653a28192e46899a2d759fb6013fa1eaafae",
-            "last_commit_epoch": 1791805671,
+            "git_object_sha": "47a1c9d42d37a493c17ee8a8f5535446176996e7",
+            "last_commit_epoch": 1791845966,
             "uncommitted_changes": false
           },
           "scripts/t3_run.sh": {
-            "git_object_sha": "3252918487bc986db821c0dc25d08f1c83286417",
-            "last_commit_epoch": 1791804219,
+            "git_object_sha": "88727de7abfba85839ba81cb843f7de057dd948d",
+            "last_commit_epoch": 1791836331,
             "uncommitted_changes": false
           }
         },
-        "time": "2026-10-12 06:04:00"
+        "time": "2026-10-12 17:36:38"
       },
       "start": {
-        "head": "eec6222a7e17569e1550d5a5bd958985b629e8e1",
+        "head": "e4344f50081a940a0ee257e6a415832a60375f15",
         "paths": {
           "arch": {
             "git_object_sha": "96fc0608c69b89b457b8450bd8e04f34e868f639",
@@ -936,19 +810,20 @@
             "uncommitted_changes": false
           },
           "model": {
-            "git_object_sha": "f0d1653a28192e46899a2d759fb6013fa1eaafae",
-            "last_commit_epoch": 1791805671,
+            "git_object_sha": "47a1c9d42d37a493c17ee8a8f5535446176996e7",
+            "last_commit_epoch": 1791845966,
             "uncommitted_changes": false
           },
           "scripts/t3_run.sh": {
-            "git_object_sha": "3252918487bc986db821c0dc25d08f1c83286417",
-            "last_commit_epoch": 1791804219,
+            "git_object_sha": "88727de7abfba85839ba81cb843f7de057dd948d",
+            "last_commit_epoch": 1791836331,
             "uncommitted_changes": false
           }
         },
-        "time": "2026-10-12 05:47:40"
+        "time": "2026-10-12 17:01:54"
       }
     }
   },
-  "rerun_dir": ".cache/repro_run"
+  "rerun_dir": ".cache/repro_run",
+  "task1_rerun_kept": null
 }

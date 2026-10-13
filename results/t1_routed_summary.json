@@ -54,7 +54,7 @@
   "pass_of_steps_run": true,
   "runtimes_seconds": {
     "cells": 3,
-    "clock_check": 4,
+    "clock_check": 3,
     "eqy_neg_netlist": 71,
     "eqy_neg_rtl_mac": 87,
     "eqy_neg_rtl_reg": 70,
@@ -72,11 +72,11 @@
     "eqy_routed_hold7": 333,
     "eqy_routed_hold8": 330,
     "eqy_routed_hold9": 342,
-    "eqy_routed_verdict": 43,
+    "eqy_routed_verdict": 27,
     "gls_icarus": 67,
     "gls_neg": 18,
     "gls_verilator": 544,
-    "total_wall": 20177
+    "total_wall": 33299
   },
   "stage": "11_eqy_routed",
   "step_exit_codes": {

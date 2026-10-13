@@ -29,8 +29,6 @@ systolic_os.g_row.0.g_col.3.u_mac.valid: proved (1 s)
 systolic_os.g_row.1.g_col.3.u_mac.valid: proved (1 s)
 systolic_os.g_row.2.g_col.3.u_mac.valid: proved (1 s)
 systolic_os.g_row.3.g_col.3.u_mac.valid: proved (1 s)
-EQY 22:10:28 [eqy_routed] Successfully proved designs equivalent
-EQY 22:10:28 [eqy_routed] summary: Elapsed clock time [H:MM:SS (secs)]: 0:00:43 (43)
 EQY 22:10:28 [eqy_routed] summary: Elapsed process time [H:MM:SS (secs)]: 0:00:27 (27)
 EQY 22:10:28 [eqy_routed] DONE (PASS, rc=0)
 EQY 22:19:49 [eqy_routed] Successfully proved designs equivalent
@@ -41,6 +39,10 @@ EQY 22:29:12 [eqy_routed] Successfully proved designs equivalent
 EQY 22:29:12 [eqy_routed] summary: Elapsed clock time [H:MM:SS (secs)]: 0:00:42 (42)
 EQY 22:29:12 [eqy_routed] summary: Elapsed process time [H:MM:SS (secs)]: 0:00:26 (26)
 EQY 22:29:12 [eqy_routed] DONE (PASS, rc=0)
+EQY  2:07:55 [eqy_routed] Successfully proved designs equivalent
+EQY  2:07:55 [eqy_routed] summary: Elapsed clock time [H:MM:SS (secs)]: 0:00:26 (26)
+EQY  2:07:55 [eqy_routed] summary: Elapsed process time [H:MM:SS (secs)]: 0:00:15 (15)
+EQY  2:07:55 [eqy_routed] DONE (PASS, rc=0)
 negative control [RTL: acc <= acc + prod + 1 in mac_int8 (checked on PE(0,0))]: partition systolic_os.acc_o.0: not proved: equivalence unknown; EQY FAIL (must be FAIL); not proven equivalent: the depth-2 base case passes and the induction step fails with a counterexample-to-induction trace (solver finished, no timeout)
 negative control [RTL: operand register a_q <= a_w ^ 1]: partition systolic_os.g_row.0.g_col.0.g_east.a_q.0: not proved: partitions not equivalent; EQY FAIL (must be FAIL); counterexample: the solver found an input sequence on which the two sides differ (partitions not equivalent)
 negative control [routed netlist: D inputs of a_q[0] and a_q[1] of PE(0,0) swapped]: partition systolic_os.g_row.0.g_col.0.g_east.a_q.0: not proved: partitions not equivalent; EQY FAIL (must be FAIL); counterexample: the solver found an input sequence on which the two sides differ (partitions not equivalent)
