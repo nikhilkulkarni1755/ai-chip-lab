@@ -2,8 +2,8 @@
   "platform": "nangate45",
   "design": "systolic_os",
   "new_run_variant": "base",
-  "new_run_id": "p2_1791830187",
-  "runs": 3,
+  "new_run_id": "p2_1791859819",
+  "runs": 4,
   "identical": true,
   "verdict": "IDENTICAL",
   "new_gds_sha256_timestamps_zeroed": "1d676f34b49e776753de3d8b905700f1ef26de9f63f6f0f8830b30603b14a68c",
@@ -21,6 +21,17 @@
     },
     {
       "vs": "nangate45_systolic_os_p2_1791821931",
+      "identical": true,
+      "differing_fields": {},
+      "localized_stages": [],
+      "gds_identical_ignoring_timestamps": true,
+      "num_cores": [
+        3,
+        3
+      ]
+    },
+    {
+      "vs": "nangate45_systolic_os_p2_1791830187",
       "identical": true,
       "differing_fields": {},
       "localized_stages": [],

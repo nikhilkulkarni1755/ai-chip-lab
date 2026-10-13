@@ -2,8 +2,8 @@
   "platform": "nangate45",
   "design": "gcd",
   "new_run_variant": "base",
-  "new_run_id": "p2_1791826039",
-  "runs": 4,
+  "new_run_id": "p2_1791859345",
+  "runs": 5,
   "identical": true,
   "verdict": "IDENTICAL",
   "new_gds_sha256_timestamps_zeroed": "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d",
@@ -32,6 +32,17 @@
     },
     {
       "vs": "nangate45_gcd_p2_1791821378",
+      "identical": true,
+      "differing_fields": {},
+      "localized_stages": [],
+      "gds_identical_ignoring_timestamps": true,
+      "num_cores": [
+        3,
+        3
+      ]
+    },
+    {
+      "vs": "nangate45_gcd_p2_1791826039",
       "identical": true,
       "differing_fields": {},
       "localized_stages": [],

@@ -1,5 +1,5 @@
 {
-  "generated_epoch": 1791832478,
+  "generated_epoch": 1791860272,
   "image": "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6",
   "tool_versions": [
     "ORFS image tag 26Q3-600-g3a964e13f (flow scripts + OpenROAD build of that commit; image digest above; `openroad -version` prints 'unknown' in this build, so the ORFS tag/commit is the version identifier)",
@@ -40,23 +40,23 @@
         "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
-        "cts": 16.66,
-        "detailedplace": 1.26,
-        "finish": 4.75,
-        "finish_merge": 2.7,
-        "floorplan": 10.6,
-        "globalplace": 3.42,
-        "globalplace_io": 0.52,
-        "globalplace_skip_io": 1.86,
-        "globalroute": 67.68,
-        "placeopt": 1.26,
-        "synth": 1.62
+        "cts": 19.12,
+        "detailedplace": 1.6,
+        "finish": 5.04,
+        "finish_merge": 2.73,
+        "floorplan": 11.84,
+        "globalplace": 3.58,
+        "globalplace_io": 0.58,
+        "globalplace_skip_io": 1.95,
+        "globalroute": 77.43,
+        "placeopt": 1.36,
+        "synth": 1.61
       },
-      "wall_s": 631,
+      "wall_s": 186,
       "gds": {
         "path": "orfs/work/results/nangate45/gcd/base/6_final.gds",
         "bytes": 609862,
-        "sha256": "fe0050db642ce69ecdbee2f5d16861d4efe54e4a43e54740e77826276bd2773b",
+        "sha256": "e075a81c41eb551020dab74dc9ce300ca01d8b9a7545a056764c8c19d43bee1f",
         "sha256_timestamps_zeroed": "74faf7bf0a7b5c69b6d586aa3f557e3f2df18f7aa8a55bc22dac819362de734d"
       },
       "checks": {
@@ -149,7 +149,7 @@
         ],
         "gds_sha256": [
           "619476af08c123ffe22f9246fb436366c1b6b253d055ce410eca0683cb98dd2b",
-          "fe0050db642ce69ecdbee2f5d16861d4efe54e4a43e54740e77826276bd2773b"
+          "e075a81c41eb551020dab74dc9ce300ca01d8b9a7545a056764c8c19d43bee1f"
         ],
         "gds_identical": false,
         "identical": true
@@ -190,23 +190,23 @@
         "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
-        "cts": 15.13,
-        "detailedplace": 1.85,
-        "finish": 8.48,
-        "finish_merge": 4.24,
-        "floorplan": 5.05,
-        "globalplace": 4.97,
-        "globalplace_io": 0.81,
-        "globalplace_skip_io": 2.54,
-        "globalroute": 68.4,
-        "placeopt": 1.79,
-        "synth": 4.4
+        "cts": 12.89,
+        "detailedplace": 1.34,
+        "finish": 6.99,
+        "finish_merge": 2.75,
+        "floorplan": 4.31,
+        "globalplace": 3.35,
+        "globalplace_io": 0.82,
+        "globalplace_skip_io": 2.9,
+        "globalroute": 46.96,
+        "placeopt": 1.38,
+        "synth": 4.09
       },
-      "wall_s": 368,
+      "wall_s": 275,
       "gds": {
         "path": "orfs/work/results/sky130hd/gcd/base/6_final.gds",
         "bytes": 974128,
-        "sha256": "f8970a47bb5297ab44ad933a8e34680de6991dc96a74ccfa398c7efb95cb09ba",
+        "sha256": "6caf366ccfcc80cd8ea16024b3df0044534b59559272f02d491f31e6a807886d",
         "sha256_timestamps_zeroed": "1a1d84451ab02e9638d2b1538bdf2a0c55561f655b6a6546812a9a1c6a449809"
       },
       "checks": {
@@ -296,7 +296,7 @@
         ],
         "gds_sha256": [
           "14064c05e756f4801ed90f12e989565f60fce8e500758ca2ec2e7ebbd1b102c7",
-          "f8970a47bb5297ab44ad933a8e34680de6991dc96a74ccfa398c7efb95cb09ba"
+          "6caf366ccfcc80cd8ea16024b3df0044534b59559272f02d491f31e6a807886d"
         ],
         "gds_identical": false,
         "identical": true
@@ -337,23 +337,23 @@
         "note": "instance_area / core_area = utilization_frac (post-fill, so it exceeds the 30-55 % CORE_UTILIZATION used at floorplan)"
       },
       "stage_runtime_s": {
-        "cts": 26.67,
-        "detailedplace": 18.92,
-        "finish": 59.04,
-        "finish_merge": 8.77,
-        "floorplan": 6.03,
-        "globalplace": 54.18,
-        "globalplace_io": 1.72,
-        "globalplace_skip_io": 12.13,
-        "globalroute": 170.2,
-        "placeopt": 19.31,
-        "synth": 49.86
+        "cts": 10.32,
+        "detailedplace": 8.03,
+        "finish": 23.8,
+        "finish_merge": 3.31,
+        "floorplan": 2.94,
+        "globalplace": 22.03,
+        "globalplace_io": 0.69,
+        "globalplace_skip_io": 4.26,
+        "globalroute": 73.45,
+        "placeopt": 8.26,
+        "synth": 25.62
       },
-      "wall_s": 1622,
+      "wall_s": 445,
       "gds": {
         "path": "orfs/work/results/nangate45/systolic_os/base/6_final.gds",
         "bytes": 9286662,
-        "sha256": "cbf45e8bea18a42b248c61c671e63a682dbbac1da196832aef69138ad0c9482e",
+        "sha256": "0d744be8e8a021eb822ae875e830d0e61ab9a3496ad4564098c9e8c5eebfb57c",
         "sha256_timestamps_zeroed": "1d676f34b49e776753de3d8b905700f1ef26de9f63f6f0f8830b30603b14a68c"
       },
       "checks": {

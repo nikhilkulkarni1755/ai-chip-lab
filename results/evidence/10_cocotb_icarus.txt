@@ -2,10 +2,10 @@ $ make -C tb SIM=icarus   (T1_NCASES=10000, seed 1234; via scripts/t1_run.sh)
 ********************************************************************************************
 ** TEST                                STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
 ********************************************************************************************
-** test_systolic.test_directed          PASS       11565.00           0.46      25055.27  **
-** test_systolic.test_clear_midstream   PASS        3025.00           0.11      28474.21  **
-** test_systolic.test_random            PASS     9606065.00         299.94      32026.17  **
-** test_systolic.test_zz_report         PASS           0.00           0.50          0.00  **
+** test_systolic.test_directed          PASS       11565.00           0.29      40304.73  **
+** test_systolic.test_clear_midstream   PASS        3025.00           0.07      44750.79  **
+** test_systolic.test_random            PASS     9606065.00         185.06      51907.98  **
+** test_systolic.test_zz_report         PASS           0.00           0.26          0.00  **
 ********************************************************************************************
-** TESTS=4 PASS=4 FAIL=0 SKIP=0                  9620655.00         301.06      31956.05  **
+** TESTS=4 PASS=4 FAIL=0 SKIP=0                  9620655.00         185.69      51811.58  **
 ********************************************************************************************

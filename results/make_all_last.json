@@ -1,0 +1,307 @@
+{
+ "generated": "2026-10-12 19:58:21 PDT",
+ "mode": "resume",
+ "exit_code": 1,
+ "failed_stages": [
+  "t3"
+ ],
+ "demo_built": true,
+ "stages": [
+  {
+   "stage": "preflight",
+   "start_epoch": 1791857503,
+   "action": "skipped",
+   "reason": "inputs (2 git-tracked files) byte-identical to the last successful `make preflight` at 2026-10-12 15:40:37",
+   "exit_code": null,
+   "runtime_s": 0,
+   "inputs": [
+    "scripts/preflight.sh",
+    "env.sh"
+   ],
+   "markers": [
+    "00_preflight"
+   ]
+  },
+  {
+   "stage": "runtime",
+   "start_epoch": 1791857503,
+   "action": "skipped",
+   "reason": "inputs (3 git-tracked files) byte-identical to the last successful `make runtime` at 2026-10-12 09:27:41",
+   "exit_code": null,
+   "runtime_s": 0,
+   "inputs": [
+    "scripts/infra_runtime_install.sh",
+    "scripts/infra_runtime_start.sh",
+    "env.sh"
+   ],
+   "markers": [
+    "01_runtime"
+   ]
+  },
+  {
+   "stage": "images",
+   "start_epoch": 1791857503,
+   "action": "ran",
+   "reason": "inputs changed since the last successful `make images` at 2026-10-12 10:21:40",
+   "exit_code": 0,
+   "runtime_s": 1092.6,
+   "lock_wait_s": 1012,
+   "inputs": [
+    "docker/",
+    "scripts/infra_images.sh",
+    "scripts/infra_build_lab_sim.sh",
+    "scripts/infra_images_lock.sh",
+    "coord/images.env"
+   ],
+   "markers": [
+    "02_images"
+   ]
+  },
+  {
+   "stage": "t1",
+   "start_epoch": 1791858595,
+   "action": "ran",
+   "reason": "inputs changed since the last successful `make t1` at 2026-10-12 15:18:46",
+   "exit_code": 0,
+   "runtime_s": 749.8,
+   "lock_wait_s": 1,
+   "inputs": [
+    "rtl/",
+    "tb/",
+    "formal/",
+    "eqy/",
+    "scripts/t1_*",
+    "coord/images.env",
+    "docker/requirements.lock"
+   ],
+   "markers": [
+    "10_rtl_verify"
+   ]
+  },
+  {
+   "stage": "t2",
+   "start_epoch": 1791859345,
+   "action": "ran",
+   "reason": "inputs changed since the last successful `make t2` at 2026-10-12 11:36:27",
+   "exit_code": 0,
+   "runtime_s": 473.7,
+   "lock_wait_s": 0,
+   "inputs": [
+    "scripts/t2_*",
+    "scripts/make_t2.sh",
+    "orfs/render.py",
+    "coord/images.env"
+   ],
+   "markers": [
+    "20_pnr_ref"
+   ]
+  },
+  {
+   "stage": "t2-stretch",
+   "start_epoch": 1791859819,
+   "action": "ran",
+   "reason": "inputs changed since the last successful `make t2-stretch` at 2026-10-12 12:14:39",
+   "exit_code": 0,
+   "runtime_s": 453.8,
+   "lock_wait_s": 0,
+   "inputs": [
+    "orfs/designs/",
+    "rtl/",
+    "scripts/t2_*",
+    "scripts/make_t2.sh",
+    "orfs/render.py",
+    "coord/images.env"
+   ],
+   "markers": []
+  },
+  {
+   "stage": "t1-routed",
+   "start_epoch": 1791860273,
+   "action": "skipped",
+   "reason": "inputs (23 git-tracked files) byte-identical to the last successful `make t1-routed` at 2026-10-12 19:07:59",
+   "exit_code": null,
+   "runtime_s": 0,
+   "inputs": [
+    "rtl/",
+    "tb/",
+    "eqy/",
+    "scripts/t1_routed*",
+    "scripts/t1_run.sh",
+    "orfs/designs/",
+    "coord/images.env",
+    "docker/requirements.lock"
+   ],
+   "markers": [
+    "11_eqy_routed"
+   ]
+  },
+  {
+   "stage": "t3",
+   "start_epoch": 1791860273,
+   "action": "ran",
+   "reason": "stage marker 30_arch_model.failed present",
+   "exit_code": 2,
+   "runtime_s": 7.8,
+   "lock_wait_s": 0,
+   "inputs": [
+    "model/",
+    "arch/",
+    "scripts/t3_*",
+    "coord/images.env",
+    "docker/requirements.lock"
+   ],
+   "markers": [
+    "30_arch_model",
+    "31_roofline_fix"
+   ]
+  },
+  {
+   "stage": "sweeps",
+   "start_epoch": 1791860281,
+   "action": "skipped",
+   "reason": "inputs (8 git-tracked files) byte-identical to the last successful `make sweeps` at 2026-10-12 15:41:01",
+   "exit_code": null,
+   "runtime_s": 0,
+   "inputs": [
+    "sweeps/arch_sweep.py",
+    "sweeps/phys_sweep.py",
+    "scripts/make_sweeps.sh",
+    "scripts/t2_run.sh",
+    "model/sim.py",
+    "model/analytic.py",
+    "budget_part2.json",
+    "coord/images.env"
+   ],
+   "markers": [
+    "41_sweeps_finish"
+   ]
+  },
+  {
+   "stage": "repro",
+   "start_epoch": 1791860281,
+   "action": "skipped",
+   "reason": "inputs (65 git-tracked files) byte-identical to the last successful `make repro` at 2026-10-12 19:07:27",
+   "exit_code": null,
+   "runtime_s": 0,
+   "inputs": [
+    "scripts/repro.sh",
+    "scripts/repro_compare.py",
+    "rtl/",
+    "tb/",
+    "formal/",
+    "eqy/",
+    "scripts/t1_*",
+    "model/",
+    "arch/",
+    "scripts/t3_*",
+    "coord/images.env",
+    "docker/requirements.lock"
+   ],
+   "markers": [
+    "51_repro_full"
+   ]
+  },
+  {
+   "stage": "demo",
+   "start_epoch": 1791860281,
+   "action": "ran",
+   "reason": "always runs",
+   "exit_code": 0,
+   "runtime_s": 20.0,
+   "lock_wait_s": 0,
+   "inputs": [],
+   "markers": [
+    "60_demo"
+   ]
+  }
+ ],
+ "post_repro_identity_check": {
+  "generated": "2026-10-12 19:58:43 PDT",
+  "repro_report_generated_epoch": 1791857247,
+  "repro_pass": true,
+  "why": "make all re-executed stages whose first-run files `make repro` had already compared; this block shows whether the files on HEAD are byte-identical to what repro compared, which is the reason its verdict still applies",
+  "task1": {
+   "files": [
+    {
+     "file": "t1_icarus.csv",
+     "head_sha256": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+     "repro_rerun_sha256": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+     "identical": true,
+     "head_mtime": "2026-10-12 19:35:08"
+    },
+    {
+     "file": "t1_verilator.csv",
+     "head_sha256": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+     "repro_rerun_sha256": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+     "identical": true,
+     "head_mtime": "2026-10-12 19:31:51"
+    },
+    {
+     "file": "t1_coverage_icarus.json",
+     "head_sha256": "7592e72bd2b3940ce265ba139c721ae33cd6fcc0b074cc60e86e508d71e4128a",
+     "repro_rerun_sha256": "7592e72bd2b3940ce265ba139c721ae33cd6fcc0b074cc60e86e508d71e4128a",
+     "identical": true,
+     "head_mtime": "2026-10-12 19:35:08"
+    },
+    {
+     "file": "t1_coverage_verilator.json",
+     "head_sha256": "7592e72bd2b3940ce265ba139c721ae33cd6fcc0b074cc60e86e508d71e4128a",
+     "repro_rerun_sha256": "7592e72bd2b3940ce265ba139c721ae33cd6fcc0b074cc60e86e508d71e4128a",
+     "identical": true,
+     "head_mtime": "2026-10-12 19:31:51"
+    },
+    {
+     "file": "t1_waveform_case.json",
+     "head_sha256": "ba48004641e4a11c99c8459c5ec32f6be51dde6b35732d716f9d95ca9beb21c9",
+     "repro_rerun_sha256": "ba48004641e4a11c99c8459c5ec32f6be51dde6b35732d716f9d95ca9beb21c9",
+     "identical": true,
+     "head_mtime": "2026-10-12 19:35:15"
+    }
+   ],
+   "against_hashes_recorded_in_repro_report": [
+    {
+     "check": "t1 csv sha256 (icarus)",
+     "head_sha256": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+     "sha256_repro_compared_first_run": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+     "sha256_repro_rerun": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+     "identical": true
+    },
+    {
+     "check": "t1 csv sha256 (verilator)",
+     "head_sha256": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+     "sha256_repro_compared_first_run": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+     "sha256_repro_rerun": "bb640b17852cbcb226670ee104c6c23b188e56d8b7863d7662650b7217184518",
+     "identical": true
+    }
+   ],
+   "summary_check_booleans_equal_to_rerun": true,
+   "summary_check_booleans_compared": 16,
+   "differing_summary_checks": [],
+   "identical": true
+  },
+  "task2_stage_own_comparison": [
+   {
+    "source": "results/repro/t2_nangate45_gcd.json",
+    "design": "nangate45/gcd",
+    "runs": 5,
+    "new_run_id": "p2_1791859345",
+    "identical_to_all_earlier_runs": true
+   },
+   {
+    "source": "results/repro/t2_nangate45_systolic_os.json",
+    "design": "nangate45/systolic_os",
+    "runs": 4,
+    "new_run_id": "p2_1791859819",
+    "identical_to_all_earlier_runs": true
+   },
+   {
+    "source": "results/repro/t2_sky130hd_gcd.json",
+    "design": "sky130hd/gcd",
+    "runs": 5,
+    "new_run_id": "p2_1791859537",
+    "identical_to_all_earlier_runs": true
+   }
+  ],
+  "identical": true
+ }
+}

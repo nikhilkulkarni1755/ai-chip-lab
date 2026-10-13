@@ -176,31 +176,31 @@
  },
  "jobs": {
   "bundled_is": {
-   "completed": "2026-10-13T02:07:59",
+   "completed": "2026-10-13T02:57:53",
    "rerun_in_stage": false
   },
   "bundled_os": {
-   "completed": "2026-10-13T02:07:59",
+   "completed": "2026-10-13T02:57:53",
    "rerun_in_stage": false
   },
   "bundled_ws": {
-   "completed": "2026-10-13T02:07:59",
+   "completed": "2026-10-13T02:57:53",
    "rerun_in_stage": false
   },
   "fit": {
-   "completed": "2026-10-13T02:07:59",
+   "completed": "2026-10-13T02:57:53",
    "rerun_in_stage": false
   },
   "rl2_calc_is": {
-   "completed": "2026-10-13T02:07:59",
+   "completed": "2026-10-13T02:57:53",
    "rerun_in_stage": false
   },
   "rl2_calc_os": {
-   "completed": "2026-10-13T02:07:59",
+   "completed": "2026-10-13T02:57:53",
    "rerun_in_stage": false
   },
   "rl2_calc_ws": {
-   "completed": "2026-10-13T02:07:59",
+   "completed": "2026-10-13T02:57:53",
    "rerun_in_stage": false
   },
   "rl2_user_is_high": {
@@ -228,7 +228,7 @@
    "state": "not_run"
   },
   "roofline_synthetic": {
-   "completed": "2026-10-13T02:07:59",
+   "completed": "2026-10-13T02:57:53",
    "rerun_in_stage": false
   }
  },

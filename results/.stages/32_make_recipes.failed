@@ -1,1 +1,1 @@
-pass=False; exit codes: runtime=0, images=0, t2=0, t2-stretch=0, t3=2, t1=0, preflight=0, t3-clean-first=0, repro=0, t1-routed=0, demo=0; not run: none; fail-soft test: PASS; make all for real: not run yet; 2026-10-12 19:09:46
+pass=False; exit codes: runtime=0, images=0, t2=0, t2-stretch=0, t3=2, t1=0, preflight=0, t3-clean-first=0, repro=0, t1-routed=0, all=2, demo=0; not run: none; fail-soft test: PASS; make all for real: recorded; 2026-10-12 19:59:16

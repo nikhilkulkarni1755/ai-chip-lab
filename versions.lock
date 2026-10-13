@@ -40,7 +40,7 @@ cacti:   # owner: infra, stage 63_sram_cacti (Part 2, P2.4), recorded 2026-10-12
   smoke: results/evidence/63_cacti_image_smoke.txt   # 64 kB direct-mapped cache at 90 nm: access time, energy, leakage, area reported
   reason_for_new_image: "TASK2 P2.4 asks for CACTI built from the official source at a pinned SHA; kept out of lab-sim so the pinned lab-sim image (and every result made with it) is unchanged"
 
-images:   # owner: infra, stage 02_images, recorded 2026-10-12 10:08:07 PDT
+images:   # owner: infra, stage 02_images, recorded 2026-10-12 19:29:52 PDT
   orfs:
     ref: "openroad/orfs@sha256:573c1716efa0e286c4f641c26d343e20929d58d27fffbb22be2d0b93f09764f6"
     tag: "26Q3-600-g3a964e13f"   # newest-but-5-commits tag that still ships rules-base.json + checkMetadata.py (see COORDINATION.md Decision 6)
