@@ -16,7 +16,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import t2_extract  # noqa: E402
 
 CRITERIA_COMMIT = "c0e5b87"    # results/p2_61_pe_bf16_summary.json pass criteria, before any run
-VARIANT = "p2_61"
+# mac_int8: one clean run in one lock hold (scripts/p2_61_orfs.sh).  mac_bf16: its flow does not fit a
+# 10-minute hold (first attempt stopped at 564 s in detailed routing, variant p2_61), so it was run
+# with one hold per ORFS stage group (scripts/p2_61_orfs_staged.sh, fresh variant p2_61s).
+VARIANT = {"mac_int8": "p2_61", "mac_bf16": "p2_61s"}
 CLOCK_NS = 1.25
 SUMMARY = "results/p2_61_pe_bf16_summary.json"
 
@@ -25,12 +28,12 @@ def main():
     d = json.load(open(SUMMARY))
     ppa, complete = {}, True
     for des in ("mac_int8", "mac_bf16"):
-        meta = os.path.join(t2_extract.WORK, "reports", "nangate45", des, VARIANT, "metadata.json")
+        meta = os.path.join(t2_extract.WORK, "reports", "nangate45", des, VARIANT[des], "metadata.json")
         if not os.path.exists(meta):
             ppa[des] = {"error": "no metadata.json: the flow did not finish"}
             complete = False
             continue
-        x = t2_extract.extract("nangate45", des, VARIANT)
+        x = t2_extract.extract("nangate45", des, VARIANT[des])
         m = x["metrics"]
         run = x.get("run", {})
         e = {k: m.get(k) for k in ("clock_period_ns", "wns_setup_ns", "tns_setup_ns", "wns_hold_ns", "area_um2",
@@ -38,6 +41,8 @@ def main():
                                    "power_total_w", "power_internal_w", "power_switching_w", "power_leakage_w",
                                    "drc_errors", "wirelength")}
         e["flow_exit_code"] = run.get("rc")
+        e["flow_variant"] = VARIANT[des]
+        e["lock_holds"] = run.get("staged_holds_s") or "one hold for the whole flow"
         e["flow_wall_s_incl_lock_wait"] = run.get("wall_s")
         e["flow_elapsed_s"] = x.get("total_elapsed_s_flow")
         e["gds_sha256_timestamps_zeroed"] = (x.get("gds") or {}).get("sha256_timestamps_zeroed")
@@ -137,7 +142,7 @@ def main():
                                   "ratio_bf16_over_int8": val.get("ppa_ratio_bf16_over_int8"),
                                   "clock": val.get("ppa_clock"), "max_clock_note": val.get("ppa_max_clock_note")},
           "design": d.get("design"),
-          "commands": ["scripts/t61_run.sh 10000 results", "scripts/p2_61_orfs.sh", "python3 scripts/p2_61_finish.py"],
+          "commands": ["scripts/t61_run.sh 10000 results", "scripts/p2_61_orfs.sh mac_int8", "scripts/p2_61_orfs_staged.sh mac_bf16", "python3 scripts/p2_61_finish.py"],
           "seeds": "1234", "evidence": [e for e in ev if os.path.exists(e)]}
     with open("results/p2_61_pe_bf16.json", "w") as f:
         json.dump(p2, f, indent=2)
