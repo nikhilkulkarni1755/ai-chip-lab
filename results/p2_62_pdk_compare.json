@@ -1,0 +1,62 @@
+{
+  "stage": "62_pdk_compare",
+  "pass": null,
+  "state": "pending (criteria and comparison definition registered; not run yet)",
+  "oracle": "the flow's own reports (ORFS metadata, setup WNS >= 0, DRC count) for both PDKs on identical RTL; the nangate45 side is the already measured sweep-B closing point, the sky130hd side is a coarse search. Physical expectation: a 130 nm process is slower and larger than a 45 nm one.",
+  "comparison_definition": {
+    "compared": [
+      "area_um2",
+      "stdcell_count",
+      "power_total_w (and energy per cycle = power x period)",
+      "clock period of the fastest closing point of each PDK"
+    ],
+    "nangate45_side": "results/sweeps/phys.jsonl systolic_os 1.25 ns u30 (closing, bracketed by failing 1.20 ns)",
+    "sky130hd_side": "results/pdk_compare/sky130hd_points.jsonl; fastest closing of the points 8.0 / 5.5 / 4.0 ns (+ one optional refinement)",
+    "validity": "The nangate45 frontier is bracketed to 0.05 ns. The sky130hd frontier is only as good as the search: with a failing point below a closing point it is a coarse bracket whose resolution is the gap between them; with only closing points it is an upper bound on the closure period and the period ratio against nangate45 is an upper bound on the true slowdown at the frontier, and area/power ratios are those at the tested period, stated as such; with no closing point no frontier is claimed.",
+    "terms": "one lock hold per point, hard timeout 35 min (decision P2-11), timeouts recorded with the stage reached and not retried, everything finished by 20:45"
+  },
+  "criteria": [
+    {
+      "name": "accounting_complete",
+      "threshold": "every planned sky130hd point (8.0, 5.5, 4.0 ns at 30 % utilization, plus at most one refinement started only if it can finish before 20:45) is recorded as ok / timeout (with the stage reached) / flow_error (with diagnosis from the log); no silent gaps, no retries of timeouts",
+      "written_before_run": "PENDING_COMMIT",
+      "measured": null,
+      "pass": null
+    },
+    {
+      "name": "sky130hd_closes_timing_somewhere",
+      "threshold": "at least one sky130hd point has setup WNS >= 0, zero DRC errors and a GDS (otherwise the comparison is reported as 'no closure in the tested range' and this criterion is FALSE)",
+      "written_before_run": "PENDING_COMMIT",
+      "measured": null,
+      "pass": null
+    },
+    {
+      "name": "frontier_claim_matches_evidence",
+      "threshold": "the result label is computed by rule: 'coarse frontier bracket' only if a failing point exists below a closing point; a lone closing point is reported as an UPPER BOUND on the closure period, never as a frontier",
+      "written_before_run": "PENDING_COMMIT",
+      "measured": null,
+      "pass": null
+    },
+    {
+      "name": "both_pdks_compared_on_same_design",
+      "threshold": "area, standard-cell count, total power and clock period are reported for nangate45 (sweep B, 1.25 ns, u30 closing point) and for the fastest closing sky130hd point, same RTL (sha256 recorded), same 4x4 array, same utilization 30 %; power also normalised to energy per cycle because the clocks differ",
+      "written_before_run": "PENDING_COMMIT",
+      "measured": null,
+      "pass": null
+    },
+    {
+      "name": "expected_direction",
+      "threshold": "sky130hd (130 nm) needs a longer closing period and more area than nangate45 (45 nm); a violation is reported as a finding, not tuned away",
+      "written_before_run": "PENDING_COMMIT",
+      "measured": null,
+      "pass": null
+    }
+  ],
+  "superseded": [],
+  "commands": [
+    "python3 scripts/p2_pdk_compare.py run --go",
+    "python3 scripts/p2_pdk_compare.py summary"
+  ],
+  "seeds": "none (ORFS flow is deterministic)",
+  "evidence": []
+}
