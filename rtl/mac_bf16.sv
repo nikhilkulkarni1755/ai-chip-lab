@@ -88,7 +88,7 @@ module mac_bf16 (
 
   logic [ 7:0] shift;      // exponent difference
   logic [ 4:0] shift_c;    // clamped to 31 (>= 27 already shifts everything out)
-  logic [57:0] small_sh;   // {significand, guard, round, 0} followed by 31 bits that collect the sticky
+  logic [57:0] small_sh;   // {significand, guard, round, 0}, then 31 bits that collect the sticky
   logic [26:0] small_al;   // aligned significand; bit 0 = sticky
   assign shift    = big_exp - small_exp;
   assign shift_c  = (shift > 8'd31) ? 5'd31 : shift[4:0];
