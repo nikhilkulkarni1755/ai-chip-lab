@@ -16,14 +16,18 @@ Generated from the files in this repository by `python3 scripts/demo_build.py` (
 | Task 1: formal MAC proof (SBY) | **PASS** | checks: formal_bmc_pass=true, formal_prove_pass=true |
 | Task 1: RTL = netlist equivalence (EQY) | **PASS** | checks: eqy_array_pass=true, eqy_mac_pass=true, eqy_pass=true; scope: split proof (1) mac_int8 incl. multiplier, (2) full 4x4 array with mac_int8 black-boxed; compared against the generic-gate Yosys netlist (synth; abc; opt), NOT the placed-and-routed nangate45 netlist (the ORFS logic-equivalence step is disabled, see caveats) |
 | Task 2: OpenROAD gcd flows within ORFS's shipped regression thresholds | **PASS** | t2_summary.json: pass=true; NOT timing-closed: nangate45/gcd misses timing at its 0.25 ns reference clock (WNS -0.161583 ns, TNS -7.08646 ns, 51 violating endpoints); sky130hd/gcd misses timing at its 1.1 ns reference clock (WNS -1.45954 ns, TNS -64.9417 ns, 63 violating endpoints) |
-| Task 3: SCALE-Sim vs analytical model | **FAIL** | FAIL: criteria that fail: calc_required_bw_inverse_to_ai_ws, calc_required_bw_inverse_to_ai_os, calc_required_bw_inverse_to_ai_is (criterion B, CALC mode: rho(intensity, required bandwidth) must be <= -0.6 for every dataflow). Criterion A (stalls at a fixed user bandwidth) is NOT EVALUATED (cost), neither pass nor fail: A_incomplete(ws_mid=not_run,ws_high=blocked,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run); the probe showed the largest layer alone needs more than 481 s, over the 10-minute lock-hold rule (results/evidence/31_a_probe.txt). Open items: repro byte-identity of 3 result files. Pre-registered thresholds were not changed (model/t3_roofline2_criteria.json, P2-A1/P2-A2/P2-7); the Part 2 hypothesis was wrong in its mechanism (the bundled google.cfg already uses USER bandwidth and its stalls are all zero, results/evidence/31_original_stalls.txt). Explainer: docs/t3_roofline_explained.md |
-| Sweep A: architecture (SCALE-Sim) | **RUNNING** | Part 2 stage 41_sweeps_finish_A has no marker yet (the Part 1 marker 40_sweeps_* is history and is not used); partial results shown. arch_summary.json (167 rows) is older than arch.jsonl (170 points): regenerate it at the stop; live from results/sweeps/arch.jsonl: 170 ok of 264 planned points (0 error, 0 skipped after timeout, 94 not reached) |
-| Sweep B: physical (ORFS) | **RUNNING** | Part 2 stage 41_sweeps_finish_B has no marker yet (the Part 1 marker 40_sweeps_* is history and is not used); partial results shown. Part 2 refinement plan: 26 points, 13 done, 0 failed or timed out, 13 cut at the gate (each listed with its state in section 12); gcd closes at 0.42-0.425 ns depending on utilization (about zero margin at 0.42 ns, u50); systolic_os at 30 % utilization: closes at 1.25 ns (WNS 0.0132117 ns), fails at 1.2 ns (WNS -0.00730405 ns), 6 points; 1 failed point(s) |
-| Repeatability rerun (repro) | **FAIL** | marker .failed: report written; pass=False (comparison verdict, not a crash): 3 Task 3 checks differ: bookkeeping, provenance, and one 1-ulp float difference from a different Python version; 14 checks, each with its run count and verdict in section 7: 3 different, 9 identical, 2 not_rerun_cost; NOT complete: at least one check was not rerun (cost) and is not counted as identical; diagnosis (results/evidence/51_repro_t3_diagnosis.txt): Task 1 and Task 2 identical; the Task 3 differences are scheduler bookkeeping (attempts.json), a summary regenerated on another Python version (1-ulp float differences) plus the probe state, and provenance (Task 3 inputs committed during the rerun); no SCALE-Sim report differs. Still reported as FAIL: a clean Task 3 first pass and rerun on frozen inputs is scheduled right after the gate (Decision P2-10) and replaces this verdict when it exists |
+| Task 3: SCALE-Sim vs analytical model | **FAIL** | FAIL: criteria that fail: calc_required_bw_inverse_to_ai_ws, calc_required_bw_inverse_to_ai_os, calc_required_bw_inverse_to_ai_is (criterion B, CALC mode: rho(intensity, required bandwidth) must be <= -0.6 for every dataflow). Criterion A (stalls at a fixed user bandwidth) is NOT EVALUATED (cost), neither pass nor fail: A_incomplete(ws_mid=not_run,ws_high=not_run,os_mid=not_run,os_high=not_run,is_mid=not_run,is_high=not_run); the probe showed the largest layer alone needs more than 481 s, over the 10-minute lock-hold rule (results/evidence/31_a_probe.txt). Open items: repro byte-identity of 32 result files. Pre-registered thresholds were not changed (model/t3_roofline2_criteria.json, P2-A1/P2-A2/P2-7); the Part 2 hypothesis was wrong in its mechanism (the bundled google.cfg already uses USER bandwidth and its stalls are all zero, results/evidence/31_original_stalls.txt). Explainer: docs/t3_roofline_explained.md |
+| Sweep A: architecture (SCALE-Sim) | **DONE** | cut at gate (Part 2 stage 41_sweeps_finish_A): all planned points accounted for (not 'complete'); 173 of 264 done, 0 errored or timed out, 91 cut (reason: sweep driver stops at the Phase 1 gate (budget_part2.json deadline_sweeps_stop_epoch); points run cheapest-estimated-first at low lock priority behind stage jobs, so the most expensive points were not reached); live from results/sweeps/arch.jsonl: 173 ok of 264 planned points (0 error, 0 skipped after timeout, 91 not reached) |
+| Sweep B: physical (ORFS) | **DONE** | cut at gate (Part 2 stage 41_sweeps_finish_B): all planned points accounted for (not 'complete'); Part 2 refinement plan: 26 points, 16 done, 0 failed or timed out, 10 cut at the gate (each listed with its state in section 12); gcd closes at 0.42-0.425 ns depending on utilization (about zero margin at 0.42 ns, u50); systolic_os at 30 % utilization: closes at 1.25 ns (WNS 0.0132117 ns), fails at 1.2 ns (WNS -0.00730405 ns), 6 points; systolic_os at 40 % utilization: closes at 1.25 ns (WNS 0.0168722 ns), fails at null ns (WNS null ns), 1 points; systolic_os at 50 % utilization: closes at 1.25 ns (WNS 0.0172729 ns), fails at null ns (WNS null ns), 1 points; 1 failed point(s) |
+| Repeatability rerun (repro) | **FAIL** | repro_report.json: pass=false; 14 checks, each with its run count and verdict in section 7: 3 different, 9 identical, 2 not_rerun_cost; NOT complete: at least one check was not rerun (cost) and is not counted as identical; diagnosis (results/evidence/51_repro_t3_diagnosis.txt): Task 1 and Task 2 identical; the Task 3 differences are scheduler bookkeeping (attempts.json), a summary regenerated on another Python version (1-ulp float differences) plus the probe state, and provenance (Task 3 inputs committed during the rerun); no SCALE-Sim report differs. Still reported as FAIL: a clean Task 3 first pass and rerun on frozen inputs is scheduled right after the gate (Decision P2-10) and replaces this verdict when it exists |
 | Task 1: RTL = ROUTED netlist equivalence (EQY) | **PASS** | eqy_routed_pass = true in t1_summary.json; EQY partitions proved: 27 of 27 |
 | Task 1: routed gate-level simulation vs NumPy | **PARTIAL** | Icarus PASS; Verilator not run (partial against the task, not counted as a PASS). Pass on Icarus only; Verilator gate-level simulation not run (partial vs TASK2 P1.3 item 4); gls_routed_pass = true in t1_summary.json; Icarus 0 mismatches against NumPy: True; negative control detected: True; Verilator: not run: the verilator model build of the routed netlist did not finish within the lock hold (stopped after 544 s, exit code 124); no simulation result exists |
 | Task 2: matches ORFS's published reference results | **PASS** | matches_published = true in t2_summary.json |
-| Make recipes executed for real | **RUNNING** | 10 recipe(s) recorded in results/make_recipes.json; non-zero exit: t3, repro |
+| P2.1 Activity-based power | **PASS** | 8 of 8 evaluated criteria pass. Total power (active-window VCD analysis, 4.0 ns clock): random 7.84 mW, sparse50 5.16 mW (0.66x), allmax 4.31 mW (0.55x); ORFS default vectorless estimate 28.51 mW, i.e. 3.6x / 5.5x / 6.6x higher. Vectorless assumes 0.1 transitions per cycle on every input and propagates it; the real array switches far less. Leakage 0.41-0.43 mW across workloads (6 % spread; Liberty leakage is state dependent). Zero-delay simulation: no glitch power, so the VCD numbers are a lower bound on switching power. Zero-delay gate-level simulation has no glitch power, so the simulated switching power is a lower bound. The vectorless figure is OpenROAD's default-activity assumption (0.1 transitions per cycle on every input), not a measurement (docs/power_explained.md). |
+| P2.2 bf16 processing element | **FAIL** | 9 of 10 evaluated criteria pass; failing checks: lint_clean; verification bit-exact on both simulators over 10042 cases if the two flags say true (bit_exact_verilator=True, bit_exact_icarus=True). INT8 vs bf16 MAC PPA table in section 16: bf16 power is at a clock it does not meet and fmax comes from one run per design, not a frontier; failing: lint_clean |
+| P2.3 systolic_os on sky130hd | **RUNNING** | 2 of 3+ planned sky130hd points recorded so far; result label by the file's rule: coarse frontier bracket: fails at 5.5 ns, closes at 8.0 ns; 0 of 0 evaluated criteria pass; 5 reported only or not evaluated yet (neither pass nor fail) |
+| P2.4 SRAM modelling (CACTI) | **PASS** | 7 of 7 evaluated criteria pass; 1 reported only or not evaluated yet (neither pass nor fail). CACTI is an analytical model: 45 nm matches nangate45 in feature size only and no SRAM macro exists in any ORFS run, so absolute numbers are unchecked; the energy model is order-of-magnitude (SRAM read energy only, DRAM and MAC energy not modelled); the non-monotone cycle time is an unregistered observation (docs/sram_explained.md) |
+| Make recipes executed for real | **FAIL** | 11 recipe(s) recorded in results/make_recipes.json; non-zero exit: t3, repro |
 
 ### What is not green yet, why, and the next action
 
@@ -32,11 +36,13 @@ State is computed from the files; diagnosis and next action are explanations wri
 | Row | State now | Diagnosis | Next action |
 |---|---|---|---|
 | Task 3: SCALE-Sim vs analytical model | **FAIL** | FAIL on the pre-registered criterion B: in CALC mode the intensity versus required-bandwidth rank correlation does not reach -0.6 for ws, os or is (values in the row and section 6). Criterion A (stalls at a fixed user bandwidth) is NOT EVALUATED, neither pass nor fail: a probe showed the largest ResNet-18 layer alone needs more than 481 s, over the 10-minute lock-hold rule, and SCALE-Sim cannot checkpoint inside a layer. The original hypothesis (default bandwidth mode hides stalls) was wrong: the bundled config uses user bandwidth and its stalls are all zero. | Thresholds are final and were not retuned. To finish criterion A the owner can approve long holds (several hours of exclusive machine time) or a smaller layer set registered as a new amendment before running; criterion B's failure needs a diagnosis of the analytic intensity (see docs/t3_roofline_explained.md). |
-| Sweep A: architecture (SCALE-Sim) | **RUNNING** | A completion status: points never reached before the sweep deadline (cut because sweeps run at low priority behind stage jobs in the one-job-at-a-time queue; cheapest points ran first). | `make sweeps` resumes where it stopped; each unreached point is accounted for in the sweep section of the page. |
-| Sweep B: physical (ORFS) | **RUNNING** | A completion status. The systolic_os frontier at 30 % utilization is bracketed by a failing and a closing period (see the row); 40 and 50 % utilization points are listed with their state in section 12. | `make sweeps` (or `python3 sweeps/phys_sweep.py --plan part2`) runs the remaining planned points. |
+| Sweep A: architecture (SCALE-Sim) | **DONE** | A completion status: points never reached before the sweep deadline (cut because sweeps run at low priority behind stage jobs in the one-job-at-a-time queue; cheapest points ran first). | `make sweeps` resumes where it stopped; each unreached point is accounted for in the sweep section of the page. |
+| Sweep B: physical (ORFS) | **DONE** | A completion status. The systolic_os frontier at 30 % utilization is bracketed by a failing and a closing period (see the row); 40 and 50 % utilization points are listed with their state in section 12. | `make sweeps` (or `python3 sweeps/phys_sweep.py --plan part2`) runs the remaining planned points. |
 | Repeatability rerun (repro) | **FAIL** | The comparison says FAIL: Task 1 and Task 2 are identical, but three Task 3 checks differ (bookkeeping, provenance, and one 1-ulp float difference from a different Python version). Diagnosis (results/evidence/51_repro_t3_diagnosis.txt, arch): no SCALE-Sim report differs; the differences are scheduling bookkeeping files, a summary file regenerated on another Python version (1-ulp float differences) plus the probe state, and provenance (Task 3 inputs were committed while the rerun was running). The user-bandwidth Task 3 runs are not rerun (cost) and are reported as such, never as identical. The only excluded file class is the per-layer run-time measurements (timing.timing). | Right after the gate a clean Task 3 first pass and rerun on frozen inputs is run (Decision P2-10): `REPRO_PART=t3 scripts/repro.sh` keeps the Task 1 rerun if its inputs are verified unchanged, else the full `scripts/repro.sh` runs. Until the new verdict exists this row stays FAIL. |
 | Task 1: routed gate-level simulation vs NumPy | **PARTIAL** | PASS on Icarus only: the task also asks for Verilator if the cell models parse (they do). The Verilator model build of the routed netlist did not finish within the 10-minute lock hold, so no Verilator gate-level result exists; every check that needs one is listed as NOT EVALUATED, neither pass nor fail. This is partial against the task, not a pass of the full item. | Build the Verilator gate-level model in a bounded way (a smaller or pre-built model, or a longer hold approved by the owner), then `T1R_STEPS=gls scripts/t1_routed.sh`. Until then the page keeps saying Icarus only. |
-| Make recipes executed for real | **RUNNING** | Each recipe is executed for real by the recorder in queue order; the ones still running or not run yet are listed in the note on the page. | `make all` (fail-soft, always builds the demo, exits non-zero naming failed stages). |
+| P2.2 bf16 processing element | **FAIL** | Verification is bit-exact on both simulators; the stage fails on the single check `lint_clean` (one comment line over the 100-character limit). The PPA table is from one flow run per design at a clock the bf16 MAC does not meet. | Shorten the comment line (comment-only change), re-run the verification once, regenerate the summary; then search the bf16 frontier clock if its power is to be quoted. |
+| P2.3 systolic_os on sky130hd | **RUNNING** | The sky130hd search is coarse and runs in the low-priority queue with a hard per-point timeout; until a failing point exists below a closing point the result is an upper bound, not a frontier. | Let the remaining planned points finish (`python3 scripts/p2_pdk_compare.py run --go`, then `summary`). |
+| Make recipes executed for real | **FAIL** | Each recipe is executed for real by the recorder in queue order; the ones still running or not run yet are listed in the note on the page. | `make all` (fail-soft, always builds the demo, exits non-zero naming failed stages). |
 
 ## Part 2: before and after
 
@@ -47,27 +53,27 @@ State is computed from the files; diagnosis and next action are explanations wri
 | Task 1: sim vs NumPy, SBY, EQY | PASS | **PARTIAL** |
 | Task 2: ORFS gcd within thresholds | PASS | **PASS** |
 | Task 3: SCALE-Sim vs analytic | FAIL | **FAIL** |
-| Sweep A | Incomplete | **RUNNING** |
-| Sweep B | Coarse | **RUNNING** |
+| Sweep A | Incomplete | **DONE** |
+| Sweep B | Coarse | **DONE** |
 | Repro | PASS | **FAIL** |
-| Make recipes | Untested | **RUNNING** |
+| Make recipes | Untested | **FAIL** |
 
-Part 2 elapsed so far (not finished): 7h 12m, from 2026-10-12 09:03:34 PDT to now, budget 14h (Part 1's total runtime stays as recorded in its own section)
+Part 2 elapsed so far (not finished): 9h 34m, from 2026-10-12 09:03:34 PDT to now, budget 14h (Part 1's total runtime stays as recorded in its own section)
 
 Part 2 stage states:
 
 | Stage | State |
 |---|---|
 | `31_roofline_fix` P1.1 Task 3 roofline check | FAIL |
-| `32_make_recipes` P1.2 every make recipe run for real | RUNNING |
+| `32_make_recipes` P1.2 every make recipe run for real | FAIL |
 | `11_eqy_routed` P1.3 equivalence and gate-level simulation of the routed netlist | PASS |
-| `51_repro_full` P1.4 complete determinism story | FAIL |
+| `51_repro_full` P1.4 complete determinism story | RUNNING |
 | `21_orfs_crosscheck` P1.5 Task 2 against ORFS's published results | PASS |
-| `41_sweeps_finish` P1.6 finish and refine the sweeps | INCOMPLETE |
-| `60_power_activity` P2.1 activity-based power | PENDING |
-| `61_pe_bf16` P2.2 bf16 processing element | PENDING |
-| `62_pdk_compare` P2.3 systolic_os on sky130hd | PENDING |
-| `63_sram_cacti` P2.4 SRAM modelling (CACTI) | PENDING |
+| `41_sweeps_finish` P1.6 finish and refine the sweeps | DONE |
+| `60_power_activity` P2.1 activity-based power | PASS |
+| `61_pe_bf16` P2.2 bf16 processing element | FAIL |
+| `62_pdk_compare` P2.3 systolic_os on sky130hd | RUNNING |
+| `63_sram_cacti` P2.4 SRAM modelling (CACTI) | PASS |
 | `64_roadmap` P2.5 roadmap | PENDING |
 
 
@@ -127,7 +133,7 @@ bash demo/run_demo.sh         # short cut (cached images, scratch output dir); n
 
 ### Make recipes: what was actually run
 
-Each recipe below was executed for real as `make <recipe>` from the repo root (recorded by `scripts/make_record.py`, raw data in `results/make_recipes.json`). Wall time includes waiting in the one-job-at-a-time queue of this machine; the time without that wait is shown separately.
+Each row is one recorded invocation of `make` from the repo root with exactly the command shown (recorded by `scripts/make_record.py`, raw data in `results/make_recipes.json`). Not every recipe re-executed all of its work: `make t3 T3_USER_DEADLINE=1` ran in resume mode (8 step/job results kept from earlier runs of the same day by the identical commands, 0 executed under the recipe); `make t1-routed T1R_RESUME=1 T1R_SKIP=gls_verilator` ran in resume mode (46 step/job results kept from earlier runs of the same day by the identical commands, 2 executed under the recipe). Variables on a command line restrict what ran (`T3_USER_DEADLINE=1`: Task 3 criterion-A jobs not started; `T1R_SKIP=gls_verilator`: Verilator gate-level simulation not run; `REPRO_PART=t3`: Task 3 rerun only). Wall time includes waiting in the one-job-at-a-time queue of this machine; the time without that wait is shown separately. The recipes were not run in the order of the task text; all recorded invocations by start time: 09:17 runtime (exit 0), 09:27 images (exit 0), 10:27 t2 (exit 0), 11:36 t2-stretch (exit 0), 12:17 t3 (exit 2), 13:10 t3 (exit 2), 13:56 t1 (exit 0), 14:06 repro (exit 2), 15:18 t1-routed (exit 0), 15:40 preflight (exit 0), 15:40 demo (exit 0).
 
 | Recipe | Exit code | Wall time | of which queue wait | Run time | Started | Log |
 |---|---|---|---|---|---|---|
@@ -136,10 +142,10 @@ Each recipe below was executed for real as `make <recipe>` from the repo root (r
 | `make t1` | 0 | 82 min 16 s | 63 min 11 s | 19 min 05 s | 13:56:30 | `logs/part2/32_make_recipes/t1_135630.log` |
 | `make t2` | 0 | 69 min 08 s | 60 min 01 s | 9 min 07 s | 10:27:19 | `logs/part2/32_make_recipes/t2_102719.log` |
 | `make t2-stretch` | 0 | 38 min 12 s | 19 min 49 s | 18 min 23 s | 11:36:27 | `logs/part2/32_make_recipes/t2-stretch_113627.log` |
-| `make t3` | 2 | 55 min 39 s | 31 min 05 s | 24 min 34 s | 13:10:40 | `logs/part2/32_make_recipes/t3_131040.log` |
-| `make repro` | 2 | 93 min 53 s | 46 min 43 s | 47 min 10 s | 14:06:34 | `logs/part2/32_make_recipes/repro_140634.log` |
+| `make t3 T3_USER_DEADLINE=1` | 2 | 55 min 39 s | 31 min 05 s | 24 min 34 s | 13:10:40 | `logs/part2/32_make_recipes/t3_131040.log` |
+| `make repro REPRO_T1_AFTER=1791838590` | 2 | 93 min 53 s | 46 min 43 s | 47 min 10 s | 14:06:34 | `logs/part2/32_make_recipes/repro_140634.log` |
 | `make demo` | 0 | 23 s | 0 s | 23 s | 15:40:38 | `logs/part2/32_make_recipes/demo_154037.log` |
-| `make t1-routed` | 0 | 1 min 01 s | 10 s | 51 s | 15:18:53 | `logs/part2/32_make_recipes/t1-routed_151853.log` |
+| `make t1-routed T1R_RESUME=1 T1R_SKIP=gls_verilator` | 0 | 1 min 01 s | 10 s | 51 s | 15:18:53 | `logs/part2/32_make_recipes/t1-routed_151853.log` |
 | `make preflight` | 0 | 1 s | 0 s | 1 s | 15:40:37 | `logs/part2/32_make_recipes/preflight_154037.log` |
 
 **Recipes that exited non-zero:** `make t3` (exit 2), `make repro` (exit 2) — see the log of each.
@@ -162,9 +168,11 @@ Notes:
 2. *Most later stages were skipped, not executed.* The run used the marker-only resume (`RESUME=markers`): the 7 stages that already had a `.done` marker or a recorded successful run (runtime, images, t1, t2, t2-stretch, t1-routed, repro) were skipped without checking whether their inputs had changed (the input-aware rule of `RESUME=1` would have rerun: t1, t2, t2-stretch, t1-routed). Reason: a full pass costs about 3 hours of the single heavy-job queue (Decision P2-1). Consequence: the test shows the control flow continuing past the failure and reaching the end; it does **not** show a heavy stage being executed after a failure. Executed for real after the forced failure: sweeps, demo.
 3. *Excluded from the test:* `t3` — make t3 has a .failed marker and would re-execute its second pass (7 container jobs, about 25 min of lock) plus the summary; its real runs are recorded as recipe attempts. A stage with a `.failed` marker is rerun by the resume rule; this one was left out to keep the lock free.
 4. *Sweeps were started but not waited for* (`SWEEPS_DETACH=1`), and Task 3's criterion-A jobs were disabled (`T3_USER_DEADLINE=1`).
-5. *One assertion was changed while the test was written:* from "only the forced stage failed" to "the forced stage is first in the failed list", so that a stage failing for its own reasons would be listed instead of failing the test. In this run no other stage failed (none), so the original, stricter assertion would also have held.
+5. *One assertion was changed while the test was written:* from "only the forced stage failed" to "the forced stage is first in the failed list", so that a stage failing for its own reasons is listed instead of failing the test. Failed list of this run besides the forced stage: empty. Correction after the reviewer's gate audit (G2): in this 15:41 run `repro` was skipped as 'succeeded before' although its report said pass=False — its marker was still .done (the marker followed the verdict only after a fix at 15:58) — and `t3`, which fails, was excluded. So the failed list contained only the forced stage because the two stages that really fail were kept out of the run, not because nothing else fails; the stricter assertion 'only the forced stage failed' would not hold in a run that includes them.
 
 It is therefore a weaker check than a full `make all` with one stage really failing: it verifies the fail-soft bookkeeping and exit status on the real Makefile and markers, with 2 of 11 stages actually executed. Execution of real recipes after a real failure is covered separately by (a) the unit test `scripts/tests/make_all_test.sh` on a scratch repository (cases A and J: every later recipe runs after one or two failing recipes) and (b) the recorded `make all` run below, when present, in which a stage fails with its own exit code.
+
+**`make all` run for real once (TASK2 P1.7 / Final steps): not run yet.**
 
 ## Evidence that it builds and runs
 
@@ -235,6 +243,10 @@ Terminal output saved by each stage, rendered to images from the saved text (not
 ![51_repro_t3_diagnosis](demo/assets/evidence/51_repro_t3_diagnosis.png)
 
 ## Results
+
+![power activity](demo/assets/power_activity.png)
+
+![sram cacti](demo/assets/sram_cacti.png)
 
 ![sweepA best dataflow](demo/assets/sweepA_best_dataflow.png)
 

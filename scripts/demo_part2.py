@@ -84,6 +84,10 @@ def inferred_progress(L, stage):
         if done or os.path.isdir(L.p("results/t3.partial/roofline2")):
             return "INCOMPLETE", ("no stage marker: the roofline runs are executed inside the real `make t3` (stage 32_make_recipes). Runs finished: %s; the fixed-bandwidth runs "
                                  "(criterion A) are in progress or not started; see the Task 3 row for the pre-registered criteria" % (", ".join(done) or "none"))
+    if stage == "62_pdk_compare":
+        n = len(pdk_points(L))
+        if n:
+            return "RUNNING", "no stage marker yet; %d sky130hd point(s) recorded in results/pdk_compare/sky130hd_points.jsonl; label by rule: %s" % (n, pdk_label(pdk_points(L)))
     if stage == "41_sweeps_finish":
         t0 = (L.jload("budget_part2.json") or {}).get("start_epoch") or 0
         new = 0
@@ -158,6 +162,10 @@ def extra_rows(L, Row, t1, t2, t3):
     rows.append(Row("Task 2: matches ORFS's published reference results", ("PASS" if v else "FAIL") if v is not None else {"failed": "FAIL", "blocked": "BLOCKED", "running": "RUNNING"}.get(mst, "PENDING"),
                     ("matches_published = %s in t2_summary.json" % str(v).lower()) if v is not None else "not reported yet (stage 21_orfs_crosscheck: %s)" % (mst if mst != "none" else "no marker"),
                     "results/t2_summary.json" if v is not None else None))
+    for stage, label in (("60_power_activity", "P2.1 Activity-based power"), ("61_pe_bf16", "P2.2 bf16 processing element"), ("62_pdk_compare", "P2.3 systolic_os on sky130hd"),
+                         ("63_sram_cacti", "P2.4 SRAM modelling (CACTI)")):
+        stt, det, evf = phase2_state(L, stage)
+        rows.append(Row(label, stt, det, evf))
     mr = L.jload("results/make_recipes.json")
     st, det = stage_state(L, "32_make_recipes")
     if isinstance(mr, dict):
@@ -582,6 +590,10 @@ NOT_GREEN = [
      "`make sweeps` (or `python3 sweeps/phys_sweep.py --plan part2`) runs the remaining planned points."),
     ("Repeatability", "The comparison says FAIL: Task 1 and Task 2 are identical, but three Task 3 checks differ (bookkeeping, provenance, and one 1-ulp float difference from a different Python version). Diagnosis (results/evidence/51_repro_t3_diagnosis.txt, arch): no SCALE-Sim report differs; the differences are scheduling bookkeeping files, a summary file regenerated on another Python version (1-ulp float differences) plus the probe state, and provenance (Task 3 inputs were committed while the rerun was running). The user-bandwidth Task 3 runs are not rerun (cost) and are reported as such, never as identical. The only excluded file class is the per-layer run-time measurements (timing.timing).",
      "Right after the gate a clean Task 3 first pass and rerun on frozen inputs is run (Decision P2-10): `REPRO_PART=t3 scripts/repro.sh` keeps the Task 1 rerun if its inputs are verified unchanged, else the full `scripts/repro.sh` runs. Until the new verdict exists this row stays FAIL."),
+    ("P2.1", "Open caveats only: zero-delay simulation has no glitch power (simulated switching power is a lower bound) and the workloads are small synthetic ones.", "Optional: glitch-aware power needs a timing-annotated (SDF) simulation; not planned."),
+    ("P2.2", "Verification is bit-exact on both simulators; the stage fails on the single check `lint_clean` (one comment line over the 100-character limit). The PPA table is from one flow run per design at a clock the bf16 MAC does not meet.", "Shorten the comment line (comment-only change), re-run the verification once, regenerate the summary; then search the bf16 frontier clock if its power is to be quoted."),
+    ("P2.3", "The sky130hd search is coarse and runs in the low-priority queue with a hard per-point timeout; until a failing point exists below a closing point the result is an upper bound, not a frontier.", "Let the remaining planned points finish (`python3 scripts/p2_pdk_compare.py run --go`, then `summary`)."),
+    ("P2.4", "Passes its registered criteria; CACTI is analytical, 45 nm only matches nangate45 in feature size, no SRAM macro exists to check absolute numbers.", "Compare against a real SRAM macro (e.g. OpenRAM or a vendor compiler) in a later round."),
     ("Make recipes", "Each recipe is executed for real by the recorder in queue order; the ones still running or not run yet are listed in the note on the page.",
      "`make all` (fail-soft, always builds the demo, exits non-zero naming failed stages)."),
 ]
@@ -671,6 +683,179 @@ def where_next(L):
     return md_to_html(md)
 
 
+def md_section(md, heading):
+    """Body of the '## heading' section of a markdown text (up to the next '## '), or ''."""
+    m = re.search(r"^## %s[^\n]*\n(.*?)(?=^## |\Z)" % re.escape(heading), md or "", re.M | re.S)
+    return m.group(1).strip() if m else ""
+
+
+def _mw(x):
+    return "%.2f" % (x * 1000.0) if isinstance(x, (int, float)) else "-"
+
+
+def phase2_state(L, stage):
+    """(state, detail, evidence_file) for P2.1-P2.4 rows, from the p2 JSON and markers only."""
+    j = p2json(L, stage) or {}
+    st, body = marker(L, stage)
+    crit = [c for c in (j.get("criteria") or []) if isinstance(c, dict)]
+    ev = [f for f in (j.get("evidence") or []) if os.path.exists(L.p(f))]
+    evf = ev[0] if ev else None
+    npass = sum(1 for c in crit if c.get("pass") is True)
+    nfail = [c.get("name") for c in crit if c.get("pass") is False]
+    nnull = sum(1 for c in crit if c.get("pass") is None)
+    nev = sum(1 for c in crit if c.get("pass") is not None)
+    cnt = ("%d of %d evaluated criteria pass" % (npass, nev) + ("; %d reported only or not evaluated yet (neither pass nor fail)" % nnull if nnull else "")) if crit else "no criteria file"
+    if stage == "60_power_activity":
+        base = ("%s. %s Zero-delay gate-level simulation has no glitch power, so the simulated switching power is a lower bound. The vectorless figure is OpenROAD's default-activity assumption "
+                "(0.1 transitions per cycle on every input), not a measurement (docs/power_explained.md)." % (cnt, j.get("finding", "")))
+    elif stage == "63_sram_cacti":
+        base = ("%s. CACTI is an analytical model: 45 nm matches nangate45 in feature size only and no SRAM macro exists in any ORFS run, so absolute numbers are unchecked; the energy model is order-of-magnitude "
+                "(SRAM read energy only, DRAM and MAC energy not modelled); the non-monotone cycle time is an unregistered observation (docs/sram_explained.md)" % cnt)
+    elif stage == "61_pe_bf16":
+        sm = L.jload("results/p2_61_pe_bf16_summary.json") or {}
+        v = (sm.get("values") or {}).get("verilator") or {}
+        base = ("%s; failing checks: %s; verification bit-exact on both simulators over %s cases if the two flags say true (bit_exact_verilator=%s, bit_exact_icarus=%s). INT8 vs bf16 MAC PPA table in section 16: "
+                "bf16 power is at a clock it does not meet and fmax comes from one run per design, not a frontier" % (
+                    cnt, ", ".join(str(x) for x in [k for k, vv in (sm.get("checks") or {}).items() if vv is False]) or "none", v.get("cases_total", "?"),
+                    (sm.get("checks") or {}).get("bit_exact_verilator"), (sm.get("checks") or {}).get("bit_exact_icarus")))
+        if isinstance(sm.get("checks"), dict):
+            nfail = [k for k, vv in sm["checks"].items() if vv is False]
+    else:
+        base = cnt
+    if stage == "62_pdk_compare":
+        pts = pdk_points(L)
+        lab = pdk_label(pts)
+        base = "%d of 3+ planned sky130hd points recorded so far; result label by the file's rule: %s; %s" % (len(pts), lab, cnt)
+        if j.get("pass") is True and st == "done":
+            return "PASS", base, evf
+        if st == "failed" or j.get("pass") is False:
+            return "FAIL", base, evf
+        return ("RUNNING" if (pts or st == "running") else "PENDING"), base, evf
+    if j.get("pass") is True and st == "done":
+        return "PASS", base, evf
+    if j.get("pass") is False or st == "failed":
+        return "FAIL", base + ("; failing: %s" % ", ".join(map(str, nfail)) if nfail else ""), evf
+    if st == "running":
+        return "RUNNING", base, evf
+    if j.get("pass") is True:
+        return "UNKNOWN", base + "; summary says pass but no .done marker", evf
+    return "PENDING", base, evf
+
+
+def pdk_points(L):
+    out = []
+    try:
+        for ln in open(L.p("results/pdk_compare/sky130hd_points.jsonl"), encoding="utf-8"):
+            ln = ln.strip()
+            if ln:
+                try:
+                    out.append(json.loads(ln))
+                except ValueError:
+                    pass
+    except OSError:
+        pass
+    return out
+
+
+def pdk_label(pts):
+    ok = [p for p in pts if p.get("status", "ok") == "ok" and isinstance(p.get("wns_setup_ns"), (int, float))]
+    closing = [p for p in ok if p["wns_setup_ns"] >= 0]
+    failing = [p for p in ok if p["wns_setup_ns"] < 0]
+    if not closing:
+        return "no closing point yet (no frontier claimed)"
+    fc = min(p["clock_period_ns"] for p in closing)
+    below = [p for p in failing if p["clock_period_ns"] < fc]
+    if below:
+        return "coarse frontier bracket: fails at %s ns, closes at %s ns" % (max(p["clock_period_ns"] for p in below), fc)
+    return "UPPER BOUND on the closure period: closes at %s ns, no failing point below it (not a frontier)" % fc
+
+
+def phase2_html(L):
+    h = ['<h2 id="p2res">16. Phase 2 results</h2><p class="sub">Each block is generated from the stage result file named in it; a stage that has not produced its file is shown as PENDING. Criteria and their thresholds are listed with the stage in section 12.</p>']
+    # ---- P2.1
+    pa = L.jload("results/power_activity.json")
+    st, det, evf = phase2_state(L, "60_power_activity")
+    h.append("<h3>P2.1 Activity-based power (stage 60_power_activity) %s</h3>" % badge(st))
+    if isinstance(pa, dict):
+        h.append("<p>%s</p>" % e(det))
+        h.append("<div class='tw'><table><thead><tr><th>workload</th><th>total (mW)</th><th>dynamic (mW)</th><th>leakage (mW)</th><th>fraction of ORFS default vectorless</th></tr></thead><tbody>")
+        h.append("<tr><td>ORFS default vectorless estimate</td><td>%s</td><td>-</td><td>-</td><td>1</td></tr>" % _mw(pa.get("orfs_vectorless_total_w")))
+        for wl, w in ((pa.get("raw") or {}).get("workloads") or {}).items():
+            r = (w or {}).get("result") or {}
+            h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(wl), _mw(r.get("total_w")), _mw(r.get("dynamic_w")), _mw(r.get("leakage_w")),
+                     e("%.3f" % (pa.get("ratios_to_orfs_vectorless") or {}).get(wl)) if isinstance((pa.get("ratios_to_orfs_vectorless") or {}).get(wl), (int, float)) else "-"))
+        h.append("</tbody></table></div>")
+        if os.path.exists(L.p("demo/assets/power_activity.png")):
+            h.append('<p><img src="assets/power_activity.png" alt="power per workload versus the default estimate" style="max-width:100%"></p>')
+        md = L.read("docs/power_explained.md")
+        for hd in ("Caveats", "Why the default estimate is so much higher"):
+            sec = md_section(md, hd)
+            if sec:
+                h.append("<h4>%s</h4>%s" % (e(hd), md_to_html(sec)))
+        h.append("<p>Full explanation: <a href='../docs/power_explained.md'><code>docs/power_explained.md</code></a>. Evidence: %s</p>" % ev_links(L, (p2json(L, "60_power_activity") or {}).get("evidence")))
+    else:
+        h.append("<p class='sub'><span class='b dim'>PENDING</span> results/power_activity.json not written yet.</p>")
+    # ---- P2.2
+    sm = L.jload("results/p2_61_pe_bf16_summary.json")
+    st, det, evf = phase2_state(L, "61_pe_bf16")
+    h.append("<h3>P2.2 bf16 processing element (stage 61_pe_bf16) %s</h3>" % badge(st))
+    j = p2json(L, "61_pe_bf16") or {}
+    if isinstance(sm, dict):
+        h.append("<p>%s</p>" % e(det))
+        ck = sm.get("checks") or {}
+        h.append("<div class='tw'><table><thead><tr><th>check</th><th>result</th></tr></thead><tbody>%s</tbody></table></div>" % "".join(
+            "<tr><td><code>%s</code></td><td class='%s'>%s</td></tr>" % (e(k), "okt" if v else "badt", "pass" if v else "FAIL") for k, v in ck.items()))
+        pp = (j.get("reported_not_gating") or {}).get("ppa") or {}
+        if pp.get("mac_int8") and pp.get("mac_bf16"):
+            a, b = pp["mac_int8"], pp["mac_bf16"]
+            rows = [("clock period (ns)", "clock_period_ns"), ("setup WNS (ns)", "wns_setup_ns"), ("timing met at that clock", "timing_met_at_clock"), ("area (um2)", "area_um2"), ("std cells", "stdcell_count"),
+                    ("total power (W, default vectorless estimate)", "power_total_w"), ("fmax reported by the flow (MHz)", "fmax_reported_by_flow_mhz"), ("max clock estimate 1/(period - WNS) (MHz)", "max_clock_estimate_mhz"), ("DRC errors", "drc_errors")]
+            h.append("<div class='tw'><table><thead><tr><th>metric (nangate45, one flow run each)</th><th>INT8 MAC</th><th>bf16 MAC</th></tr></thead><tbody>%s</tbody></table></div>" % "".join(
+                "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(n), e(str(a.get(k))), e(str(b.get(k)))) for n, k in rows))
+            rat = (j.get("reported_not_gating") or {}).get("ratio_bf16_over_int8") or {}
+            h.append("<p>bf16 / INT8: %s. <b>Caveats:</b> the bf16 power is measured at 1.25 ns, a clock the bf16 MAC does not meet (WNS %s ns), so it is not a power at its own operating point; fmax comes from a single run per design, not from a timing-closure frontier search. "
+                     "</p>" % (e(", ".join("%s %s" % (k, v) for k, v in rat.items())), e(str(b.get("wns_setup_ns")))))
+        d = sm.get("design") or {}
+        if d:
+            h.append("<p><b>Design choices (documented):</b> rounding: %s; subnormals: %s.</p>" % (e(str(d.get("rounding"))), e(str(d.get("subnormals")))))
+        h.append("<p>Why floating point costs area: a bf16 MAC adds an exponent adder, a mantissa multiplier plus a 24-bit alignment shifter, a wide adder, leading-zero detection, a normalisation shifter and rounding on top of the integer datapath that an INT8 MAC needs; the table above shows the measured cost. Evidence: %s</p>" % ev_links(L, j.get("evidence")))
+    else:
+        h.append("<p class='sub'><span class='b dim'>PENDING</span> results/p2_61_pe_bf16_summary.json not written yet.</p>")
+    # ---- P2.3
+    st, det, evf = phase2_state(L, "62_pdk_compare")
+    h.append("<h3>P2.3 systolic_os on sky130hd (stage 62_pdk_compare) %s</h3><p>%s</p>" % (badge(st), e(det)))
+    pts = pdk_points(L)
+    if pts:
+        h.append("<div class='tw'><table><thead><tr><th>sky130hd clock (ns)</th><th>utilization</th><th>status</th><th>setup WNS (ns)</th><th>area (um2)</th><th>total power (W)</th><th>DRC</th></tr></thead><tbody>")
+        for p in pts:
+            h.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % tuple(e(str(p.get(k, "-"))) for k in ("clock_period_ns", "core_utilization", "status", "wns_setup_ns", "area_um2", "power_total_w", "drc_errors")))
+        h.append("</tbody></table></div>")
+    h.append("<p class='sub'>The nangate45 side is the sweep B closing point (1.25 ns at 30 %, bracketed by 1.20 ns failing). A lone closing sky130hd point is an upper bound, a failing point below a closing one makes it a coarse bracket (rule registered in results/p2_62_pdk_compare.json). Why sky130 is slower and larger is explained once the comparison has its numbers: a 130 nm process has longer gate delays and larger cells than a 45 nm library.</p>")
+    # ---- P2.4
+    sc = L.jload("results/sram_cacti.json")
+    em = L.jload("results/sram_energy_model.json")
+    st, det, evf = phase2_state(L, "63_sram_cacti")
+    h.append("<h3>P2.4 SRAM modelling with CACTI (stage 63_sram_cacti) %s</h3><p>%s</p>" % (badge(st), e(det)))
+    if isinstance(sc, dict) and isinstance(sc.get("points"), dict):
+        h.append("<p class='sub'>%s; settings: %s</p>" % (e(str(sc.get("model"))), e(json.dumps(sc.get("settings"), sort_keys=True))))
+        h.append("<div class='tw'><table><thead><tr><th>point</th><th>size (kB)</th><th>technology (um)</th><th>area (mm2)</th><th>access (ns)</th><th>cycle (ns)</th><th>read energy (nJ)</th><th>leakage (mW)</th></tr></thead><tbody>")
+        for k, v in sorted(sc["points"].items(), key=lambda kv: (kv[1].get("tech_um", 0), kv[1].get("size_kB", 0))):
+            h.append("<tr><td>%s</td>%s</tr>" % (e(k), "".join("<td>%s</td>" % e(("%.4g" % v[x]) if isinstance(v.get(x), (int, float)) else str(v.get(x, "-"))) for x in ("size_kB", "tech_um", "area_mm2", "access_ns", "cycle_ns", "read_nJ", "leak_mW"))))
+        h.append("</tbody></table></div>")
+    if isinstance(em, dict):
+        h.append("<p><b>%s</b></p><p>Workload: %s</p>" % (e(str(em.get("label"))), e(str(em.get("workload")))))
+        h.append("<div class='tw'><table><thead><tr><th>configuration</th><th>cycles</th><th>SRAM read energy (uJ)</th><th>leakage energy at 1 GHz (uJ)</th><th>DRAM words moved</th></tr></thead><tbody>%s</tbody></table></div>" % "".join(
+            "<tr><td>%s</td><td>%s</td><td>%.2f</td><td>%.2f</td><td>%s</td></tr>" % (e(c["config"]), c["cycles"], c["sram_energy_uJ"], c["leakage_energy_uJ_at_1GHz"], c["dram_words"]) for c in em.get("configs") or []))
+        h.append("<p>Break-even DRAM energy per word that would pay for the larger SRAM: %s.</p>" % e(json.dumps(em.get("break_even"))))
+    if os.path.exists(L.p("demo/assets/sram_cacti.png")):
+        h.append('<p><img src="assets/sram_cacti.png" alt="CACTI SRAM area, access time and energy versus capacity" style="max-width:100%"></p>')
+    sec = md_section(L.read("docs/sram_explained.md"), "Caveats")
+    if sec:
+        h.append("<h4>Caveats</h4>" + md_to_html(sec))
+    h.append("<p>Full explanation: <a href='../docs/sram_explained.md'><code>docs/sram_explained.md</code></a>. Evidence: %s</p>" % ev_links(L, (p2json(L, "63_sram_cacti") or {}).get("evidence")))
+    return "".join(h)
+
+
 def part2_html(L, rows, before):
     ba, missing = render_before_after(L, rows, before)
     h = ['<h2 id="p2sum">10. Part 2 summary: before and after</h2>',
@@ -685,6 +870,7 @@ def part2_html(L, rows, before):
     h.append('<h2 id="p2dec">13. Decisions and superseded criteria</h2>' + decisions(L))
     h.append('<h2 id="p2cav">14. Remaining caveats and BLOCKED items</h2>' + caveats(L, rows))
     h.append('<h2 id="p2next">15. Where to go next</h2><p>From <a href="../docs/next.md"><code>docs/next.md</code></a> (costs are grounded in this lab\'s measurements; unverified items say so).</p>' + where_next(L))
+    h.append(phase2_html(L))
     return "".join(h)
 
 

@@ -872,6 +872,12 @@ def t1_routed_block(L, s1):
         vd = r.get("verdict_definition")
         if vd:
             h.append("<tr><th>verdict_definition</th><td>%s</td></tr>" % e(json.dumps(vd, sort_keys=True) if not isinstance(vd, str) else vd))
+        nc = r.get("eqy_negative_controls")
+        if isinstance(nc, dict):
+            for k, v in nc.items():
+                if isinstance(v, dict):
+                    h.append("<tr><th>EQY negative control: %s</th><td>%s &mdash; %s (solver %s; base case %s, induction %s)</td></tr>" % (
+                        e(k), e(str(v.get("bug") or v.get("what") or "")), e(str(v.get("rejected_as") or v.get("result") or "")), e(str(v.get("solver_status"))), e(str(v.get("basecase"))), e(str(v.get("induction")))))
         for k in ("eqy_scope", "gls_scope", "note", "routed_netlist", "routed_netlist_sha256"):
             if r.get(k):
                 h.append("<tr><th>%s</th><td>%s</td></tr>" % (e(k), e(str(r[k]))))
