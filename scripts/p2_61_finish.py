@@ -40,6 +40,12 @@ def main():
                                    "stdcell_area_um2", "synth_area_um2", "stdcell_count", "utilization_frac",
                                    "power_total_w", "power_internal_w", "power_switching_w", "power_leakage_w",
                                    "drc_errors", "wirelength")}
+        md = json.load(open(meta))
+        # the clock the flow actually constrained, and the flow's own fmax report
+        det = [c for c in md.get("constraints__clocks__details", []) if c.startswith("core_clock:")]
+        e["clock_period_ns"] = float(det[0].split(":")[1]) if det else None
+        fmax = md.get("finish__timing__fmax__clock__core_clock")
+        e["fmax_reported_by_flow_mhz"] = round(float(fmax) / 1e6, 1) if isinstance(fmax, (int, float)) else None
         e["flow_exit_code"] = run.get("rc")
         e["flow_variant"] = VARIANT[des]
         e["lock_holds"] = run.get("staged_holds_s") or "one hold for the whole flow"
@@ -65,8 +71,10 @@ def main():
                       "why": "closure clock of the INT8 MAC array: sweep B frontier of systolic_os on nangate45 "
                              "(results/sweeps/phys.jsonl: 1.25 ns closes at 30/40/50 % utilization, 1.20 ns does not)",
                       "fixed_before_first_run_in": "orfs/p2_designs/nangate45/*/constraint.sdc"}
-    v["ppa_max_clock_note"] = ("max clock = 1 / (period - setup WNS) of the single run at 1.25 ns: an estimate from one "
-                               "run, not a searched timing-closure frontier")
+    v["ppa_max_clock_note"] = ("max clock: fmax_reported_by_flow_mhz is OpenROAD's finish-stage fmax for core_clock in "
+                               "the single run at 1.25 ns (metadata finish__timing__fmax__clock__core_clock); "
+                               "max_clock_estimate_mhz = 1 / (period - setup WNS) of the same run. Both come from one "
+                               "run per design, not from a searched timing-closure frontier")
     a, b = ppa.get("mac_int8", {}), ppa.get("mac_bf16", {})
     if a.get("area_um2") and b.get("area_um2"):
         v["ppa_ratio_bf16_over_int8"] = {
@@ -74,7 +82,9 @@ def main():
             "stdcell_count": round(float(b["stdcell_count"]) / float(a["stdcell_count"]), 3) if a.get("stdcell_count") else None,
             "power_total": round(float(b["power_total_w"]) / float(a["power_total_w"]), 3) if a.get("power_total_w") else None,
             "min_period_estimate": round(b["min_period_estimate_ns"] / a["min_period_estimate_ns"], 3)
-            if a.get("min_period_estimate_ns") and b.get("min_period_estimate_ns") else None}
+            if a.get("min_period_estimate_ns") and b.get("min_period_estimate_ns") else None,
+            "fmax_reported_by_flow": round(b["fmax_reported_by_flow_mhz"] / a["fmax_reported_by_flow_mhz"], 3)
+            if a.get("fmax_reported_by_flow_mhz") and b.get("fmax_reported_by_flow_mhz") else None}
     v["timing_at_int8_clock"] = {"mac_bf16_wns_setup_ns": b.get("wns_setup_ns"), "met": b.get("timing_met_at_clock"),
                                  "mac_int8_wns_setup_ns": a.get("wns_setup_ns"), "mac_int8_met": a.get("timing_met_at_clock")}
     ver = bool(d.get("verification_pass"))
@@ -89,7 +99,7 @@ def main():
             "# numbers from each run's metadata.json; min period / max clock are estimates (period - setup WNS) from this one run",
             "%-28s %14s %14s" % ("metric", "mac_int8", "mac_bf16")]
     for k in ("flow_exit_code", "clock_period_ns", "wns_setup_ns", "timing_met_at_clock", "min_period_estimate_ns",
-              "max_clock_estimate_mhz", "area_um2", "stdcell_count", "utilization_frac", "power_total_w",
+              "max_clock_estimate_mhz", "fmax_reported_by_flow_mhz", "area_um2", "stdcell_count", "utilization_frac", "power_total_w",
               "power_internal_w", "power_switching_w", "power_leakage_w", "drc_errors", "flow_elapsed_s"):
         rows.append("%-28s %14s %14s" % (k, a.get(k), b.get(k)))
     rows.append("ratio bf16 / int8: " + json.dumps(v.get("ppa_ratio_bf16_over_int8")))
