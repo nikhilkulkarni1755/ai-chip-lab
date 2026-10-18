@@ -4,7 +4,7 @@ Part 2 finished at 20:14 PDT: 11 h 11 min of the 14 h budget (started 09:03).
 
 Not everything is green. Task 3 fails, the routed gate-level simulation is partial, and the bf16 PE fails on one lint line.
 
-Work is on branch `part2-green`, 185 commits ahead of `main`. Nothing was pushed and `main` is untouched. Start with `demo/index.html`; the README carries the same status table.
+Work was done on branch `part2-green` (185 commits). On 17 October, at your request, it was merged into `main` as a fast-forward and pushed, together with the `p2/*` agent branches. Start with `demo/index.html`; the README carries the same status table.
 
 ## Final state
 
@@ -104,7 +104,7 @@ No ORFS run includes an SRAM macro, so these absolute numbers have nothing in th
 
 ## What needs you
 
-1. **Review and merge `part2-green`.** It is not pushed.
+1. **Done on 17 October:** `part2-green` was merged into `main` and pushed. The Part 1 agent branches (`arch/t3`, `demo/main-work`, `infra/runtime`, `pnr/t2`, `rtl/t1`) stay local: their pre-rewrite history carries a machine identity and personal paths, and their content is already on `main`.
 2. **Optional bf16 fix:** `git cherry-pick e21fd3b`, then `scripts/t61_run.sh 10000 results && python3 scripts/p2_61_finish.py` (about 4 minutes of lock). `make all` will then rerun Task 1 and the routed stage. Keep the `p2/rtl` branch until you decide.
 3. **To run anything again:** the VM is stopped. `source ~/ai-chip-lab/env.sh && colima start` brings it back with all images intact.
 
@@ -112,7 +112,7 @@ No ORFS run includes an SRAM macro, so these absolute numbers have nothing in th
 
 - Colima is stopped; the heartbeat and keep-awake processes are ended.
 - The working tree is clean. The privacy scan reports 0 findings in 535 tracked files.
-- This file was committed to `part2-green` after the final state was recorded.
+- This file was committed to `part2-green` after the final state was recorded, and is on `main` since the 17 October push.
 
 ## Comments on the process
 

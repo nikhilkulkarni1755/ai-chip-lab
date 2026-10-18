@@ -1,1 +1,1 @@
-DONE — Part 2 finished; open demo/index.html (branch part2-green, not pushed). VM stopped: source env.sh && colima start
+DONE — Part 2 finished; open demo/index.html (part2-green merged into main and pushed 2026-10-17). VM stopped: source env.sh && colima start

@@ -44,7 +44,7 @@ State is computed from the files; diagnosis and next action are explanations wri
 
 **Owner actions**
 
-- Review and merge branch `part2-green` yourself. Nothing was pushed and `main` was not touched.
+- Branch `part2-green` was merged into `main` (fast-forward) and pushed on 2026-10-17 at the owner's request, together with the `p2/*` agent branches. The Part 1 agent branches were not pushed: their pre-rewrite history carries a machine identity and personal paths.
 - Keep branch `p2/rtl`: it holds the one-line bf16 lint fix (commit e21fd3b) that was deliberately not merged (Decision P2-12).
 - Optional bf16 lint fix: `git cherry-pick e21fd3b`, then `scripts/t61_run.sh 10000 results && python3 scripts/p2_61_finish.py`. rtl/ is an input of the t1, t1-routed and repro stages, so those re-run afterwards.
 - Optional: decide whether Task 3 criterion A should be evaluated at all (several hours of exclusive machine time) or re-registered; criterion B's failure is a finding, not a bug.
